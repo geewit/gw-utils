@@ -1,0 +1,98 @@
+buildscript {
+    repositories {
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
+    }
+}
+
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+buildDir = 'target'
+
+group = 'io.geewit.core'
+
+compileJava {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+compileJava.options*.compilerArgs = [
+        "-Xlint:unchecked", "-Xlint:options"
+]
+
+compileTestJava {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+//设置编码
+[compileJava, javadoc, compileTestJava]*.options*.encoding = "UTF-8"
+
+configurations {
+    all { config ->
+        config.exclude group: "org.apache.geronimo.specs"
+        resolutionStrategy.eachDependency { details ->
+        }
+    }
+}
+
+
+repositories {
+    maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
+}
+
+dependencies {
+    compileOnly("javax.servlet:javax.servlet-api:$javax_servlet_api_version")
+    compile("commons-beanutils:commons-beanutils:$commons_beanutils_version")
+    compile("commons-codec:commons-codec:$commons_codec_version")
+    compile("org.apache.commons:commons-collections4:$commons_collections4_version")
+    compile("org.apache.commons:commons-configuration2:$commons_configuration2_version")
+    compile("commons-io:commons-io:$commons_io_version")
+    compile("org.apache.commons:commons-lang3:$commons_lang3_version")
+    compile("com.google.guava:guava:$guava_version") {
+        exclude group: 'com.google.code.findbugs', module: 'jsr305'
+        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
+        exclude group: 'com.google.j2objc', module: 'j2objc-annotations'
+        exclude group: 'org.codehaus.mojo', module: 'animal-sniffer-annotations'
+    }
+    compile("org.slf4j:slf4j-api:$slf4j_version") {
+        exclude group: 'org.slf4j', module: 'logback'
+    }
+    compile("com.fasterxml.jackson.core:jackson-annotations:$jackson_version")
+    compile("com.fasterxml.jackson.core:jackson-core:$jackson_version")
+    compile("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
+
+    compile("org.springframework:spring-beans:$spring_version")
+    compile("org.springframework:spring-context:$spring_version")
+    compile("org.springframework:spring-context-support:$spring_version")
+    compile("org.springframework:spring-core:$spring_version")
+    compile("org.springframework:spring-web:$spring_version")
+
+    compile("io.geewit.core:gw-core-profiles:$gw_core_profiles_version")
+}
+
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+artifacts {
+    archives jar
+    archives sourcesJar
+}
+
+install {
+    repositories.mavenInstaller {
+        pom.groupId = project.group
+        pom.artifactId = project.name
+        pom.version = project.version
+    }
+}
+
+//上传到nexus
+
+
+
+
+
