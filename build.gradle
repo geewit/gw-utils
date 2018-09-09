@@ -7,6 +7,7 @@ buildscript {
 
 apply plugin: 'java'
 apply plugin: 'maven'
+apply plugin: 'https://raw.githubusercontent.com/geewit/gradle_publish_sonatype/master/gradle_publish_sonatype.gradle'
 
 buildDir = 'target'
 
@@ -77,6 +78,7 @@ task sourcesJar(type: Jar) {
     classifier = 'sources'
     from sourceSets.main.allSource
 }
+
 artifacts {
     archives jar
     archives sourcesJar
