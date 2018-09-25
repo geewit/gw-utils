@@ -1,12 +1,8 @@
-buildscript {
-    repositories {
-        maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
-    }
-}
-
+import java.nio.charset.StandardCharsets
 
 apply plugin: 'java'
 apply plugin: 'maven'
+apply plugin: 'signing'
 
 buildDir = 'target'
 
@@ -17,29 +13,19 @@ compileJava {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-compileJava.options*.compilerArgs = [
-        "-Xlint:unchecked", "-Xlint:options"
-]
-
 compileTestJava {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 //设置编码
-[compileJava, javadoc, compileTestJava]*.options*.encoding = "UTF-8"
+compileJava.options*.compilerArgs << "-Xlint:unchecked" << "-Xlint:options"
 
-configurations {
-    all { config ->
-        config.exclude group: "org.apache.geronimo.specs"
-        resolutionStrategy.eachDependency { details ->
-        }
-    }
-}
+[compileJava, javadoc]*.options*.encoding = StandardCharsets.UTF_8.name()
 
 
 repositories {
-    maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
+    maven { url "http://repo1.maven.org/maven2" }
 }
 
 dependencies {
@@ -73,24 +59,90 @@ dependencies {
 }
 
 
-task sourcesJar(type: Jar) {
+def isReleaseBuild() {
+    return !version.contains("SNAPSHOT")
+}
+
+def getReleaseRepositoryUrl() {
+    return hasProperty('RELEASE_REPOSITORY_URL') ? getProperty('RELEASE_REPOSITORY_URL')
+            : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+}
+
+def getSnapshotRepositoryUrl() {
+    return hasProperty('SNAPSHOT_REPOSITORY_URL') ? getProperty('SNAPSHOT_REPOSITORY_URL')
+            : "https://oss.sonatype.org/content/repositories/snapshots/"
+}
+
+def getRepositoryUsername() {
+    return hasProperty('SONATYPE_USERNAME') ? getProperty('SONATYPE_USERNAME') : ""
+}
+
+def getRepositoryPassword() {
+    return hasProperty('SONATYPE_PASSWORD') ? getProperty('SONATYPE_PASSWORD') : ""
+}
+
+
+task javadocs(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+task sources(type: Jar) {
     classifier = 'sources'
     from sourceSets.main.allSource
 }
+
 artifacts {
     archives jar
-    archives sourcesJar
+
+    archives javadocs
+    archives sources
 }
 
-install {
-    repositories.mavenInstaller {
-        pom.groupId = project.group
-        pom.artifactId = project.name
-        pom.version = project.version
+signing {
+    required { isReleaseBuild() }
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: getReleaseRepositoryUrl()) {
+                authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+            }
+
+            snapshotRepository(url: getSnapshotRepositoryUrl()) {
+                authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+            }
+
+            pom.project {
+                name POM_ARTIFACT_ID
+                packaging POM_PACKAGING
+                description POM_DESCRIPTION
+                url POM_SCM_URL
+
+                licenses {
+                    license {
+                        name = POM_LICENCE_NAME
+                        url = POM_LICENCE_URL
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = POM_DEVELOPER_ID
+                        name = POM_DEVELOPER_NAME
+                        email = POM_DEVELOPER_EMAIL
+                    }
+                }
+            }
+        }
     }
 }
 
-//上传到nexus
+
 
 
 

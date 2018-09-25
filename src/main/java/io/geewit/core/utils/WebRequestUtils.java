@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 public class WebRequestUtils {
 
     public static boolean isIE(HttpServletRequest request) {
-        String userAgent = request.getHeader("USER-AGENT");
+        String userAgent = request.getHeader("User-Agent");
         if(userAgent == null) {
             return false;
         }
