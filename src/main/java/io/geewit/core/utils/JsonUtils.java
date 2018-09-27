@@ -11,8 +11,8 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 /**
  JSON 工具类
- @author gelif
- @since  2015-5-18
+ @author geewit
+ @since  2015-05-18
  */
 @SuppressWarnings({"unchecked", "unused"})
 public class JsonUtils {

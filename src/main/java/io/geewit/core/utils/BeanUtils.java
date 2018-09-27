@@ -12,8 +12,8 @@ import java.util.Map;
 
 /**
  反射实现的bean和bean之间的属性copy
- @author gelif
- @since  2015-5-18
+ @author geewit
+ @since  2015-05-18
  */
 @SuppressWarnings({"unchecked", "unused"})
 public class BeanUtils {

@@ -5,7 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 /**
  *
  * @author geewit
- * @since  2016/12/13
+ * @since  2016-12-13
  */
 @SuppressWarnings({"unused"})
 public class WebRequestUtils {

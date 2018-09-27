@@ -7,8 +7,8 @@ import java.security.SecureRandom;
 /**
  * 来自 JDK {@link java.util.UUID} 去掉 ‘-’
  *
- * @author gelif
- * @since 2015-5-18
+ * @author geewit
+ * @since 2015-05-18
  */
 @SuppressWarnings({"unchecked", "unused"})
 public class UUID implements java.io.Serializable, Comparable<UUID> {

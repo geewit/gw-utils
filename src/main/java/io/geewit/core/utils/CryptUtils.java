@@ -14,7 +14,7 @@ import java.util.Arrays;
 
 
 /**
- *
+ * 加密工具类
  * @author geewit
  * @since  2016/4/17
  */
@@ -25,7 +25,12 @@ public class CryptUtils {
     private final static String ALGORITHM = "AES";
     private final static String KEY = "key";
 
-
+    /**
+     * 加密
+     * @param password
+     * @param strKey
+     * @return
+     */
     public static String encrypt(String password, String strKey) {
         try {
             byte[] keyBytes = Arrays.copyOf(strKey.getBytes(StandardCharsets.US_ASCII), 16);
@@ -45,6 +50,12 @@ public class CryptUtils {
         return null;
     }
 
+    /**
+     * 解密
+     * @param encryptResult
+     * @param strKey
+     * @return
+     */
     public static String decrypt(String encryptResult, String strKey) {
         try {
             byte[] keyBytes = Arrays.copyOf(strKey.getBytes(StandardCharsets.US_ASCII), 16);
@@ -62,6 +73,11 @@ public class CryptUtils {
         return null;
     }
 
+    /**
+     * 解密
+     * @param encryptResult
+     * @return
+     */
     public static String decrypt(String encryptResult) {
         return decrypt(encryptResult, KEY);
     }

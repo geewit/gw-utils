@@ -6,7 +6,9 @@ apply plugin: 'signing'
 
 buildDir = 'target'
 
-group = 'io.geewit.core'
+repositories {
+    maven { url "http://repo1.maven.org/maven2" }
+}
 
 compileJava {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -24,43 +26,8 @@ compileJava.options*.compilerArgs << "-Xlint:unchecked" << "-Xlint:options"
 [compileJava, javadoc]*.options*.encoding = StandardCharsets.UTF_8.name()
 
 
-repositories {
-    maven { url "http://repo1.maven.org/maven2" }
-}
-
-dependencies {
-    compileOnly("javax.servlet:javax.servlet-api:$javax_servlet_api_version")
-    compile("commons-beanutils:commons-beanutils:$commons_beanutils_version")
-    compile("commons-codec:commons-codec:$commons_codec_version")
-    compile("org.apache.commons:commons-collections4:$commons_collections4_version")
-    compile("org.apache.commons:commons-configuration2:$commons_configuration2_version")
-    compile("commons-io:commons-io:$commons_io_version")
-    compile("org.apache.commons:commons-lang3:$commons_lang3_version")
-    compile("com.google.guava:guava:$guava_version") {
-        exclude group: 'com.google.code.findbugs', module: 'jsr305'
-        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
-        exclude group: 'com.google.j2objc', module: 'j2objc-annotations'
-        exclude group: 'org.codehaus.mojo', module: 'animal-sniffer-annotations'
-    }
-    compile("org.slf4j:slf4j-api:$slf4j_version") {
-        exclude group: 'org.slf4j', module: 'logback'
-    }
-    compile("com.fasterxml.jackson.core:jackson-annotations:$jackson_version")
-    compile("com.fasterxml.jackson.core:jackson-core:$jackson_version")
-    compile("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
-
-    compile("org.springframework:spring-beans:$spring_version")
-    compile("org.springframework:spring-context:$spring_version")
-    compile("org.springframework:spring-context-support:$spring_version")
-    compile("org.springframework:spring-core:$spring_version")
-    compile("org.springframework:spring-web:$spring_version")
-
-    compile("io.geewit.core:gw-core-profiles:$gw_core_profiles_version")
-}
-
-
 def isReleaseBuild() {
-    return !version.contains("SNAPSHOT")
+    return !VERSION_NAME.contains("SNAPSHOT")
 }
 
 def getReleaseRepositoryUrl() {
@@ -130,6 +97,12 @@ uploadArchives {
                     }
                 }
 
+                scm {
+                    url POM_SCM_URL
+                    connection POM_SCM_CONNECTION
+                    developerConnection POM_SCM_DEV_CONNECTION
+                }
+
                 developers {
                     developer {
                         id = POM_DEVELOPER_ID
@@ -143,8 +116,34 @@ uploadArchives {
 }
 
 
+dependencies {
+    compile("commons-beanutils:commons-beanutils:$commons_beanutils_version")
+    compile("commons-codec:commons-codec:$commons_codec_version")
+    compile("org.apache.commons:commons-collections4:$commons_collections4_version")
+    compile("org.apache.commons:commons-configuration2:$commons_configuration2_version")
+    compile("commons-io:commons-io:$commons_io_version")
+    compile("org.apache.commons:commons-lang3:$commons_lang3_version")
+    compile("com.google.guava:guava:$guava_version") {
+        exclude group: 'com.google.code.findbugs', module: 'jsr305'
+        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
+        exclude group: 'com.google.j2objc', module: 'j2objc-annotations'
+        exclude group: 'org.codehaus.mojo', module: 'animal-sniffer-annotations'
+    }
+    compile("org.slf4j:slf4j-api:$slf4j_version") {
+        exclude group: 'org.slf4j', module: 'logback'
+    }
+    compile("com.fasterxml.jackson.core:jackson-annotations:$jackson_version")
+    compile("com.fasterxml.jackson.core:jackson-core:$jackson_version")
+    compile("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
 
+    compile("org.springframework:spring-beans:$spring_version")
+    compile("org.springframework:spring-context:$spring_version")
+    compile("org.springframework:spring-context-support:$spring_version")
+    compile("org.springframework:spring-core:$spring_version")
+    compile("org.springframework:spring-web:$spring_version")
 
+    compile("io.geewit.core:gw-core-profiles:$gw_core_profiles_version")
 
-
+    compileOnly("javax.servlet:javax.servlet-api:$javax_servlet_api_version")
+}
 

@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  * String convert to Boolean
  * @author geewit
- * @since  2015-5-18
+ * @since  2015-05-18
  */
 @SuppressWarnings({"unused"})
 public class StringUtils {

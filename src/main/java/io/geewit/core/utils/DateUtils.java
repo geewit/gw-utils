@@ -8,8 +8,8 @@ import java.util.Date;
 
 /**
  时间转换工具类
- @author gelif
- @since  2015-5-18
+ @author geewit
+ @since  2015-05-18
  */
 @SuppressWarnings({"unchecked", "unused"})
 public class DateUtils {

@@ -6,8 +6,8 @@ import org.apache.commons.codec.binary.Hex;
 /**
  * 来自 JDK {@link java.util.UUID} 去掉 ‘-’ 的工具类
  *
- * @author gelif
- * @since 2015-5-18
+ * @author geewit
+ * @since 2015-05-18
  */
 @SuppressWarnings({"unchecked", "unused"})
 public final class UUIDUtils {

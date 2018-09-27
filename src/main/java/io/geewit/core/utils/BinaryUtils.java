@@ -8,7 +8,7 @@ import java.util.Iterator;
 /**
  * 二进制工具类
  * @author geewit
- * @since  2015/5/27
+ * @since  2015-05-27
  */
 @SuppressWarnings({"unused", "unchecked"})
 public class BinaryUtils {
