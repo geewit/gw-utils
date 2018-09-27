@@ -187,7 +187,8 @@ public class UUID implements java.io.Serializable, Comparable<UUID> {
      * The version number associated with this <tt>UUID</tt>. The version
      * number describes how this <tt>UUID</tt> was generated.
      * <p>
-     * The version number has the following meaning:<p>
+     * The version number has the following meaning:
+     * </p>
      * <ul>
      * <li>1    Time-based UUID
      * <li>2    DCE security UUID
@@ -228,16 +229,15 @@ public class UUID implements java.io.Serializable, Comparable<UUID> {
 
     /**
      * The timestamp value associated with this UUID.
-     * <p>
      * <p> The 60 bit timestamp value is constructed from the time_low,
      * time_mid, and time_hi fields of this {@code UUID}.  The resulting
      * timestamp is measured in 100-nanosecond units since midnight,
      * October 15, 1582 UTC.
-     * <p>
+     * </p>
      * <p> The timestamp value is only meaningful in a time-based UUID, which
      * has version type 1.  If this {@code UUID} is not a time-based UUID then
      * this method throws UnsupportedOperationException.
-     *
+     * </p>
      * @return The timestamp of this {@code UUID}.
      * @throws UnsupportedOperationException If this UUID is not a version 1 UUID
      */

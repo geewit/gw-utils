@@ -27,7 +27,7 @@ compileJava.options*.compilerArgs << "-Xlint:unchecked" << "-Xlint:options"
 
 
 def isReleaseBuild() {
-    return !VERSION_NAME.contains("SNAPSHOT")
+    return !version.contains("SNAPSHOT")
 }
 
 def getReleaseRepositoryUrl() {
