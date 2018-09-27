@@ -7,7 +7,7 @@ package io.geewit.core.enums;
 @SuppressWarnings({"unused"})
 public interface Value {
     /**
-     * @return
+     * @return 数字
      */
     int value();
 }

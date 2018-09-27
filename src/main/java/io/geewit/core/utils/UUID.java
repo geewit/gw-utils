@@ -253,15 +253,14 @@ public class UUID implements java.io.Serializable, Comparable<UUID> {
 
     /**
      * The clock sequence value associated with this UUID.
-     * <p>
      * <p>The 14 bit clock sequence value is constructed from the clock
      * sequence field of this UUID. The clock sequence field is used to
-     * guarantee temporal uniqueness in a time-based UUID.<p>
+     * guarantee temporal uniqueness in a time-based UUID.</p>
      * <p>
      * The  clockSequence value is only meaningful in a time-based UUID, which
      * has version type 1. If this UUID is not a time-based UUID then
      * this method throws UnsupportedOperationException.
-     *
+     * </p>
      * @return the clock sequence of this <tt>UUID</tt>.
      * @throws UnsupportedOperationException if this UUID is not a
      *                                       version 1 UUID.
