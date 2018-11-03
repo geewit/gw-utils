@@ -266,7 +266,7 @@ public class Reflections {
     }
 
     /**
-     * 将反射时的checked exception转换为unchecked exception.
+     * @return 将反射时的checked exception转换为unchecked exception.
      */
     public static RuntimeException convertReflectionExceptionToUnchecked(Exception e) {
         if ((e instanceof IllegalAccessException) || (e instanceof IllegalArgumentException) || (e instanceof NoSuchMethodException)) {
@@ -279,6 +279,9 @@ public class Reflections {
         return new RuntimeException("Unexpected Checked Exception.", e);
     }
 
+    /**
+     * @return 获取所有public方法
+     */
     public static <T> Method[] getPublicMethods(Class<T> clazz) {
         Method[] methods = clazz.getDeclaredMethods();
         Method[] result = {};
@@ -291,7 +294,7 @@ public class Reflections {
     }
 
     /**
-    *  获取clazz的有对应getter方法的属性
+    *  @return 获取clazz的有对应getter方法的属性
      */
     public static <T> Field[] getPublicGetters(Class<T> clazz) {
         Field[] fields = clazz.getFields();
@@ -316,7 +319,7 @@ public class Reflections {
     }
 
     /**
-    *  获取clazz的有对应getter方法的属性
+    *  @return 获取clazz的有对应getter方法的属性
      */
     @SuppressWarnings("unchecked")
     public static <T> Field[] getPublicGetters(Class<T> clazz, Class<? extends Annotation>... excluedAnnotations) {

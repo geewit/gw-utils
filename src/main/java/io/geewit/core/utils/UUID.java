@@ -85,8 +85,8 @@ public class UUID implements java.io.Serializable, Comparable<UUID> {
      * of the <tt>UUID</tt> and <tt>leastSigBits</tt> becomes the
      * least significant 64 bits of the <tt>UUID</tt>.
      *
-     * @param mostSigBits
-     * @param leastSigBits
+     * @param mostSigBits The most significant bits of the {@code UUID}
+     * @param leastSigBits The least significant bits of the {@code UUID}
      */
     public UUID(long mostSigBits, long leastSigBits) {
         this.mostSigBits = mostSigBits;
@@ -275,16 +275,15 @@ public class UUID implements java.io.Serializable, Comparable<UUID> {
 
     /**
      * The node value associated with this UUID.
-     * <p>
      * <p>The 48 bit node value is constructed from the node field of
      * this UUID. This field is intended to hold the IEEE 802 address
      * of the machine that generated this UUID to guarantee spatial
-     * uniqueness.<p>
+     * uniqueness.</p>
      * <p>
      * The node value is only meaningful in a time-based UUID, which
      * has version type 1. If this UUID is not a time-based UUID then
      * this method throws UnsupportedOperationException.
-     *
+     * </p>
      * @return the node value of this <tt>UUID</tt>.
      * @throws UnsupportedOperationException if this UUID is not a
      *                                       version 1 UUID.
@@ -309,8 +308,7 @@ public class UUID implements java.io.Serializable, Comparable<UUID> {
     /**
      * Returns a <code>String</code> object representing this
      * <code>UUID</code>.
-     * <p>
-     * <p>The UUID string representation is as described by this BNF :
+     * The UUID string representation is as described by this BNF :
      * <blockquote><pre>
      * {@code
      * UUID                   = <time_low> "-" <time_mid> "-"
