@@ -1,5 +1,7 @@
 package io.geewit.core.utils;
 
+import java.time.Duration;
+
 /**
  * 数组工具类
  * @author geewit
@@ -36,5 +38,15 @@ public class ArrayUtils {
             }
         }
         return false;
+    }
+
+    private static Duration parseDuration(String value) {
+        value = "PT" + value.toUpperCase();
+        return Duration.parse(value);
+    }
+
+    public static void main(String[] args) {
+        Duration duration = parseDuration("10h30m");
+        System.out.println(duration);
     }
 }
