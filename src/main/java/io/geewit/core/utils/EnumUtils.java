@@ -16,7 +16,7 @@ public class EnumUtils {
      * @param clazz 枚举类 class
      * @param token String 类型的参数
      * @param <E>   枚举
-     * @return
+     * @return      枚举
      */
     public static <E extends Enum<E> & Name> E forToken(Class<E> clazz, String token) {
         return Stream.of(clazz.getEnumConstants())
@@ -30,7 +30,7 @@ public class EnumUtils {
      * @param clazz 枚举类 class
      * @param token Integer 类型的参数
      * @param <E>   枚举
-     * @return
+     * @return      枚举
      */
     public static <E extends Enum<E> & Value> E forToken(Class<E> clazz, Integer token) {
         return Stream.of(clazz.getEnumConstants())

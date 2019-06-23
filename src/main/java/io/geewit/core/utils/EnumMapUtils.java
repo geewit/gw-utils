@@ -16,7 +16,7 @@ public class EnumMapUtils {
      * 枚举开关Map转成二进制
      * @param enumMap 枚举开关Map
      * @param <E> 枚举
-     * @return
+     * @return    二进制
      */
     public static <E extends Enum<E>> int toBinary(Map<E, Boolean> enumMap) {
         if(enumMap == null || enumMap.isEmpty()) {
@@ -30,7 +30,7 @@ public class EnumMapUtils {
      * @param clazz 枚举类
      * @param value 二进制参数
      * @param <E>   枚举
-     * @return
+     * @return      开关Map
      */
     public static <E extends Enum<E>> Map<E, Boolean> toEnumMap(Class<E> clazz, int value) {
         Map<E, Boolean> enumMap = Maps.newHashMap();

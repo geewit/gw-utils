@@ -88,6 +88,10 @@ public class Reflections {
      * 直接调用对象方法, 无视private/protected修饰符.
      * 用于一次性调用的情况，否则应使用getAccessibleMethod()函数获得Method后反复调用.
      * 同时匹配方法名+参数类型，
+     * @param obj            目标对象
+     * @param methodName     目标方法
+     * @param parameterTypes 参数类型
+     * @param args           参数
      */
     public static Object invokeMethod(final Object obj, final String methodName, final Class<?>[] parameterTypes,
                                       final Object[] args) {
@@ -107,6 +111,9 @@ public class Reflections {
      * 直接调用对象方法, 无视private/protected修饰符，
      * 用于一次性调用的情况，否则应使用getAccessibleMethodByName()函数获得Method后反复调用.
      * 只匹配函数名，如果有多个同名函数调用第一个。
+     * @param obj            目标对象
+     * @param methodName     目标方法
+     * @param args           参数
      */
     public static Object invokeMethodByName(final Object obj, final String methodName, final Object[] args) {
         Method method = getAccessibleMethodByName(obj, methodName);
@@ -125,6 +132,8 @@ public class Reflections {
      * 循环向上转型, 获取对象的DeclaredField, 并强制设置为可访问.
      *
      * 如向上转型到Object仍无法找到, 返回null.
+     * @param obj            目标对象
+     * @param fieldName      目标属性
      */
     public static Field getAccessibleField(final Object obj, final String fieldName) {
         Validate.notNull(obj, "object can't be null");
@@ -147,6 +156,9 @@ public class Reflections {
      * 匹配函数名+参数类型。
      *
      * 用于方法需要被多次调用的情况. 先使用本函数先取得Method,然后调用Method.invoke(Object obj, Object... args)
+     * @param obj            目标对象
+     * @param methodName     目标方法
+     * @param parameterTypes 参数类型
      */
     public static Method getAccessibleMethod(final Object obj, final String methodName,
                                              final Class<?>... parameterTypes) {

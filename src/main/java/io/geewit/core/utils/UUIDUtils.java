@@ -9,7 +9,7 @@ import org.apache.commons.codec.binary.Hex;
  * @author geewit
  * @since 2015-05-18
  */
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unused"})
 public final class UUIDUtils {
     /**
      * {@value}

@@ -12,6 +12,11 @@ import java.util.Iterator;
  */
 @SuppressWarnings({"unused", "unchecked"})
 public class BinaryUtils {
+    /**
+     * 枚举转二进制
+     * @param enumType  枚举类型
+     * @return          二进制
+     */
     public static <E extends Enum<E>> int toBinary(E enumType) {
         int value = 0;
 
@@ -28,9 +33,8 @@ public class BinaryUtils {
 
     /**
      * 正排序转二进制
-     * @param enumTypes
-     * @param <E>
-     * @return
+     * @param enumTypes 枚举类型
+     * @return          枚举
      */
     @SafeVarargs
     public static <E extends Enum<?>> int toBinary(E... enumTypes) {
@@ -58,9 +62,8 @@ public class BinaryUtils {
 
     /**
      * 反排序转二进制
-     * @param enumTypes
-     * @param <E>
-     * @return
+     * @param enumTypes 枚举类型
+     * @return          枚举
      */
     @SafeVarargs
     public static <E extends Enum<?>> int toBinaryReverse(E... enumTypes) {

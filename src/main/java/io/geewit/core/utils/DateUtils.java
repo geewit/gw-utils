@@ -11,7 +11,7 @@ import java.util.Date;
  @author geewit
  @since  2015-05-18
  */
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unused"})
 public class DateUtils {
 
     private static final String[] PATTERNS = {"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd", "HH:mm:ss"};

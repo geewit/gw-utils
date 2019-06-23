@@ -10,7 +10,7 @@ import java.security.SecureRandom;
  * @author geewit
  * @since 2015-05-18
  */
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unused"})
 public class UUID implements java.io.Serializable, Comparable<UUID> {
     private static final long serialVersionUID = 1L;
 

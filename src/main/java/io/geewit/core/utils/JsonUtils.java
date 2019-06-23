@@ -14,7 +14,7 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
  @author geewit
  @since  2015-05-18
  */
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unused"})
 public class JsonUtils {
     private final static Logger logger = LoggerFactory.getLogger(JsonUtils.class);
 
