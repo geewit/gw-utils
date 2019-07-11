@@ -27,11 +27,11 @@ public class CryptUtils {
 
     /**
      * 加密
-     * @param password
-     * @param strKey
+     * @param value
+     * @param strKey 秘钥
      * @return
      */
-    public static String encrypt(String password, String strKey) {
+    public static String encrypt(String value, String strKey) {
         try {
             byte[] keyBytes = Arrays.copyOf(strKey.getBytes(StandardCharsets.US_ASCII), 16);
 
@@ -39,7 +39,7 @@ public class CryptUtils {
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, key);
 
-            byte[] cleartext = password.getBytes(StandardCharsets.UTF_8);
+            byte[] cleartext = value.getBytes(StandardCharsets.UTF_8);
             byte[] ciphertextBytes = cipher.doFinal(cleartext);
 
             return new String(Hex.encodeHex(ciphertextBytes)).toUpperCase();
@@ -53,7 +53,7 @@ public class CryptUtils {
     /**
      * 解密
      * @param encryptResult
-     * @param strKey
+     * @param strKey 秘钥
      * @return
      */
     public static String decrypt(String encryptResult, String strKey) {

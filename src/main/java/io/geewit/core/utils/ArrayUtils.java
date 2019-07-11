@@ -45,8 +45,8 @@ public class ArrayUtils {
         return Duration.parse(value);
     }
 
-    public static void main(String[] args) {
-        Duration duration = parseDuration("10h30m");
-        System.out.println(duration);
-    }
+//    public static void main(String[] args) {
+//        Duration duration = parseDuration("10h30m");
+//        System.out.println(duration);
+//    }
 }

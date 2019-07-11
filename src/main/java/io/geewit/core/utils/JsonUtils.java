@@ -1,18 +1,18 @@
 package io.geewit.core.utils;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 
 /**
- JSON 工具类
- @author geewit
- @since  2015-05-18
+ * JSON 工具类
+ *
+ * @author geewit
+ * @since 2015-05-18
  */
 @SuppressWarnings({"unused"})
 public class JsonUtils {
@@ -21,18 +21,20 @@ public class JsonUtils {
     private static ObjectMapper objectMapper;
 
     private static ObjectMapper objectMapper() {
-        if(objectMapper != null) {
+        if (objectMapper != null) {
             return objectMapper;
         }
         try {
+            //region 从spring中获取ObjectMapper
             objectMapper = SpringContextUtil.getBean(ObjectMapper.class);
+            //endregion
         } catch (Exception e) {
             final Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
             builder.featuresToDisable(
-                    com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS,
-                    com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+                    SerializationFeature.FAIL_ON_EMPTY_BEANS,
+                    DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
             );
-            builder.serializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL);
+            builder.serializationInclusion(JsonInclude.Include.NON_NULL);
             objectMapper = builder.build();
         }
         return objectMapper;

@@ -143,7 +143,7 @@ public class Reflections {
                 Field field = superClass.getDeclaredField(fieldName);
                 makeAccessible(field);
                 return field;
-            } catch (NoSuchFieldException ignore) {// NOSONAR
+            } catch (NoSuchFieldException ignore) {
                 // Field不在当前类定义,继续向上转型
             }
         }
