@@ -1,0 +1,9 @@
+rootProject.name = 'core'
+
+include 'codec'
+include 'date'
+include 'enum'
+include 'lang'
+include 'reflection'
+include 'uuid'
+

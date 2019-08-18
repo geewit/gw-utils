@@ -1,0 +1,8 @@
+project(':core:uuid') {
+    dependencies {
+        compile("org.slf4j:slf4j-api:$slf4j_version") {
+            exclude group: 'org.slf4j', module: 'logback'
+        }
+        compile("commons-codec:commons-codec:$commons_codec_version")
+    }
+}

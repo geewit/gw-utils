@@ -1,32 +1,37 @@
-apply from: "https://gitee.com/geewit/gradle_publish_sonatype/raw/master/publish.gradle"
+apply from: "https://gitee.com/geewit/gradle_publish_sonatype/raw/master/sub_publish_signing.gradle"
 
-
-dependencies {
-    compile("commons-beanutils:commons-beanutils:$commons_beanutils_version")
-    compile("commons-codec:commons-codec:$commons_codec_version")
-    compile("org.apache.commons:commons-collections4:$commons_collections4_version")
-    compile("org.apache.commons:commons-configuration2:$commons_configuration2_version")
-    compile("commons-io:commons-io:$commons_io_version")
-    compile("org.apache.commons:commons-lang3:$commons_lang3_version")
-    compile("com.google.guava:guava:$guava_version") {
-        exclude group: 'com.google.code.findbugs', module: 'jsr305'
-        exclude group: 'com.google.errorprone', module: 'error_prone_annotations'
-        exclude group: 'com.google.j2objc', module: 'j2objc-annotations'
-        exclude group: 'org.codehaus.mojo', module: 'animal-sniffer-annotations'
+task publish {
+    doFirst {
+        println 'run publish start'
     }
-    compile("org.slf4j:slf4j-api:$slf4j_version") {
-        exclude group: 'org.slf4j', module: 'logback'
+    doLast {
+        println 'run publish complete'
     }
-    compile("com.fasterxml.jackson.core:jackson-annotations:$jackson_version")
-    compile("com.fasterxml.jackson.core:jackson-core:$jackson_version")
-    compile("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
-
-    compile("org.springframework:spring-beans:$spring_version")
-    compile("org.springframework:spring-context:$spring_version")
-    compile("org.springframework:spring-context-support:$spring_version")
-    compile("org.springframework:spring-core:$spring_version")
-    compile("org.springframework:spring-web:$spring_version")
-
-    compileOnly("javax.servlet:javax.servlet-api:$javax_servlet_api_version")
 }
+
+publish.dependsOn(":core:codec:publish")
+publish.dependsOn(":core:date:publish")
+publish.dependsOn(":core:enum:publish")
+publish.dependsOn(":core:lang:publish")
+publish.dependsOn(":core:reflection:publish")
+publish.dependsOn(":core:uuid:publish")
+publish.dependsOn(":web:publish")
+
+task clean {
+    doFirst {
+        println 'run clean start'
+    }
+    doLast {
+        println 'run clean complete'
+    }
+}
+
+
+clean.dependsOn(":core:codec:clean")
+clean.dependsOn(":core:date:clean")
+clean.dependsOn(":core:enum:clean")
+clean.dependsOn(":core:lang:clean")
+clean.dependsOn(":core:reflection:clean")
+clean.dependsOn(":core:uuid:clean")
+clean.dependsOn(":web:clean")
 
