@@ -362,10 +362,10 @@ public class Reflections {
         return getterFields;
     }
 
-    public static Collection<Class<?>> getClassesByPackageName(final String classpath) {
+    public static Collection<Class<?>> getClassesByPackageName(final Path classpath) {
         final ArrayList<Class<?>> classes = new ArrayList<>();
         try {
-            Files.walkFileTree(Paths.get(classpath), new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(classpath, new SimpleFileVisitor<Path>() {
                 // 访问文件时候触发该方法
                 @Override
                 public FileVisitResult visitFile(Path classFile, BasicFileAttributes attrs) {
@@ -375,7 +375,7 @@ public class Reflections {
                     if (org.apache.commons.lang3.StringUtils.endsWith(filename.toLowerCase(), ".class")) {
                         String classPath = classFile.toAbsolutePath().toString();
                         //logger.debug("classPath = " + classPath + " , classpath = " + classpath);
-                        String classname = org.apache.commons.lang3.StringUtils.substringAfterLast(classPath, classpath).substring(1);
+                        String classname = org.apache.commons.lang3.StringUtils.substringAfterLast(classPath, classpath.toString()).substring(1);
                         //logger.debug("classname = " + classname);
                         classname = org.apache.commons.lang3.StringUtils.substringBeforeLast(classname, ".class");
                         //logger.debug("classname = " + classname);
@@ -407,5 +407,9 @@ public class Reflections {
         }
 
         return classes;
+    }
+
+    public static Collection<Class<?>> getClassesByPackageName(final String classpath) {
+        return getClassesByPackageName(Paths.get(classpath));
     }
 }

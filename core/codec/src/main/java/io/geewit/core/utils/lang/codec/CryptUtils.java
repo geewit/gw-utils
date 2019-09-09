@@ -27,9 +27,9 @@ public class CryptUtils {
 
     /**
      * 加密
-     * @param value
+     * @param value  未加密的字符串
      * @param strKey 秘钥
-     * @return
+     * @return 加密的字符串
      */
     public static String encrypt(String value, String strKey) {
         try {
@@ -52,18 +52,18 @@ public class CryptUtils {
 
     /**
      * 解密
-     * @param encryptResult
+     * @param encrypt 加密的字符串
      * @param strKey 秘钥
-     * @return
+     * @return 解密的字符串
      */
-    public static String decrypt(String encryptResult, String strKey) {
+    public static String decrypt(String encrypt, String strKey) {
         try {
             byte[] keyBytes = Arrays.copyOf(strKey.getBytes(StandardCharsets.US_ASCII), 16);
 
             SecretKey key = new SecretKeySpec(keyBytes, ALGORITHM);
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, key);
-            byte[] cleartext = Hex.decodeHex(encryptResult.toCharArray());
+            byte[] cleartext = Hex.decodeHex(encrypt.toCharArray());
             byte[] ciphertextBytes = cipher.doFinal(cleartext);
             return new String(ciphertextBytes, StandardCharsets.UTF_8);
 
@@ -75,11 +75,11 @@ public class CryptUtils {
 
     /**
      * 解密
-     * @param encryptResult
-     * @return
+     * @param encrypt 加密的字符串
+     * @return 解密的字符串
      */
-    public static String decrypt(String encryptResult) {
-        return decrypt(encryptResult, KEY);
+    public static String decrypt(String encrypt) {
+        return decrypt(encrypt, KEY);
     }
 
 //    public static void main(String[] args) {

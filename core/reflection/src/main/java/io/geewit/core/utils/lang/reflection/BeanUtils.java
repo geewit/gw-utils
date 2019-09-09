@@ -187,7 +187,7 @@ public class BeanUtils {
      * @param source Origin bean whose properties are retrieved
      * @param target Destination bean whose properties are modified
      *
-     * @exception FatalBeanException
+     * @exception FatalBeanException 找不到bean异常
      */
     public static void copyProperties(Object source, Map<String, Object> target, final Class<?> editable, String[] ignoreProperties, boolean ignoreNull) throws BeansException {
         Class<?> actualEditable = source.getClass();
