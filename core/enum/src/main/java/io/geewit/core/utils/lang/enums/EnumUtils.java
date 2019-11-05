@@ -16,6 +16,9 @@ public class EnumUtils {
      * @return      枚举
      */
     public static <E extends Enum<E> & Name> E forToken(Class<E> clazz, String token) {
+        if(token == null) {
+            return null;
+        }
         return Stream.of(clazz.getEnumConstants())
                 .filter(e -> e.getName().equalsIgnoreCase(token) || e.name().equalsIgnoreCase(token))
                 .findFirst()
@@ -30,6 +33,9 @@ public class EnumUtils {
      * @return      枚举
      */
     public static <E extends Enum<E> & Value> E forToken(Class<E> clazz, Integer token) {
+        if(token == null) {
+            return null;
+        }
         return Stream.of(clazz.getEnumConstants())
                 .filter(e -> e.value() == token)
                 .findFirst()
