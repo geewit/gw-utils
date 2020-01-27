@@ -23,13 +23,13 @@ import java.util.Collection;
  */
 @SuppressWarnings({"unchecked", "unused"})
 public class Reflections {
+    private static final Logger logger = LoggerFactory.getLogger(Reflections.class);
+
     private static final String SETTER_PREFIX = "set";
 
     private static final String GETTER_PREFIX = "get";
 
     private static final String CGLIB_CLASS_SEPARATOR = "$$";
-
-    private static Logger logger = LoggerFactory.getLogger(Reflections.class);
 
     /**
      * 调用Getter方法.
@@ -320,7 +320,7 @@ public class Reflections {
         for (Method method : methods) {
             if (Modifier.isPublic(method.getModifiers())) {
                 for (Field field : result) {
-                    if(("get" + org.apache.commons.lang3.StringUtils.capitalize(field.getName())).equals(method.getName()) && field.getType().getName().equals(method.getReturnType().getName())) {
+                    if((GETTER_PREFIX + org.apache.commons.lang3.StringUtils.capitalize(field.getName())).equals(method.getName()) && field.getType().getName().equals(method.getReturnType().getName())) {
                         getterFields = org.apache.commons.lang3.ArrayUtils.add(getterFields, field);
                     }
                 }
@@ -353,7 +353,7 @@ public class Reflections {
             }
             if (Modifier.isPublic(method.getModifiers())) {
                 for (Field field : result) {
-                    if(("get" + org.apache.commons.lang3.StringUtils.capitalize(field.getName())).equals(method.getName()) && field.getType().getName().equals(method.getReturnType().getName())) {
+                    if((GETTER_PREFIX + org.apache.commons.lang3.StringUtils.capitalize(field.getName())).equals(method.getName()) && field.getType().getName().equals(method.getReturnType().getName())) {
                         getterFields = org.apache.commons.lang3.ArrayUtils.add(getterFields, field);
                     }
                 }

@@ -16,7 +16,7 @@ public class ArrayUtils {
      * @return {@code true} if the array contains the object
      */
     @SafeVarargs
-    public static <T>boolean containsAny(T[] array, T... any) {
+    public static <T> boolean containsAny(T[] array, T... any) {
         if (array == null) {
             return false;
         }

@@ -112,6 +112,7 @@ public class BeanUtils {
                 } catch (SecurityException e) {
                     throw new FatalBeanException("Could not copy properties from source bean to target bean!", e);
                 } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ignore) {
+
                 }
 
             }

@@ -4,5 +4,6 @@ project(':core:codec') {
             exclude group: 'org.slf4j', module: 'logback'
         }
         compile("commons-codec:commons-codec:$commons_codec_version")
+        testCompile("junit:junit:$junit_version")
     }
 }

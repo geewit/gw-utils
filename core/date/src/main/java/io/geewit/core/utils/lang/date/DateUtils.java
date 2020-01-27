@@ -22,7 +22,7 @@ public class DateUtils {
     /**
      * 获取最早时间
      * @param dates
-     * @return
+     * @return 最早时间
      */
     public static Date earliest(Date... dates) {
         if(dates == null || dates.length == 0) {
@@ -35,7 +35,7 @@ public class DateUtils {
     /**
      * 获取最晚时间
      * @param dates
-     * @return
+     * @return 最晚时间
      */
     public static Date latest(Date... dates) {
         if(dates == null || dates.length == 0) {

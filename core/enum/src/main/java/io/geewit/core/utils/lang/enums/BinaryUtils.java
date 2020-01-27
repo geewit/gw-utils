@@ -10,7 +10,7 @@ import java.util.Iterator;
  * @author geewit
  * @since  2015-05-27
  */
-@SuppressWarnings({"unused", "unchecked"})
+@SuppressWarnings({"unused"})
 public class BinaryUtils {
     /**
      * 枚举转二进制
@@ -37,16 +37,16 @@ public class BinaryUtils {
      * @return          枚举
      */
     @SafeVarargs
-    public static <E extends Enum<?>> int toBinary(E... enumTypes) {
+    public static <E extends Enum<E>> int toBinary(E... enumTypes) {
         int value = 0;
         int bitValue = 1;
         for (int i = enumTypes.length - 1; i >= 0; i--) {
             E enumType = enumTypes[i];
-            EnumSet<? extends Enum<?>> enumSet = EnumSet.allOf(enumType.getDeclaringClass());
-            Iterator<? extends Enum<?>> iterator = enumSet.iterator();
+            EnumSet<E> enumSet = EnumSet.allOf(enumType.getDeclaringClass());
+            Iterator<E> iterator = enumSet.iterator();
             int eValue = 0;
             while (iterator.hasNext()) {
-                E e = (E)iterator.next();
+                E e = iterator.next();
                 if(e.equals(enumType)) {
                     eValue |= 1 << e.ordinal();
                 }
@@ -66,16 +66,16 @@ public class BinaryUtils {
      * @return          枚举
      */
     @SafeVarargs
-    public static <E extends Enum<?>> int toBinaryReverse(E... enumTypes) {
+    public static <E extends Enum<E>> int toBinaryReverse(E... enumTypes) {
         int value = 0;
         int bitValue = 1;
         for (int i = 0; i < enumTypes.length; i++) {
             E enumType = enumTypes[i];
-            EnumSet<? extends Enum<?>> enumSet = EnumSet.allOf(enumType.getDeclaringClass());
-            Iterator<? extends Enum<?>> iterator = enumSet.iterator();
+            EnumSet<E> enumSet = EnumSet.allOf(enumType.getDeclaringClass());
+            Iterator<E> iterator = enumSet.iterator();
             int eValue = 0;
             while (iterator.hasNext()) {
-                E e = (E)iterator.next();
+                E e = iterator.next();
                 if(e.equals(enumType)) {
                     eValue |= 1 << e.ordinal();
                 }
