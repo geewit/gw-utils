@@ -1,6 +1,5 @@
 package io.geewit.core.utils.codec;
 
-import io.geewit.core.utils.lang.codec.CryptUtils;
 import org.junit.Test;
 
 public class CryptUtilsTest {

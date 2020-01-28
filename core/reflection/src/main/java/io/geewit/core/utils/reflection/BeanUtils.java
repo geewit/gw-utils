@@ -1,4 +1,4 @@
-package io.geewit.core.utils.lang.reflection;
+package io.geewit.core.utils.reflection;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.BeansException;

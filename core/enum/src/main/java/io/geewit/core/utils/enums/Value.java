@@ -1,4 +1,4 @@
-package io.geewit.core.utils.lang.enums;
+package io.geewit.core.utils.enums;
 
 /**
  * 枚举可以实现该接口

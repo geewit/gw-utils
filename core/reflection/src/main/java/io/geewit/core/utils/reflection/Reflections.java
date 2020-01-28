@@ -1,4 +1,4 @@
-package io.geewit.core.utils.lang.reflection;
+package io.geewit.core.utils.reflection;
 
 
 import org.apache.commons.lang3.Validate;
@@ -169,7 +169,7 @@ public class Reflections {
                 Method method = searchType.getDeclaredMethod(methodName, parameterTypes);
                 makeAccessible(method);
                 return method;
-            } catch (NoSuchMethodException e) {
+            } catch (NoSuchMethodException ignore) {
                 // Method不在当前类定义,继续向上转型
             }
         }

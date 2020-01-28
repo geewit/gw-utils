@@ -1,4 +1,4 @@
-package io.geewit.core.utils.lang.codec;
+package io.geewit.core.utils.codec;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
