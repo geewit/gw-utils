@@ -2,6 +2,8 @@ package io.geewit.core.utils.enums;
 
 import org.junit.Test;
 
+import java.util.EnumSet;
+
 public class BinaryUtilsTest {
 
     @Test
@@ -17,4 +19,12 @@ public class BinaryUtilsTest {
     }
 
 
+    @Test
+    public void fromBinaryTest() {
+        int orgsAndCompanies = BinaryUtils.toBinary(UserExtraInfoRequest.orgs, UserExtraInfoRequest.companies);
+        System.out.println("orgsAndCompanies = " + orgsAndCompanies);
+
+        EnumSet<UserExtraInfoRequest> enums = BinaryUtils.fromBinary(orgsAndCompanies, UserExtraInfoRequest.class);
+        System.out.println("enums = " + enums);
+    }
 }
