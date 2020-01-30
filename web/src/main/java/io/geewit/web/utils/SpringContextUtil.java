@@ -10,16 +10,16 @@ import java.util.Map;
  * 以静态变量保存Spring ApplicationContext.
  * @author geewit
  */
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unused"})
 public class SpringContextUtil {
 
     private static ApplicationContext getContext() {
         return ContextLoader.getCurrentWebApplicationContext();
     }
 
-    public static <T> T getBean(String name) throws BeansException {
+    public static <T> T getBean(String name, Class<T> clazz) throws BeansException {
         ApplicationContext context = getContext();
-        return (T) context.getBean(name);
+        return context.getBean(name, clazz);
     }
 
     public static <T> T getBean(Class<T> clazz) {

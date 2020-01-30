@@ -1,5 +1,7 @@
 package io.geewit.web.utils;
 
+import org.springframework.http.HttpHeaders;
+
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -11,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 public class WebRequestUtils {
 
     public static boolean isIE(HttpServletRequest request) {
-        String userAgent = request.getHeader("User-Agent");
+        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
         if(userAgent == null) {
             return false;
         }

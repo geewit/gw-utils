@@ -82,19 +82,4 @@ public class CryptUtils {
         return decrypt(encrypt, KEY);
     }
 
-//    public static void main(String[] args) {
-//        String content = "qwe123!@#";
-//        String password = "qwe123!@#";
-//        // 加密
-//        System.out.println("加密前：" + content);
-//        String encryptResult = encrypt(content, password);
-//        System.out.println("加密后：" + encryptResult);
-//        // 解密
-//        String decryptResult = decrypt(encryptResult, password);
-//        System.out.println("解密后：" + decryptResult);
-//
-//
-//        //SELECT HEX(encrypt("password", "0123456789012345"));
-//        //SELECT decrypt(UNHEX("E75C7C56AFB3EA4360A9856456F1C8A2"), "0123456789012345");
-//    }
 }

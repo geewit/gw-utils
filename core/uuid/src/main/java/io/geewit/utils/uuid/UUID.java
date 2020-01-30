@@ -360,11 +360,12 @@ public class UUID implements java.io.Serializable, Comparable<UUID> {
      * otherwise
      */
     public boolean equals(Object obj) {
-        if ((null == obj) || (obj.getClass() != UUID.class))
+        if ((null == obj) || (obj.getClass() != UUID.class)) {
             return false;
+        }
         UUID id = (UUID) obj;
-        return (mostSigBits == id.mostSigBits &&
-                leastSigBits == id.leastSigBits);
+        return mostSigBits == id.mostSigBits &&
+                leastSigBits == id.leastSigBits;
     }
 
     // Comparison Operations
