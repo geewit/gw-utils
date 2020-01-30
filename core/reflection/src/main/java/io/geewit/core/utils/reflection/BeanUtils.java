@@ -1,6 +1,5 @@
 package io.geewit.core.utils.reflection;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.FatalBeanException;
 
@@ -8,6 +7,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -52,7 +52,7 @@ public class BeanUtils {
                 if("class".equals(propertyName)) {
                     continue;
                 }
-                if(ArrayUtils.contains(ignoreProperties, propertyName)) {
+                if(ignoreProperties != null && Arrays.asList(ignoreProperties).contains(propertyName)) {
                     continue;
                 }
                 final Method readMethod = sourcePd.getReadMethod();
@@ -64,7 +64,7 @@ public class BeanUtils {
                 }
                 try {
                     final Object value = readMethod.invoke(source);
-                    if(value != null || ArrayUtils.contains(nullProperties, propertyName)) {
+                    if(value != null || (nullProperties != null && Arrays.asList(nullProperties).contains(propertyName))) {
                         ((Map<String, Object>)target).put(propertyName, value);
                     }
                 } catch (Throwable throwable) {
@@ -78,14 +78,11 @@ public class BeanUtils {
                 if("class".equals(propertyName)) {
                     continue;
                 }
-                if(ArrayUtils.contains(ignoreProperties, propertyName)) {
+                if(ignoreProperties != null && Arrays.asList(ignoreProperties).contains(propertyName)) {
                     continue;
                 }
                 final Method writeMethod = targetPd.getWriteMethod();
                 if(writeMethod == null) {
-                    continue;
-                }
-                if(ArrayUtils.contains(ignoreProperties, propertyName)) {
                     continue;
                 }
 
@@ -102,7 +99,7 @@ public class BeanUtils {
                         readMethod.setAccessible(true);
                     }
                     final Object value = readMethod.invoke(source);
-                    if(value == null && !ArrayUtils.contains(nullProperties, propertyName)) {
+                    if(value == null && (nullProperties == null || !Arrays.asList(nullProperties).contains(propertyName))) {
                         continue;
                     }
                     if (!Modifier.isPublic(writeMethod.getDeclaringClass().getModifiers())) {
@@ -157,7 +154,7 @@ public class BeanUtils {
             if("class".equals(propertyName)) {
                 continue;
             }
-            if(ArrayUtils.contains(ignoreProperties, propertyName)) {
+            if(ignoreProperties != null && Arrays.asList(ignoreProperties).contains(propertyName)) {
                 continue;
             }
             final Method writeMethod = targetPd.getWriteMethod();
@@ -205,7 +202,7 @@ public class BeanUtils {
             if("class".equals(propertyName)) {
                 continue;
             }
-            if(ArrayUtils.contains(ignoreProperties, propertyName)) {
+            if(ignoreProperties != null && Arrays.asList(ignoreProperties).contains(propertyName)) {
                 continue;
             }
             final Method readMethod = sourcePd.getReadMethod();
