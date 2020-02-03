@@ -12,6 +12,7 @@ import java.lang.reflect.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -137,7 +138,8 @@ public class Reflections {
     public static Field getAccessibleField(final Object obj, final String fieldName) {
         Validate.notNull(obj, "object can't be null");
         Validate.notBlank(fieldName, "fieldName can't be blank");
-        for (Class<?> superClass = obj.getClass(); superClass != Object.class; superClass = superClass.getSuperclass()) {
+        Class<?> superClass = obj.getClass();
+        while (superClass != Object.class) {
             try {
                 Field field = superClass.getDeclaredField(fieldName);
                 makeAccessible(field);
@@ -145,6 +147,7 @@ public class Reflections {
             } catch (NoSuchFieldException ignore) {
                 // Field不在当前类定义,继续向上转型
             }
+            superClass = superClass.getSuperclass();
         }
         return null;
     }
@@ -164,7 +167,8 @@ public class Reflections {
         Validate.notNull(obj, "object can't be null");
         Validate.notBlank(methodName, "methodName can't be blank");
 
-        for (Class<?> searchType = obj.getClass(); searchType != Object.class; searchType = searchType.getSuperclass()) {
+        Class<?> searchType = obj.getClass();
+        while (searchType != Object.class) {
             try {
                 Method method = searchType.getDeclaredMethod(methodName, parameterTypes);
                 makeAccessible(method);
@@ -172,6 +176,7 @@ public class Reflections {
             } catch (NoSuchMethodException ignore) {
                 // Method不在当前类定义,继续向上转型
             }
+            searchType = searchType.getSuperclass();
         }
         return null;
     }
@@ -187,7 +192,8 @@ public class Reflections {
         Validate.notNull(obj, "object can't be null");
         Validate.notBlank(methodName, "methodName can't be blank");
 
-        for (Class<?> searchType = obj.getClass(); searchType != Object.class; searchType = searchType.getSuperclass()) {
+        Class<?> searchType = obj.getClass();
+        while (searchType != Object.class) {
             Method[] methods = searchType.getDeclaredMethods();
             for (Method method : methods) {
                 if (method.getName().equals(methodName)) {
@@ -195,6 +201,7 @@ public class Reflections {
                     return method;
                 }
             }
+            searchType = searchType.getSuperclass();
         }
         return null;
     }
@@ -295,12 +302,7 @@ public class Reflections {
      */
     public static <T> Method[] getPublicMethods(Class<T> clazz) {
         Method[] methods = clazz.getDeclaredMethods();
-        Method[] result = {};
-        for (Method method : methods) {
-            if (Modifier.isPublic(method.getModifiers())) {
-                result = org.apache.commons.lang3.ArrayUtils.add(result, method);
-            }
-        }
+        Method[] result = Arrays.stream(methods).filter(method -> Modifier.isPublic(method.getModifiers())).toArray(Method[]::new);
         return result;
     }
 
@@ -309,12 +311,7 @@ public class Reflections {
      */
     public static <T> Field[] getPublicGetters(Class<T> clazz) {
         Field[] fields = clazz.getFields();
-        Field[] result = {};
-        for (Field field : fields) {
-            if (!Modifier.isStatic(field.getModifiers())) {
-                result = org.apache.commons.lang3.ArrayUtils.add(result, field);
-            }
-        }
+        Field[] result = Arrays.stream(fields).filter(field -> !Modifier.isStatic(field.getModifiers())).toArray(Field[]::new);
         Method[] methods = clazz.getDeclaredMethods();
         Field[] getterFields = {};
         for (Method method : methods) {
@@ -335,12 +332,7 @@ public class Reflections {
     @SuppressWarnings("unchecked")
     public static <T> Field[] getPublicGetters(Class<T> clazz, Class<? extends Annotation>... excluedAnnotations) {
         Field[] fields = clazz.getFields();
-        Field[] result = {};
-        for (Field field : fields) {
-            if (!Modifier.isStatic(field.getModifiers())) {
-                result = org.apache.commons.lang3.ArrayUtils.add(result, field);
-            }
-        }
+        Field[] result = Arrays.stream(fields).filter(field -> !Modifier.isStatic(field.getModifiers())).toArray(Field[]::new);
         Method[] methods = clazz.getDeclaredMethods();
         Field[] getterFields = {};
         outer: for (Method method : methods) {
