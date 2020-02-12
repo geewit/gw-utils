@@ -2,12 +2,9 @@ package io.geewit.web.convert.converter;
 
 import io.geewit.core.utils.enums.EnumUtils;
 import io.geewit.core.utils.enums.Name;
-import io.geewit.core.utils.enums.Value;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.ConditionalConverter;
 import org.springframework.core.convert.converter.Converter;
-
-import java.io.Serializable;
 
 
 /**
@@ -24,7 +21,7 @@ public class EnumNameConverter<T extends Enum<T> & Name> implements Converter<St
         if(!sourceType.isAssignableTo(TypeDescriptor.valueOf(String.class))) {
             return false;
         }
-        if(targetType.isAssignableTo(TypeDescriptor.valueOf(Enum.class)) && targetType.isAssignableTo(TypeDescriptor.valueOf(Value.class))) {
+        if(targetType.isAssignableTo(TypeDescriptor.valueOf(Enum.class)) && targetType.isAssignableTo(TypeDescriptor.valueOf(Name.class))) {
             this.targetType = targetType;
             return true;
         } else {
