@@ -1,0 +1,16 @@
+project(':web:convert') {
+    dependencies {
+        compile(project(':core:enum'))
+        compile("org.slf4j:slf4j-api:$slf4j_version") {
+            exclude group: 'org.slf4j', module: 'logback'
+        }
+        compile("com.fasterxml.jackson.core:jackson-annotations:$jackson_version")
+        compile("com.fasterxml.jackson.core:jackson-core:$jackson_version")
+        compile("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
+
+        compile("org.springframework:spring-context:$spring_version")
+        compile("org.springframework:spring-web:$spring_version")
+
+        compileOnly("javax.servlet:javax.servlet-api:$javax_servlet_api_version")
+    }
+}

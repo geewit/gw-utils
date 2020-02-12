@@ -43,10 +43,19 @@
 /core/uuid/target
 /core/uuid/out
 /core/uuid/.gradle
-/web/.gradle
 /web/*.iml
 /web/logs
 /web/target
 /web/out
 /web/.gradle
+/web/convert/*.iml
+/web/convert/logs
+/web/convert/target
+/web/convert/out
+/web/convert/.gradle
+/web/utils/*.iml
+/web/utils/logs
+/web/utils/target
+/web/utils/out
+/web/utils/.gradle
 
