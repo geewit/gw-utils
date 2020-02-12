@@ -21,7 +21,7 @@ public class EnumValueConverter<S extends Serializable, T extends Enum<T> & Valu
 
     @Override
     public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
-        if(!sourceType.isAssignableTo(TypeDescriptor.valueOf(String.class)) && !sourceType.isAssignableTo(TypeDescriptor.valueOf(int.class)) || !sourceType.isAssignableTo(TypeDescriptor.valueOf(Integer.class))) {
+        if(!sourceType.isAssignableTo(TypeDescriptor.valueOf(String.class)) && !sourceType.isAssignableTo(TypeDescriptor.valueOf(int.class)) && !sourceType.isAssignableTo(TypeDescriptor.valueOf(Integer.class))) {
             return false;
         }
         if(targetType.isAssignableTo(TypeDescriptor.valueOf(Enum.class)) && targetType.isAssignableTo(TypeDescriptor.valueOf(Value.class))) {

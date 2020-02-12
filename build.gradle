@@ -15,7 +15,8 @@ publish.dependsOn(":core:enum:publish")
 publish.dependsOn(":core:lang:publish")
 publish.dependsOn(":core:reflection:publish")
 publish.dependsOn(":core:uuid:publish")
-publish.dependsOn(":web:publish")
+publish.dependsOn(":web:convert:publish")
+publish.dependsOn(":web:utils:publish")
 
 task clean {
     doFirst {
@@ -33,5 +34,6 @@ clean.dependsOn(":core:enum:clean")
 clean.dependsOn(":core:lang:clean")
 clean.dependsOn(":core:reflection:clean")
 clean.dependsOn(":core:uuid:clean")
-clean.dependsOn(":web:clean")
+clean.dependsOn(":web:convert:clean")
+clean.dependsOn(":web:utils:clean")
 
