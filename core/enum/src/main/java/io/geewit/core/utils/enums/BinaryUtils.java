@@ -7,34 +7,31 @@ import java.util.stream.Collectors;
 
 /**
  * 二进制工具类
+ *
  * @author geewit
- * @since  2015-05-27
+ * @since 2015-05-27
  */
 @SuppressWarnings({"unused"})
 public class BinaryUtils {
     /**
      * 枚举转二进制
-     * @param enumType  枚举类型
-     * @return          二进制
+     *
+     * @param enumType 枚举类型
+     * @return 二进制
      */
     public static <E extends Enum<E>> int toBinary(E enumType) {
-        int value;
-        if (null != enumType) {
-            value = 1 << enumType.ordinal();
-        } else {
-            value = 0;
-        }
-        return value;
+        return null != enumType ? 1 << enumType.ordinal() : 0;
     }
 
     /**
      * 转二进制掩码
+     *
      * @param enumTypes 枚举类型
-     * @return          枚举
+     * @return 枚举
      */
     @SafeVarargs
     public static <E extends Enum<E>> int toBinary(E... enumTypes) {
-        if(enumTypes == null || enumTypes.length == 0) {
+        if (enumTypes == null || enumTypes.length == 0) {
             return 0;
         }
         return Arrays.stream(enumTypes).mapToInt(enumType -> 1 << enumType.ordinal()).reduce(0, (a, b) -> a | b);
@@ -56,8 +53,9 @@ public class BinaryUtils {
 
     /**
      * 二进制掩码转枚举集合
+     *
      * @param binary 二进制掩码
-     * @param clazz 枚举类型
+     * @param clazz  枚举类型
      * @return 枚举集合
      */
     public static <E extends Enum<E>> EnumSet<E> fromBinary(int binary, Class<E> clazz) {
@@ -77,7 +75,6 @@ public class BinaryUtils {
     }
 
 
-
     /**
      * 检查二进制参数的枚举开关
      *
@@ -90,6 +87,26 @@ public class BinaryUtils {
         return (1 << enu.ordinal() & value) > 0;
     }
 
+
+    /**
+     * 检查二进制参数的枚举开关
+     *
+     * @param clazz 枚举类
+     * @param value 二进制参数
+     * @param <E>   枚举
+     * @return true:开|false:关
+     */
+    public static <E extends Enum<E>> boolean any(Class<E> clazz, int value) {
+        return EnumSet.allOf(clazz).stream().anyMatch(enu -> (1 << enu.ordinal() & value) > 0);
+    }
+
+    public static <E extends Enum<E>> boolean hasAny(Collection<E> enumSet, int value) {
+        if (null != enumSet) {
+            return enumSet.stream().anyMatch(enu -> (1 << enu.ordinal() & value) > 0);
+        }
+        return false;
+    }
+
     /**
      * 检查二进制参数的枚举开关集合是否全开
      *
@@ -100,12 +117,7 @@ public class BinaryUtils {
      */
     public static <E extends Enum<E>> boolean hasAll(Collection<E> enumSet, int value) {
         if (null != enumSet) {
-            for (E enu : enumSet) {
-                if ((1 << enu.ordinal() & value) == 0) {
-                    return false;
-                }
-            }
-            return true;
+            return enumSet.stream().allMatch(enu -> (1 << enu.ordinal() & value) > 0);
         } else {
             return false;
         }
