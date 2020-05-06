@@ -2,7 +2,8 @@ package io.geewit.web.utils;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
-import org.springframework.web.context.ContextLoader;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.Map;
 
@@ -10,21 +11,21 @@ import java.util.Map;
  * 以静态变量保存Spring ApplicationContext.
  * @author geewit
  */
-@SuppressWarnings({"unused"})
-public class SpringContextUtil {
+@Configuration
+public class SpringContextUtil implements ApplicationContextAware {
+    private static ApplicationContext applicationContext;
 
-    private static ApplicationContext getContext() {
-        return ContextLoader.getCurrentWebApplicationContext();
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     public static <T> T getBean(String name, Class<T> clazz) throws BeansException {
-        ApplicationContext context = getContext();
-        return context.getBean(name, clazz);
+        return applicationContext.getBean(name, clazz);
     }
 
     public static <T> T getBean(Class<T> clazz) {
-        ApplicationContext context = getContext();
-        return getBean(clazz, context);
+        return getBean(clazz, applicationContext);
     }
 
     public static <T> T getBean(Class<T> clazz, ApplicationContext ctx) {

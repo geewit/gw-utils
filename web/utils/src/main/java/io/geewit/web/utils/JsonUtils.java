@@ -18,12 +18,12 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 public class JsonUtils {
     private final static Logger logger = LoggerFactory.getLogger(JsonUtils.class);
 
-    private static ObjectMapper objectMapper;
+    public JsonUtils() {
+    }
+
 
     private static ObjectMapper objectMapper() {
-        if (objectMapper != null) {
-            return objectMapper;
-        }
+        ObjectMapper objectMapper;
         try {
             //region 从spring中获取ObjectMapper
             objectMapper = SpringContextUtil.getBean(ObjectMapper.class);
@@ -51,7 +51,7 @@ public class JsonUtils {
 
     public static String toJson(Object value, Class<?> jsonView) {
         try {
-            objectMapper = objectMapper();
+            ObjectMapper objectMapper = objectMapper();
             objectMapper.disable(MapperFeature.DEFAULT_VIEW_INCLUSION);
             String json = objectMapper.writerWithView(jsonView).writeValueAsString(value);
             objectMapper.enable(MapperFeature.DEFAULT_VIEW_INCLUSION);
