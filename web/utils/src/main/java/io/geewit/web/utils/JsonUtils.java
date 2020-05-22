@@ -3,9 +3,14 @@ package io.geewit.web.utils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -85,6 +90,18 @@ public class JsonUtils {
     public static <T> T fromJson(String json, JavaType javaType) {
         try {
             return objectMapper().readValue(json, javaType);
+        } catch (Exception e) {
+            logger.warn(e.getMessage() + ", json : " + json);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> List<T> toList(String json, Class<T> clazz) {
+        ObjectMapper objectMapper = objectMapper();
+        TypeFactory factory = objectMapper.getTypeFactory();
+        CollectionType javaType = factory.constructCollectionType(ArrayList.class, clazz);
+        try {
+            return objectMapper.readValue(json, javaType);
         } catch (Exception e) {
             logger.warn(e.getMessage() + ", json : " + json);
             throw new RuntimeException(e);
