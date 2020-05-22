@@ -32,6 +32,7 @@ public class JsonUtils {
         try {
             //region 从spring中获取ObjectMapper
             objectMapper = SpringContextUtil.getBean(ObjectMapper.class);
+            return objectMapper.copy();
             //endregion
         } catch (Exception e) {
             final Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
