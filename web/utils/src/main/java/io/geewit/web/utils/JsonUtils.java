@@ -27,7 +27,7 @@ public class JsonUtils {
     }
 
 
-    private static ObjectMapper objectMapper() {
+    public static ObjectMapper objectMapper() {
         ObjectMapper objectMapper;
         try {
             //region 从spring中获取ObjectMapper
@@ -84,7 +84,6 @@ public class JsonUtils {
             logger.warn(e.getMessage() + ", json : " + json);
             throw new RuntimeException(e);
         }
-
     }
 
     public static <T> T fromJson(String json, JavaType javaType) {
