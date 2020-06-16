@@ -37,10 +37,10 @@ public class BeanUtils {
      *
      * @exception FatalBeanException
      */
-    private static void copyProperties(Object source, Object target, final Class<?> editable, String[] ignoreProperties, String[] nullProperties) throws BeansException {
+    public static void copyProperties(Object source, Object target, final Class<?> editable, String[] ignoreProperties, String[] nullProperties) throws BeansException {
         Class<?> actualEditable = target.getClass();
         if (null != editable) {
-            if (!editable.isInstance(target)) {
+            if (!editable.isInstance(target) && !editable.isInstance(source)) {
                 throw new IllegalArgumentException("Target class[" + target.getClass().getName() + "] not assignable to Editable class [" + editable.getName() + "]");
             }
             actualEditable = editable;
@@ -72,7 +72,7 @@ public class BeanUtils {
                 }
             }
         } else {
-            final PropertyDescriptor[] targetPds = org.springframework.beans.BeanUtils.getPropertyDescriptors(actualEditable);
+            final PropertyDescriptor[] targetPds = org.springframework.beans.BeanUtils.getPropertyDescriptors(target.getClass());
             for (final PropertyDescriptor targetPd : targetPds) {
                 final String propertyName = targetPd.getName();
                 if("class".equals(propertyName)) {

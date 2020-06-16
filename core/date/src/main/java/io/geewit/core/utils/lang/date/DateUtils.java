@@ -28,7 +28,7 @@ public class DateUtils {
         if(dates == null || dates.length == 0) {
             return null;
         }
-        Arrays.parallelSort(dates);
+        Arrays.sort(dates);
         return dates[0];
     }
 
@@ -41,7 +41,7 @@ public class DateUtils {
         if(dates == null || dates.length == 0) {
             return null;
         }
-        Arrays.parallelSort(dates);
+        Arrays.sort(dates);
         return dates[dates.length - 1];
     }
 }
