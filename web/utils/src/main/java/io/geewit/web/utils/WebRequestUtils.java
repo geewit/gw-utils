@@ -6,6 +6,8 @@ import org.springframework.util.Assert;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -24,20 +26,15 @@ public class WebRequestUtils {
         return (userAgent.indexOf("msie") > 0 || userAgent.indexOf("rv:11.0") > 0 || userAgent.indexOf("edge") > 0);
     }
 
-    public static Cookie[] getCookie(HttpServletRequest request, String... names) {
+    public static Map<String, Cookie> getCookies(HttpServletRequest request, String... names) {
         Assert.notNull(request, "Request must not be null");
         Cookie[] cookies = request.getCookies();
-        Cookie[] result = null;
+        Map<String, Cookie> result = new HashMap<>();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 for(String name : names) {
                     if (name.equals(cookie.getName())) {
-                        if(result == null) {
-                            result = new Cookie[]{cookie};
-                        } else {
-                            result = Arrays.copyOf(result, result.length + 1);
-                            result[result.length - 1] = cookie;
-                        }
+                        result.put(name, cookie);
                     }
                 }
 
