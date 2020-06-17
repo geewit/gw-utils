@@ -1,7 +1,6 @@
 package io.geewit.web.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
@@ -34,7 +33,12 @@ public class JsonUtils {
         try {
             //region 从spring中获取ObjectMapper
             objectMapper = SpringContextUtil.getBean(ObjectMapper.class);
-            return objectMapper.copy();
+            objectMapper = objectMapper.copy();
+            objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+            objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            objectMapper.enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature());
+            objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            return objectMapper;
             //endregion
         } catch (Exception e) {
             final Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
