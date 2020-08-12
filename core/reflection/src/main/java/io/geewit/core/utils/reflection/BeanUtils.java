@@ -72,7 +72,7 @@ public class BeanUtils {
                 }
             }
         } else {
-            final PropertyDescriptor[] targetPds = org.springframework.beans.BeanUtils.getPropertyDescriptors(target.getClass());
+            final PropertyDescriptor[] targetPds = org.springframework.beans.BeanUtils.getPropertyDescriptors(actualEditable);
             for (final PropertyDescriptor targetPd : targetPds) {
                 final String propertyName = targetPd.getName();
                 if("class".equals(propertyName)) {
