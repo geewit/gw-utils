@@ -57,6 +57,19 @@ public class JsonUtils {
         }
     }
 
+    public static String toJson(Object value, boolean useIgnore) {
+        try {
+            ObjectMapper objectMapper = objectMapper();
+            if(!useIgnore) {
+                objectMapper.disable(MapperFeature.USE_ANNOTATIONS);
+            }
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception e) {
+            logger.warn(e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
     public static String toJson(Object value, Class<?> jsonView) {
         try {
             ObjectMapper objectMapper = objectMapper();
