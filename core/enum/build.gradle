@@ -3,6 +3,7 @@ project(':core:enum') {
         compile("org.slf4j:slf4j-api:$slf4j_version") {
             exclude group: 'org.slf4j', module: 'logback'
         }
-        testCompile("junit:junit:$junit_version")
+        testCompile("org.junit.jupiter:junit-jupiter-engine:$junit_version")
+        testCompile("org.junit.platform:junit-platform-launcher:$junit_platform_version")
     }
 }
