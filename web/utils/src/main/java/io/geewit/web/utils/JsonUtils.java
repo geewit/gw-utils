@@ -1,7 +1,7 @@
 package io.geewit.web.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.json.JsonReadFeature;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.type.CollectionType;
@@ -46,7 +46,7 @@ public class JsonUtils {
                     SerializationFeature.FAIL_ON_EMPTY_BEANS,
                     DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
             );
-            builder.featuresToEnable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS);
+            builder.featuresToEnable(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS);
             builder.serializationInclusion(JsonInclude.Include.NON_NULL);
             objectMapper = builder.build();
         }
@@ -56,6 +56,19 @@ public class JsonUtils {
     public static String toJson(Object value) {
         try {
             return objectMapper().writeValueAsString(value);
+        } catch (Exception e) {
+            logger.warn(e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String toJson(Object value, boolean useIgnore) {
+        try {
+            ObjectMapper objectMapper = objectMapper();
+            if(!useIgnore) {
+                objectMapper.disable(MapperFeature.USE_ANNOTATIONS);
+            }
+            return objectMapper.writeValueAsString(value);
         } catch (Exception e) {
             logger.warn(e.getMessage());
             throw new RuntimeException(e);

@@ -71,10 +71,21 @@ public class Reflections {
      * 直接设置对象属性值, 无视private/protected修饰符, 不经过setter函数.
      */
     public static void setFieldValue(final Object obj, final String fieldName, final Object value) {
+        setFieldValue(obj, fieldName, value, true);
+    }
+
+    /**
+     * 直接设置对象属性值, 无视private/protected修饰符, 不经过setter函数.
+     */
+    public static void setFieldValue(final Object obj, final String fieldName, final Object value, boolean silent) {
         Field field = getAccessibleField(obj, fieldName);
 
         if (field == null) {
-            throw new IllegalArgumentException("Could not find field [" + fieldName + "] on target [" + obj + "]");
+            if(silent) {
+                return;
+            } else {
+                throw new IllegalArgumentException("Could not find field [" + fieldName + "] on target [" + obj + "]");
+            }
         }
 
         try {
@@ -116,9 +127,25 @@ public class Reflections {
      * @param args           参数
      */
     public static Object invokeMethodByName(final Object obj, final String methodName, final Object[] args) {
+        return invokeMethodByName(obj, methodName, args, true);
+    }
+
+    /**
+     * 直接调用对象方法, 无视private/protected修饰符，
+     * 用于一次性调用的情况，否则应使用getAccessibleMethodByName()函数获得Method后反复调用.
+     * 只匹配函数名，如果有多个同名函数调用第一个。
+     * @param obj            目标对象
+     * @param methodName     目标方法
+     * @param args           参数
+     */
+    public static Object invokeMethodByName(final Object obj, final String methodName, final Object[] args, boolean silent) {
         Method method = getAccessibleMethodByName(obj, methodName);
         if (method == null) {
-            throw new IllegalArgumentException("Could not find method [" + methodName + "] on target [" + obj + "]");
+            if(silent) {
+                return null;
+            } else {
+                throw new IllegalArgumentException("Could not find method [" + methodName + "] on target [" + obj + "]");
+            }
         }
 
         try {
