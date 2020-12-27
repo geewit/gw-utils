@@ -36,7 +36,7 @@ public class JsonUtils {
             objectMapper = objectMapper.copy();
             objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
             objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-            objectMapper.enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature());
+            objectMapper.enable(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS);
             objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
             return objectMapper;
             //endregion
