@@ -3,11 +3,13 @@ project(':core:tree') {
         compile("org.slf4j:slf4j-api:$slf4j_version") {
             exclude group: 'org.slf4j', module: 'logback'
         }
-        testCompile("org.junit.jupiter:junit-jupiter-engine:$junit_version")
-        testCompile("org.junit.platform:junit-platform-launcher:$junit_platform_version")
         compileOnly("org.projectlombok:lombok:$lombok_version")
         annotationProcessor("org.projectlombok:lombok:$lombok_version")
         testAnnotationProcessor("org.projectlombok:lombok:$lombok_version")
+        testCompile(project(":core:uuid"))
+        testCompile("org.apache.logging.log4j:log4j-slf4j-impl:$log4j2_version")
+        testCompile("org.junit.jupiter:junit-jupiter-engine:$junit_version")
+        testCompile("org.junit.platform:junit-platform-launcher:$junit_platform_version")
         testCompileOnly("org.projectlombok:lombok:$lombok_version")
     }
 }
