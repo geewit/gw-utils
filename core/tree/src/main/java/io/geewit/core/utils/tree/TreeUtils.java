@@ -16,12 +16,22 @@ public class TreeUtils {
     public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> generateTree(List<N> nodes) {
         nodes.sort(Comparator.comparing(TreeNode::getParentIds));
         List<N> treeRoots = new ArrayList<>();
-        Stack<N> stack = new Stack<>();
+        Map<Key, Stack<N>> stackMap = new HashMap<>();
         for (N nodeObj : nodes) {
             if (nodeObj == null) {
                 continue;
             }
-            if (stack.empty() && treeRoots.isEmpty()) {
+            Key stackMapKey;
+            if(nodeObj.getParentId() == null) {
+                stackMapKey = nodeObj.getId();
+            } else {
+                stackMapKey = nodeObj.getParentId();
+            }
+            Stack<N> stack = stackMap.get(stackMapKey);
+            if(stack == null) {
+                stack = new Stack<>();
+            }
+            if (stack.empty()) {
                 treeRoots.add(nodeObj);
                 stack.push(nodeObj);
                 logger.debug("set tree root = " + nodeObj.getId() + ")");
@@ -41,6 +51,7 @@ public class TreeUtils {
                 logger.debug("TreeNode(" + parent.getId() + ").addChild " + nodeObj.getId());
                 parent.addChild(nodeObj);
             }
+            stackMap.put(stackMapKey, stack);
         }
         return treeRoots;
     }

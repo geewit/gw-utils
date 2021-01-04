@@ -38,6 +38,11 @@
 /core/reflection/target
 /core/reflection/out
 /core/reflection/.gradle
+/core/tree/*.iml
+/core/tree/logs
+/core/tree/target
+/core/tree/out
+/core/tree/.gradle
 /core/uuid/*.iml
 /core/uuid/logs
 /core/uuid/target
