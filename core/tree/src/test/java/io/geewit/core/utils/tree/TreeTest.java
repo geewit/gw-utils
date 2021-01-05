@@ -9,19 +9,16 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @Slf4j
 public class TreeTest {
     private final static Logger logger = LoggerFactory.getLogger(TreeTest.class);
 
-    private Set<Org> roots;
-
-    private List<Org> tree;
+    private List<Org> roots;
 
     @BeforeEach
     public void init() {
@@ -30,9 +27,8 @@ public class TreeTest {
         roots = this.buildTree(maxLevel, maxIndex);
     }
 
-    private Set<Org> buildTree(int maxLevel, int maxIndex) {
-        List<Org> orgList = new ArrayList<>();
-        Set<Org> roots = new HashSet<>();
+    private List<Org> buildTree(int maxLevel, int maxIndex) {
+        List<Org> orgs = new ArrayList<>();
         for(int level = 0; level < maxLevel; level++) {
             Org parent = null;
             for(int index = 0; index < maxIndex; index++) {
@@ -44,12 +40,11 @@ public class TreeTest {
                 }
                 if(org.parentId == null) {
                     parent = org;
-                    roots.add(org);
                 }
-                orgList.add(org);
+                orgs.add(org);
             }
         }
-        tree = TreeUtils.generateTree(orgList);
+        roots = TreeUtils.generateTree(orgs);
         return roots;
     }
 
@@ -61,22 +56,34 @@ public class TreeTest {
         org.setName(name);
         if(parent != null) {
             org.setParentId(parent.id);
-//            org.setParent(parent);
             org.setParentIds(parent.parentIds + id + "#");
-//            parent.addChild(org);
         } else {
             org.setParentIds(id + "#");
         }
+//        boolean checked = new Random().nextBoolean();
+//        org.setChecked(checked);
         log.info("org.id = {}, org.name = {}", id, name);
         return org;
     }
 
+    private ObjectMapper objectMapper = new ObjectMapper();
+
     @Test
     public void test() {
-        ObjectMapper objectMapper = new ObjectMapper();
         try {
             log.info("roots: " + objectMapper.writeValueAsString(roots));
-            log.info("tree: " + objectMapper.writeValueAsString(tree));
+        } catch (JsonProcessingException e) {
+            log.warn(e.getMessage());
+        }
+    }
+
+
+    @Test
+    public void testCheck() {
+        Set<Long> checkingKeys = Stream.of(1L, 10L, 100L, 1000L, 10000L).collect(Collectors.toSet());
+        TreeUtils.cascadeCheckKeys(roots, checkingKeys);
+        try {
+            log.info("roots: " + objectMapper.writeValueAsString(roots));
         } catch (JsonProcessingException e) {
             log.warn(e.getMessage());
         }

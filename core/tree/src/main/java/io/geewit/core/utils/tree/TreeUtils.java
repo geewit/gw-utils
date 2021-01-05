@@ -14,9 +14,12 @@ public class TreeUtils {
     private final static Logger logger = LoggerFactory.getLogger(TreeUtils.class);
 
     public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> generateTree(List<N> nodes) {
-        nodes.sort(Comparator.comparing(TreeNode::getParentIds));
         List<N> treeRoots = new ArrayList<>();
-        Map<Key, Stack<N>> stackMap = new HashMap<>();
+        if(nodes == null || nodes.isEmpty()) {
+            return treeRoots;
+        }
+        nodes.sort(Comparator.comparing(TreeNode::getParentIds));
+        Map<Key, Deque<N>> stackMap = new HashMap<>(nodes.size());
         for (N nodeObj : nodes) {
             if (nodeObj == null) {
                 continue;
@@ -27,11 +30,11 @@ public class TreeUtils {
             } else {
                 stackMapKey = nodeObj.getParentId();
             }
-            Stack<N> stack = stackMap.get(stackMapKey);
+            Deque<N> stack = stackMap.get(stackMapKey);
             if(stack == null) {
-                stack = new Stack<>();
+                stack = new ArrayDeque<>();
             }
-            if (stack.empty()) {
+            if (stack.isEmpty()) {
                 treeRoots.add(nodeObj);
                 stack.push(nodeObj);
                 logger.debug("set tree root = " + nodeObj.getId() + ")");
@@ -63,7 +66,7 @@ public class TreeUtils {
      * @param parentId
      * @return
      */
-    private static <N extends TreeNode<N, Key>, Key extends Serializable> N findParent(Stack<N> stack, Key parentId) {
+    private static <N extends TreeNode<N, Key>, Key extends Serializable> N findParent(Deque<N> stack, Key parentId) {
         if (parentId == null) {
             logger.debug("parentId == null, return null");
             return null;
@@ -89,5 +92,45 @@ public class TreeUtils {
                 logger.debug("stack.pop: " + popNode.getId() + ")");
             }
         } while (true);
+    }
+
+    public static <N extends TreeNode<N, Key>, Key extends Serializable> Set<Key> cascadeCheckKeys(List<N> nodes, Set<Key> checkingKeys) {
+        if(nodes == null || nodes.isEmpty()) {
+            return Collections.emptySet();
+        }
+        if(checkingKeys == null || checkingKeys.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        nodes.forEach(node -> node.setChecked(checkingKeys.stream().anyMatch(key -> key.equals(node.getId()))));
+
+        List<N> roots = generateTree(nodes);
+
+        if(roots.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        Set<Key> checkedKeys = new HashSet<>();
+
+        for(N root : roots) {
+            Deque<N> stack = new ArrayDeque<>();
+            stack.push(root);
+            while (!stack.isEmpty()) {
+                N node = stack.pop();
+                if(node.getChecked() != null && node.getChecked()) {
+                    checkedKeys.add(node.getId());
+                }
+                if (node.getChildren() != null) {
+                    for (N child : node.getChildren()) {
+                        if(node.getChecked() != null && node.getChecked()) {
+                            child.setChecked(true);
+                        }
+                        stack.push(child);
+                    }
+                }
+            }
+        }
+
+        return checkedKeys;
     }
 }
