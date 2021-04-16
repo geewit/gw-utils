@@ -1,0 +1,11 @@
+project(':web:servlet') {
+    dependencies {
+        compile("org.slf4j:slf4j-api:$slf4j_version") {
+            exclude group: 'org.slf4j', module: 'logback'
+        }
+
+        compile("org.springframework:spring-web:$spring_version")
+
+        compileOnly("jakarta.servlet:jakarta.servlet-api:$jakarta_servlet_api_version")
+    }
+}

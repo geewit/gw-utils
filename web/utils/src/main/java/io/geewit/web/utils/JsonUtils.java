@@ -78,9 +78,14 @@ public class JsonUtils {
     public static String toJson(Object value, Class<?> jsonView) {
         try {
             ObjectMapper objectMapper = objectMapper();
-            objectMapper.disable(MapperFeature.DEFAULT_VIEW_INCLUSION);
+            boolean defaultViewInclusionEnabled = objectMapper.isEnabled(MapperFeature.DEFAULT_VIEW_INCLUSION);
+            if(defaultViewInclusionEnabled) {
+                objectMapper.disable(MapperFeature.DEFAULT_VIEW_INCLUSION);
+            }
             String json = objectMapper.writerWithView(jsonView).writeValueAsString(value);
-            objectMapper.enable(MapperFeature.DEFAULT_VIEW_INCLUSION);
+            if(defaultViewInclusionEnabled) {
+                objectMapper.enable(MapperFeature.DEFAULT_VIEW_INCLUSION);
+            }
             return json;
         } catch (Exception e) {
             logger.warn(e.getMessage());

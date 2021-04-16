@@ -10,6 +10,5 @@ project(':web:utils') {
         compile("org.springframework:spring-context:$spring_version")
         compile("org.springframework:spring-web:$spring_version")
 
-        compileOnly("javax.servlet:javax.servlet-api:$javax_servlet_api_version")
     }
 }

@@ -20,7 +20,7 @@ public class DateConverter implements Converter<String, Date> {
         try {
             return org.apache.commons.lang3.time.DateUtils.parseDateStrictly(source, PATTERNS);
         } catch (ParseException e) {
-            logger.warn(e.getMessage(), e);
+            logger.warn(e.getMessage());
             return null;
         }
     }

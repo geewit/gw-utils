@@ -3,7 +3,6 @@ package io.geewit.core.utils.tree;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.geewit.utils.uuid.UUIDUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -14,29 +13,34 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
-@Slf4j
 public class TreeTest {
     private final static Logger logger = LoggerFactory.getLogger(TreeTest.class);
 
-    private List<Org> roots;
+    private List<Org> nodes;
 
     @BeforeEach
     public void init() {
         int maxLevel = 5;
         int maxIndex = 5;
-        roots = this.buildTree(maxLevel, maxIndex);
+        nodes = this.buildTreeNodes(maxLevel, maxIndex);
     }
 
-    private List<Org> buildTree(int maxLevel, int maxIndex) {
+    /**
+     *
+     * @param maxDepth    最大深度
+     * @param maxBreadth  最大广度
+     * @return
+     */
+    private List<Org> buildTreeNodes(int maxDepth, int maxBreadth) {
         List<Org> orgs = new ArrayList<>();
-        for(int level = 0; level < maxLevel; level++) {
+        for(int depth = 0; depth < maxDepth; depth++) {
             Org parent = null;
-            for(int index = 0; index < maxIndex; index++) {
+            for(int breadth = 0; breadth < maxBreadth; breadth++) {
                 Org org;
                 if(parent == null) {
-                    org = this.buildOrg(level, index, null);
+                    org = this.buildOrg(depth, breadth, null);
                 } else {
-                    org = this.buildOrg(level, index, parent);
+                    org = this.buildOrg(depth, breadth, parent);
                 }
                 if(org.parentId == null) {
                     parent = org;
@@ -44,13 +48,19 @@ public class TreeTest {
                 orgs.add(org);
             }
         }
-        roots = TreeUtils.generateTree(orgs);
-        return roots;
+        return orgs;
     }
 
-    private Org buildOrg(int level, int index, Org parent) {
+    /**
+     *
+     * @param depth    深度
+     * @param breadth  广度
+     * @param parent   父节点
+     * @return
+     */
+    private Org buildOrg(int depth, int breadth, Org parent) {
         Org org = new Org();
-        long id = Double.valueOf(Math.pow(10, level)).longValue() + index;
+        long id = Double.valueOf(Math.pow(10, depth)).longValue() + breadth;
         org.setId(id);
         String name = UUIDUtils.randomUUID();
         org.setName(name);
@@ -60,32 +70,44 @@ public class TreeTest {
         } else {
             org.setParentIds(id + "#");
         }
-//        boolean checked = new Random().nextBoolean();
-//        org.setChecked(checked);
-        log.info("org.id = {}, org.name = {}", id, name);
+        logger.info("org.id = {}, org.name = {}", id, name);
         return org;
     }
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    public void test() {
+    public void testBuildTree() {
         try {
-            log.info("roots: " + objectMapper.writeValueAsString(roots));
+            logger.info("nodes: " + objectMapper.writeValueAsString(nodes));
+            List<Org> tree = TreeUtils.buildTree(nodes);
+            logger.info("tree: " + objectMapper.writeValueAsString(tree));
         } catch (JsonProcessingException e) {
-            log.warn(e.getMessage());
+            logger.warn(e.getMessage());
         }
     }
 
 
     @Test
+    public void testBuildTreeByParentIds() {
+        try {
+            logger.info("nodes: " + objectMapper.writeValueAsString(nodes));
+            List<Org> tree = TreeUtils.buildTreeByParentIds(nodes);
+            logger.info("tree: " + objectMapper.writeValueAsString(tree));
+        } catch (JsonProcessingException e) {
+            logger.warn(e.getMessage());
+        }
+    }
+
+    @Test
     public void testCheck() {
         Set<Long> checkingKeys = Stream.of(1L, 10L, 100L, 1000L, 10000L).collect(Collectors.toSet());
-        TreeUtils.cascadeCheckKeys(roots, checkingKeys);
+        List<Org> tree = TreeUtils.buildTree(nodes);
+        TreeUtils.cascadeCheckKeys(tree, checkingKeys);
         try {
-            log.info("roots: " + objectMapper.writeValueAsString(roots));
+            logger.info("tree: " + objectMapper.writeValueAsString(tree));
         } catch (JsonProcessingException e) {
-            log.warn(e.getMessage());
+            logger.warn(e.getMessage());
         }
     }
 }
