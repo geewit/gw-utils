@@ -1,8 +1,6 @@
 package io.geewit.core.utils.enums;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.EnumSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -62,6 +60,16 @@ public class BinaryUtils {
         return EnumSet.allOf(clazz).stream().filter(e -> ((binary & 1 << e.ordinal()) > 0)).collect(Collectors.toCollection(() -> EnumSet.noneOf(clazz)));
     }
 
+    /**
+     * 二进制掩码转Integer集合
+     *
+     * @param binary 二进制掩码
+     * @param clazz  枚举类型
+     * @return Integer集合
+     */
+    public static <E extends Enum<E>> List<Integer> fromBinaryToValues(int binary, Class<E> clazz) {
+        return EnumSet.allOf(clazz).stream().mapToInt(e -> 1 << e.ordinal()).filter(value -> (binary & value) > 0).boxed().collect(Collectors.toList());
+    }
 
     /**
      * 打开对应枚举类所有开关的二进制值
