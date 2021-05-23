@@ -1,10 +1,10 @@
 project(':core:codec') {
     dependencies {
-        compile("org.slf4j:slf4j-api:$slf4j_version") {
+        api("org.slf4j:slf4j-api:$slf4j_version") {
             exclude group: 'org.slf4j', module: 'logback'
         }
-        compile("commons-codec:commons-codec:$commons_codec_version")
-        testCompile("org.junit.jupiter:junit-jupiter-engine:$junit_version")
-        testCompile("org.junit.platform:junit-platform-launcher:$junit_platform_version")
+        api("commons-codec:commons-codec:$commons_codec_version")
+        testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit_version")
+        testImplementation("org.junit.platform:junit-platform-launcher:$junit_platform_version")
     }
 }

@@ -1,17 +1,17 @@
 project(':core:tree') {
     dependencies {
-        compile("org.slf4j:slf4j-api:$slf4j_version") {
+        api("org.slf4j:slf4j-api:$slf4j_version") {
             exclude group: 'org.slf4j', module: 'logback'
         }
         compileOnly("org.projectlombok:lombok:$lombok_version")
         annotationProcessor("org.projectlombok:lombok:$lombok_version")
         testAnnotationProcessor("org.projectlombok:lombok:$lombok_version")
-        testCompile(project(":core:uuid"))
-        testCompile("com.fasterxml.jackson.core:jackson-core:$jackson_version")
-        testCompile("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
-        testCompile("org.apache.logging.log4j:log4j-slf4j-impl:$log4j2_version")
-        testCompile("org.junit.jupiter:junit-jupiter-engine:$junit_version")
-        testCompile("org.junit.platform:junit-platform-launcher:$junit_platform_version")
+        testImplementation(project(":core:uuid"))
+        testImplementation("com.fasterxml.jackson.core:jackson-core:$jackson_version")
+        testImplementation("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
+        testImplementation("org.apache.logging.log4j:log4j-slf4j-impl:$log4j2_version")
+        testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit_version")
+        testImplementation("org.junit.platform:junit-platform-launcher:$junit_platform_version")
         testCompileOnly("org.projectlombok:lombok:$lombok_version")
     }
 }

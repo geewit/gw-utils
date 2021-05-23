@@ -1,14 +1,14 @@
 project(':web:utils') {
     dependencies {
-        compile("org.slf4j:slf4j-api:$slf4j_version") {
+        api("org.slf4j:slf4j-api:$slf4j_version") {
             exclude group: 'org.slf4j', module: 'logback'
         }
-        compile("com.fasterxml.jackson.core:jackson-annotations:$jackson_version")
-        compile("com.fasterxml.jackson.core:jackson-core:$jackson_version")
-        compile("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
+        api("com.fasterxml.jackson.core:jackson-annotations:$jackson_version")
+        api("com.fasterxml.jackson.core:jackson-core:$jackson_version")
+        api("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
 
-        compile("org.springframework:spring-context:$spring_version")
-        compile("org.springframework:spring-web:$spring_version")
+        api("org.springframework:spring-context:$spring_version")
+        api("org.springframework:spring-web:$spring_version")
 
     }
 }

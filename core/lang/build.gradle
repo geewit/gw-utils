@@ -1,8 +1,8 @@
 project(':core:lang') {
     dependencies {
-        compile("org.slf4j:slf4j-api:$slf4j_version") {
+        api("org.slf4j:slf4j-api:$slf4j_version") {
             exclude group: 'org.slf4j', module: 'logback'
         }
-        compile("org.apache.commons:commons-lang3:$commons_lang3_version")
+        api("org.apache.commons:commons-lang3:$commons_lang3_version")
     }
 }

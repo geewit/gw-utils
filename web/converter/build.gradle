@@ -1,10 +1,10 @@
 project(':web:converter') {
     dependencies {
-        compile(project(':core:enum'))
-        compile("org.slf4j:slf4j-api:$slf4j_version") {
+        api(project(':core:enum'))
+        api("org.slf4j:slf4j-api:$slf4j_version") {
             exclude group: 'org.slf4j', module: 'logback'
         }
-        compile("org.apache.commons:commons-lang3:$commons_lang3_version")
-        compile("org.springframework:spring-context:$spring_version")
+        api("org.apache.commons:commons-lang3:$commons_lang3_version")
+        api("org.springframework:spring-context:$spring_version")
     }
 }
