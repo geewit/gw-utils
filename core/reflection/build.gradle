@@ -5,6 +5,5 @@ project(':core:reflection') {
         }
         api("org.apache.commons:commons-lang3:$commons_lang3_version")
         api("org.springframework:spring-beans:$spring_version")
-        api("cn.hutool:hutool-core:$hutool_version")
     }
 }

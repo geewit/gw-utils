@@ -4,7 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,13 +41,32 @@ public abstract class TreeNode<N extends TreeNode<N, Key>, Key extends Serializa
      */
     protected N parent;
 
-    protected Set<N> children;
+    protected List<N> children = new ArrayList<>();
 
-    public void addChild(N treeNode) {
-        if(this.children == null) {
-            this.children = Stream.of(treeNode).collect(Collectors.toSet());
+    public void addChild(N child) {
+        if(children == null) {
+            children = Stream.of(child).collect(Collectors.toList());
         } else {
-            this.children.add(treeNode);
+            if (children.stream().filter(Objects::nonNull).map(N::getId).filter(Objects::nonNull).noneMatch(id -> id.equals(child.getId()))) {
+                children.add(child);
+            }
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof TreeNode)) {
+            return false;
+        }
+        TreeNode<N, Key> treeNode = (TreeNode<N, Key>) o;
+        return getId().equals(treeNode.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId());
     }
 }

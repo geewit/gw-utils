@@ -1,10 +1,13 @@
 package io.geewit.core.utils.reflection;
 
-import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.bean.copier.CopyOptions;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.FatalBeanException;
 
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -35,29 +38,80 @@ public class BeanUtils {
      * @exception FatalBeanException
      */
     public static void copyProperties(Object source, Object target, final Class<?> editable, String[] ignoreProperties, String[] nullProperties) throws BeansException {
-        boolean ignoreNullValue = nullProperties == null || nullProperties.length == 0;
-        Class<?> actualEditable;
-        if (null == editable) {
-            actualEditable = target.getClass();
-        } else {
+        Class<?> actualEditable = target.getClass();
+        if (null != editable) {
             if (!editable.isInstance(target) && !editable.isInstance(source)) {
                 throw new IllegalArgumentException("Target class[" + target.getClass().getName() + "] not assignable to Editable class [" + editable.getName() + "]");
             }
             actualEditable = editable;
         }
-        CopyOptions copyOptions = CopyOptions.create(actualEditable, ignoreNullValue, ignoreProperties);
-
         if(target instanceof Map) {
-            if(source instanceof Map) {
-                throw new IllegalArgumentException("不支持Map拷贝到Map");
-            } else {
-                BeanUtil.beanToMap(source, (Map<String, Object>) target, false, ignoreNullValue);
+            final PropertyDescriptor[] sourcePds = org.springframework.beans.BeanUtils.getPropertyDescriptors(source.getClass());
+            for (final PropertyDescriptor sourcePd : sourcePds) {
+                final String propertyName = sourcePd.getName();
+                if("class".equals(propertyName)) {
+                    continue;
+                }
+                if(ignoreProperties != null && Arrays.asList(ignoreProperties).contains(propertyName)) {
+                    continue;
+                }
+                final Method readMethod = sourcePd.getReadMethod();
+                if(readMethod == null) {
+                    continue;
+                }
+                if (!Modifier.isPublic(readMethod.getDeclaringClass().getModifiers())) {
+                    readMethod.setAccessible(true);
+                }
+                try {
+                    final Object value = readMethod.invoke(source);
+                    if(value != null || (nullProperties != null && Arrays.asList(nullProperties).contains(propertyName))) {
+                        ((Map<String, Object>)target).put(propertyName, value);
+                    }
+                } catch (Throwable throwable) {
+                    throw new FatalBeanException("Could not copy properties from source bean to target bean!", throwable);
+                }
             }
         } else {
-            if (source instanceof Map) {
-                BeanUtil.fillBeanWithMap((Map<?, ?>) source, target, copyOptions);
-            } else {
-                BeanUtil.beanToMap(source, (Map<String, Object>) target, false, ignoreNullValue);
+            final PropertyDescriptor[] targetPds = org.springframework.beans.BeanUtils.getPropertyDescriptors(actualEditable);
+            for (final PropertyDescriptor targetPd : targetPds) {
+                final String propertyName = targetPd.getName();
+                if("class".equals(propertyName)) {
+                    continue;
+                }
+                if(ignoreProperties != null && Arrays.asList(ignoreProperties).contains(propertyName)) {
+                    continue;
+                }
+                final Method writeMethod = targetPd.getWriteMethod();
+                if(writeMethod == null) {
+                    continue;
+                }
+
+                final PropertyDescriptor sourcePd = org.springframework.beans.BeanUtils.getPropertyDescriptor(source.getClass(), propertyName);
+                if(sourcePd == null) {
+                    continue;
+                }
+                final Method readMethod = sourcePd.getReadMethod();
+                if(readMethod == null) {
+                    continue;
+                }
+                try {
+                    if (!Modifier.isPublic(readMethod.getDeclaringClass().getModifiers())) {
+                        readMethod.setAccessible(true);
+                    }
+                    final Object value = readMethod.invoke(source);
+                    if(value == null && (nullProperties == null || !Arrays.asList(nullProperties).contains(propertyName))) {
+                        continue;
+                    }
+                    if (!Modifier.isPublic(writeMethod.getDeclaringClass().getModifiers())) {
+                        writeMethod.setAccessible(true);
+                    }
+                    writeMethod.invoke(target, value);
+                } catch (SecurityException e) {
+                    throw new FatalBeanException("Could not copy properties from source bean to target bean!", e);
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ignore) {
+
+                }
+
             }
         }
     }
@@ -71,11 +125,50 @@ public class BeanUtils {
     }
 
     public static void copyProperties(Map<String, Object> source, Object target, String[] ignoreProperties) throws BeansException {
-        copyProperties(source, target, null, ignoreProperties, null);
+        copyProperties(source, target, null, ignoreProperties, true);
     }
 
     public static void copyProperties(Map<String, Object> source, Object target, String[] ignoreProperties, boolean ignoreNull) throws BeansException {
         copyProperties(source, target, null, ignoreProperties, ignoreNull);
+    }
+
+    /**
+     * 将 Map的内容 copy 到 bean里
+     *
+     * @param source Origin bean whose properties are retrieved
+     * @param target Destination bean whose properties are modified
+     *
+     * @exception FatalBeanException
+     */
+    private static void copyProperties(Map<String, Object> source, Object target, final Class<?> editable, String[] ignoreProperties, boolean ignoreNull) throws BeansException {
+        Class<?> actualEditable = target.getClass();
+        if (null != editable) {
+            if (!editable.isInstance(target)) {
+                throw new IllegalArgumentException("Target class[" + target.getClass().getName() + "] not assignable to Editable class [" + editable.getName() + "]");
+            }
+            actualEditable = editable;
+        }
+        final PropertyDescriptor[] targetPds = org.springframework.beans.BeanUtils.getPropertyDescriptors(actualEditable);
+        for (final PropertyDescriptor targetPd : targetPds) {
+            String propertyName = targetPd.getName();
+            if("class".equals(propertyName)) {
+                continue;
+            }
+            if(ignoreProperties != null && Arrays.asList(ignoreProperties).contains(propertyName)) {
+                continue;
+            }
+            final Method writeMethod = targetPd.getWriteMethod();
+            if(writeMethod == null) {
+                continue;
+            }
+            final Object value = source.get(propertyName);
+            if(!ignoreNull || null != value) {
+                try {
+                    writeMethod.invoke(target, value);
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ignore) {
+                }
+            }
+        }
     }
 
     public static void copyProperties(Object source, Map<String, Object> target, boolean ignoreNull) throws BeansException {
@@ -94,29 +187,34 @@ public class BeanUtils {
      *
      * @exception FatalBeanException 找不到bean异常
      */
-    public static void copyProperties(Object source, Object target, final Class<?> editable, String[] ignoreProperties, boolean ignoreNullValue) throws BeansException {
-        Class<?> actualEditable;
-        if (null == editable) {
-            actualEditable = target.getClass();
-        } else {
-            if (!editable.isInstance(target) && !editable.isInstance(source)) {
-                throw new IllegalArgumentException("Target class[" + target.getClass().getName() + "] not assignable to Editable class [" + editable.getName() + "]");
+    public static void copyProperties(Object source, Map<String, Object> target, final Class<?> editable, String[] ignoreProperties, boolean ignoreNull) throws BeansException {
+        Class<?> actualEditable = source.getClass();
+        if (null != editable) {
+            if (!editable.isInstance(source)) {
+                throw new IllegalArgumentException("Target class[" + source.getClass().getName() + "] not assignable to Editable class [" + editable.getName() + "]");
             }
             actualEditable = editable;
         }
-        CopyOptions copyOptions = CopyOptions.create(actualEditable, ignoreNullValue, ignoreProperties);
 
-        if(target instanceof Map) {
-            if(source instanceof Map) {
-                throw new IllegalArgumentException("不支持Map拷贝到Map");
-            } else {
-                BeanUtil.beanToMap(source, (Map<String, Object>) target, false, ignoreNullValue);
+        final PropertyDescriptor[] sourcePds = org.springframework.beans.BeanUtils.getPropertyDescriptors(actualEditable);
+        for (final PropertyDescriptor sourcePd : sourcePds) {
+            final String propertyName = sourcePd.getName();
+            if("class".equals(propertyName)) {
+                continue;
             }
-        } else {
-            if (source instanceof Map) {
-                BeanUtil.fillBeanWithMap((Map<?, ?>) source, target, copyOptions);
-            } else {
-                BeanUtil.beanToMap(source, (Map<String, Object>) target, false, ignoreNullValue);
+            if(ignoreProperties != null && Arrays.asList(ignoreProperties).contains(propertyName)) {
+                continue;
+            }
+            final Method readMethod = sourcePd.getReadMethod();
+            if(readMethod == null) {
+                continue;
+            }
+            try {
+                final Object value = readMethod.invoke(source);
+                if(!ignoreNull || value != null) {
+                    target.put(propertyName, value);
+                }
+            } catch (IllegalAccessException | InvocationTargetException ignore) {
             }
         }
     }
