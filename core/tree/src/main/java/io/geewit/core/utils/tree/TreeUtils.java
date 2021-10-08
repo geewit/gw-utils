@@ -148,7 +148,7 @@ public class TreeUtils {
 
         nodes.forEach(node -> node.setChecked(checkingKeys.stream().anyMatch(key -> key.equals(node.getId()))));
 
-        List<N> roots = buildTreeByParentIds(nodes);
+        List<N> roots = buildTree(nodes);
 
         if(roots.isEmpty()) {
             return Collections.emptySet();
@@ -161,20 +161,90 @@ public class TreeUtils {
             stack.push(root);
             while (!stack.isEmpty()) {
                 N node = stack.pop();
+                boolean parentChecked = false;
                 if(node.getChecked() != null && node.getChecked()) {
                     checkedKeys.add(node.getId());
+                    parentChecked = true;
                 }
                 if (node.getChildren() != null) {
+                    Boolean allChildrenChecked = null;
                     for (N child : node.getChildren()) {
-                        if(node.getChecked() != null && node.getChecked()) {
+                        if(parentChecked) {
                             child.setChecked(true);
+                        } else {
+                            if (child.getChecked() != null && child.getChecked()) {
+                                if (allChildrenChecked == null) {
+                                    allChildrenChecked = true;
+                                }
+                            } else {
+                                allChildrenChecked = false;
+                            }
                         }
                         stack.push(child);
+                    }
+                    if (allChildrenChecked != null && allChildrenChecked && !parentChecked) {
+                        node.setChecked(true);
+                        checkedKeys.add(node.getId());
                     }
                 }
             }
         }
 
         return checkedKeys;
+    }
+
+    /**
+     * 递归选中节点
+     * @param nodes          多个树
+     * @param checkingKeys   选中的id集合
+     * @return  递归后最终选中的id集合
+     */
+    public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTreeAndCascadeCheckKeys(List<N> nodes, Set<Key> checkingKeys) {
+        if(nodes == null || nodes.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if(checkingKeys == null || checkingKeys.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        nodes.forEach(node -> node.setChecked(checkingKeys.stream().anyMatch(key -> key.equals(node.getId()))));
+
+        List<N> roots = buildTree(nodes);
+
+        if(roots.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+
+        for(N root : roots) {
+            Deque<N> stack = new ArrayDeque<>();
+            stack.push(root);
+            while (!stack.isEmpty()) {
+                N node = stack.pop();
+                boolean parentChecked = node.getChecked() != null && node.getChecked();
+                if (node.getChildren() != null) {
+                    Boolean allChildrenChecked = null;
+                    for (N child : node.getChildren()) {
+                        if(parentChecked) {
+                            child.setChecked(true);
+                        } else {
+                            if (child.getChecked() != null && child.getChecked()) {
+                                if (allChildrenChecked == null) {
+                                    allChildrenChecked = true;
+                                }
+                            } else {
+                                allChildrenChecked = false;
+                            }
+                        }
+                        stack.push(child);
+                    }
+                    if (allChildrenChecked != null && allChildrenChecked && !parentChecked) {
+                        node.setChecked(true);
+                    }
+                }
+            }
+        }
+
+        return roots;
     }
 }

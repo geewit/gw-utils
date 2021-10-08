@@ -101,9 +101,8 @@ public class TreeTest {
 
     @Test
     public void testCheck() {
-        Set<Long> checkingKeys = Stream.of(1L, 10L, 100L, 1000L, 10000L).collect(Collectors.toSet());
-        List<Org> tree = TreeUtils.buildTree(nodes);
-        TreeUtils.cascadeCheckKeys(tree, checkingKeys);
+        Set<Long> checkingKeys = Stream.of(1L, 11L, 12L, 13L, 100L, 1000L, 10001L, 10002L, 10003L, 10004L).collect(Collectors.toSet());
+        List<Org> tree = TreeUtils.buildTreeAndCascadeCheckKeys(nodes, checkingKeys);
         try {
             logger.info("tree: " + objectMapper.writeValueAsString(tree));
         } catch (JsonProcessingException e) {
