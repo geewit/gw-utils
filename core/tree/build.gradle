@@ -3,6 +3,7 @@ project(':core:tree') {
         api("org.slf4j:slf4j-api:$slf4j_version") {
             exclude group: 'org.slf4j', module: 'logback'
         }
+        api("org.apache.commons:commons-lang3:$commons_lang3_version")
         compileOnly("org.projectlombok:lombok:$lombok_version")
         annotationProcessor("org.projectlombok:lombok:$lombok_version")
         testAnnotationProcessor("org.projectlombok:lombok:$lombok_version")

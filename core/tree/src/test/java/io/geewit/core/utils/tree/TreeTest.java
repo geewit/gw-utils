@@ -3,6 +3,7 @@ package io.geewit.core.utils.tree;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.geewit.utils.uuid.UUIDUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -100,13 +101,33 @@ public class TreeTest {
     }
 
     @Test
-    public void testCheck() {
+    public void testBuildTreeAndCheck() {
         Set<Long> checkingKeys = Stream.of(1L, 11L, 12L, 13L, 100L, 1000L, 10001L, 10002L, 10003L, 10004L).collect(Collectors.toSet());
-        List<Org> tree = TreeUtils.buildTreeAndCascadeCheckKeys(nodes, checkingKeys);
+        Pair<List<Org>, Set<Long>> pair = TreeUtils.buildTreeAndCascadeCheckKeys(nodes, checkingKeys);
         try {
-            logger.info("tree: " + objectMapper.writeValueAsString(tree));
+            logger.info("tree: " + objectMapper.writeValueAsString(pair.getLeft()));
+            logger.info("checkedKeys: " + objectMapper.writeValueAsString(pair.getRight()));
+            List<Long> sortedNodeIds = new ArrayList<>(pair.getRight());
+            Collections.sort(sortedNodeIds);
+            logger.info("sortedNodeIds: " + objectMapper.writeValueAsString(sortedNodeIds));
         } catch (JsonProcessingException e) {
             logger.warn(e.getMessage());
         }
     }
+
+    @Test
+    public void testCheck() {
+        Set<Long> checkingKeys = Stream.of(1L, 11L, 12L, 13L, 100L, 1000L, 10001L, 10002L, 10003L, 10004L).collect(Collectors.toSet());
+        List<Org> tree = TreeUtils.buildTree(nodes);
+        try {
+            logger.info("tree: " + objectMapper.writeValueAsString(tree));
+            Set<Long> checkedNodeIds = TreeUtils.cascadeCheckKeys(tree, checkingKeys);
+            List<Long> sortedNodeIds = new ArrayList<>(checkedNodeIds);
+            Collections.sort(sortedNodeIds);
+            logger.info("sortedNodeIds: " + objectMapper.writeValueAsString(sortedNodeIds));
+        } catch (JsonProcessingException e) {
+            logger.warn(e.getMessage());
+        }
+    }
+
 }

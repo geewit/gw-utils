@@ -1,5 +1,6 @@
 package io.geewit.core.utils.tree;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,7 +139,7 @@ public class TreeUtils {
      * @param checkingKeys   选中的id集合
      * @return  递归后最终选中的id集合
      */
-    public static <N extends TreeNode<N, Key>, Key extends Serializable> Set<Key> cascadeCheckKeys(List<N> nodes, Set<Key> checkingKeys) {
+    public static <N extends TreeNode<N, Key>, Key extends Serializable> Set<Key> cascadeCheckKeys(List<N> nodes, Collection<Key> checkingKeys) {
         if(nodes == null || nodes.isEmpty()) {
             return Collections.emptySet();
         }
@@ -167,7 +168,7 @@ public class TreeUtils {
                     parentChecked = true;
                 }
                 if (node.getChildren() != null) {
-                    Boolean allChildrenChecked = null;
+                    Boolean allChildrenChecked = parentChecked ? true : null;
                     for (N child : node.getChildren()) {
                         if(parentChecked) {
                             child.setChecked(true);
@@ -182,7 +183,7 @@ public class TreeUtils {
                         }
                         stack.push(child);
                     }
-                    if (allChildrenChecked != null && allChildrenChecked && !parentChecked) {
+                    if (allChildrenChecked != null && allChildrenChecked) {
                         node.setChecked(true);
                         checkedKeys.add(node.getId());
                     }
@@ -199,12 +200,12 @@ public class TreeUtils {
      * @param checkingKeys   选中的id集合
      * @return  递归后最终选中的id集合
      */
-    public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTreeAndCascadeCheckKeys(List<N> nodes, Set<Key> checkingKeys) {
+    public static <N extends TreeNode<N, Key>, Key extends Serializable> Pair<List<N>, Set<Key>> buildTreeAndCascadeCheckKeys(List<N> nodes, Collection<Key> checkingKeys) {
         if(nodes == null || nodes.isEmpty()) {
-            return Collections.emptyList();
+            return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
         if(checkingKeys == null || checkingKeys.isEmpty()) {
-            return Collections.emptyList();
+            return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
 
         nodes.forEach(node -> node.setChecked(checkingKeys.stream().anyMatch(key -> key.equals(node.getId()))));
@@ -212,18 +213,22 @@ public class TreeUtils {
         List<N> roots = buildTree(nodes);
 
         if(roots.isEmpty()) {
-            return Collections.emptyList();
+            return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
-
+        Set<Key> checkedKeys = new HashSet<>();
 
         for(N root : roots) {
             Deque<N> stack = new ArrayDeque<>();
             stack.push(root);
             while (!stack.isEmpty()) {
                 N node = stack.pop();
-                boolean parentChecked = node.getChecked() != null && node.getChecked();
+                boolean parentChecked = false;
+                if(node.getChecked() != null && node.getChecked()) {
+                    checkedKeys.add(node.getId());
+                    parentChecked = true;
+                }
                 if (node.getChildren() != null) {
-                    Boolean allChildrenChecked = null;
+                    Boolean allChildrenChecked = parentChecked ? true : null;
                     for (N child : node.getChildren()) {
                         if(parentChecked) {
                             child.setChecked(true);
@@ -238,13 +243,14 @@ public class TreeUtils {
                         }
                         stack.push(child);
                     }
-                    if (allChildrenChecked != null && allChildrenChecked && !parentChecked) {
+                    if (allChildrenChecked != null && allChildrenChecked) {
                         node.setChecked(true);
+                        checkedKeys.add(node.getId());
                     }
                 }
             }
         }
 
-        return roots;
+        return Pair.of(roots, checkedKeys);
     }
 }
