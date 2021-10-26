@@ -155,41 +155,7 @@ public class TreeUtils {
             return Collections.emptySet();
         }
 
-        Set<Key> checkedKeys = new HashSet<>();
-
-        for(N root : roots) {
-            Deque<N> stack = new ArrayDeque<>();
-            stack.push(root);
-            while (!stack.isEmpty()) {
-                N node = stack.pop();
-                boolean parentChecked = false;
-                if(node.getChecked() != null && node.getChecked()) {
-                    checkedKeys.add(node.getId());
-                    parentChecked = true;
-                }
-                if (node.getChildren() != null) {
-                    Boolean allChildrenChecked = parentChecked ? true : null;
-                    for (N child : node.getChildren()) {
-                        if(parentChecked) {
-                            child.setChecked(true);
-                        } else {
-                            if (child.getChecked() != null && child.getChecked()) {
-                                if (allChildrenChecked == null) {
-                                    allChildrenChecked = true;
-                                }
-                            } else {
-                                allChildrenChecked = false;
-                            }
-                        }
-                        stack.push(child);
-                    }
-                    if (allChildrenChecked != null && allChildrenChecked) {
-                        node.setChecked(true);
-                        checkedKeys.add(node.getId());
-                    }
-                }
-            }
-        }
+        Set<Key> checkedKeys = cascadeCheckNodes(roots);
 
         return checkedKeys;
     }
@@ -215,6 +181,12 @@ public class TreeUtils {
         if(roots.isEmpty()) {
             return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
+        Set<Key> checkedKeys = cascadeCheckNodes(roots);
+
+        return Pair.of(roots, checkedKeys);
+    }
+
+    private static <N extends TreeNode<N, Key>, Key extends Serializable> Set<Key> cascadeCheckNodes(List<N> roots) {
         Set<Key> checkedKeys = new HashSet<>();
 
         for(N root : roots) {
@@ -227,7 +199,7 @@ public class TreeUtils {
                     checkedKeys.add(node.getId());
                     parentChecked = true;
                 }
-                if (node.getChildren() != null) {
+                if (node.getChildren() != null && !node.getChildren().isEmpty()) {
                     Boolean allChildrenChecked = parentChecked ? true : null;
                     for (N child : node.getChildren()) {
                         if(parentChecked) {
@@ -250,7 +222,6 @@ public class TreeUtils {
                 }
             }
         }
-
-        return Pair.of(roots, checkedKeys);
+        return checkedKeys;
     }
 }
