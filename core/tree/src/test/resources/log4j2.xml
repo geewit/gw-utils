@@ -2,7 +2,7 @@
 
 <configuration status="OFF">
     <Properties>
-        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] %class %M-%L - %m%n</Property>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight{[%-5level][%t]} %highlight{%C{1.}.%M(%L)} - %m%n</Property>
     </Properties>
     <appenders>
         <Console name="console" target="SYSTEM_OUT" follow="true">
@@ -10,7 +10,7 @@
         </Console>
     </appenders>
     <loggers>
-        <Logger name="io.geewit" level="debug" additivity="true"/>
+        <Logger name="io.geewit" level="info" additivity="true"/>
         <Logger name="reactor.util" level="warn" additivity="true"/>
         <Logger name="antlr" level="warn" additivity="true"/>
         <Logger name="com.alibaba" level="warn" additivity="true"/>

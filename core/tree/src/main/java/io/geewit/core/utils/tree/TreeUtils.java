@@ -1,5 +1,6 @@
 package io.geewit.core.utils.tree;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,38 +16,31 @@ public class TreeUtils {
     private final static Logger logger = LoggerFactory.getLogger(TreeUtils.class);
 
     public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTree(List<N> nodes) {
-        if(nodes == null || nodes.isEmpty()) {
-            return Collections.emptyList();
+        Map<String, List<N>> cildrenMap = nodes.stream().collect(Collectors.groupingBy(n -> n.getParentId() == null ? StringUtils.EMPTY : n.getParentId().toString()));
+        List<N> roots = cildrenMap.get(StringUtils.EMPTY);
+        for (N root : roots) {
+            forEach(cildrenMap, root);
         }
-        List<N> treeRoots = new ArrayList<>();
-        Map<Key, N> keyNodeMap = new HashMap<>(nodes.size());
-        for(N node : nodes) {
-            keyNodeMap.put(node.getId(), node);
-        }
+        return roots;
+    }
 
-        for(N node : nodes) {
-            if(node.getParentId() == null) {
-                treeRoots.add(node);
-            } else {
-                N parent = keyNodeMap.get(node.getParentId());
-                if(parent == null) {
-                    treeRoots.add(node);
-                } else {
-                    parent.addChild(node);
-                }
-            }
+    private static <N extends TreeNode<N, Key>, Key extends Serializable> void forEach(Map<String, List<N>> childrenMap, N node) {
+        String key = node.getId().toString();
+        List<N> children = childrenMap.get(key);
+        if (childrenMap.get(key) != null) {
+            node.setChildren(children);
+            node.getChildren().forEach(t -> forEach(childrenMap, t));
         }
-
-        return treeRoots;
     }
 
     /**
      * 根据parentIds 构造 tree
+     *
      * @param nodes 节点列表
      * @return 多颗 tree
      */
     public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTreeByParentIds(List<N> nodes) {
-        if(nodes == null || nodes.isEmpty()) {
+        if (nodes == null || nodes.isEmpty()) {
             return Collections.emptyList();
         }
         //region 除非parentIds全是正确的, 否则无法正确构造出树
@@ -64,14 +58,15 @@ public class TreeUtils {
                 continue;
             }
             Key stackMapKey;
-            if(nodeObj.getParentId() == null) {
+            if (nodeObj.getParentId() == null) {
                 stackMapKey = nodeObj.getId();
             } else {
                 stackMapKey = nodeObj.getParentId();
             }
             Deque<N> stack = stackMap.get(stackMapKey);
-            if(stack == null) {
+            if (stack == null) {
                 stack = new ArrayDeque<>();
+                stackMap.put(stackMapKey, stack);
             }
             if (stack.isEmpty()) {
                 treeRoots.add(nodeObj);
@@ -87,13 +82,12 @@ public class TreeUtils {
                 stack.push(nodeObj);
                 if (logger.isDebugEnabled()) {
                     logger.debug("stack.push " + nodeObj.getId() + ")");
-                    String stackLog = stack.stream().map(org -> org.getId().toString()).collect(Collectors.joining( ","));
+                    String stackLog = stack.stream().map(org -> org.getId().toString()).collect(Collectors.joining(","));
                     logger.debug("stack.push " + nodeObj.getId() + "), stack: [" + stackLog + "]");
                 }
                 logger.debug("TreeNode(" + parent.getId() + ").addChild " + nodeObj.getId());
                 parent.addChild(nodeObj);
             }
-            stackMap.put(stackMapKey, stack);
         }
         return treeRoots;
     }
@@ -101,8 +95,8 @@ public class TreeUtils {
     /**
      * 根据父节点id查找父节点
      *
-     * @param stack     缓存栈
-     * @param parentId  父节点id
+     * @param stack    缓存栈
+     * @param parentId 父节点id
      * @return 父节点
      */
     private static <N extends TreeNode<N, Key>, Key extends Serializable> N findParent(Deque<N> stack, Key parentId) {
@@ -111,16 +105,11 @@ public class TreeUtils {
             return null;
         }
         if (logger.isDebugEnabled()) {
-            String stackLog = stack.stream().map(org -> org.getId().toString()).collect(Collectors.joining( ","));
+            String stackLog = stack.stream().map(org -> org.getId().toString()).collect(Collectors.joining(","));
             logger.debug("parentId = " + parentId + ", stack: [" + stackLog + "]");
         }
-        N node;
-        do {
-            if (stack.isEmpty()) {
-                logger.debug("stack.isEmpty");
-                return null;
-            }
-            node = stack.peek();
+        while (!stack.isEmpty()) {
+            N node = stack.peek();
             logger.debug("stack.peek = " + node.getId());
             logger.debug("node.id = " + node.getId() + ", parentId = " + parentId);
             if (Objects.equals(node.getId(), parentId)) {
@@ -128,22 +117,24 @@ public class TreeUtils {
                 return node;
             } else {
                 N popNode = stack.pop();
-                logger.debug("stack.pop: " + popNode.getId() + ")");
+                logger.debug("not a parent, stack.pop: " + popNode.getId() + ")");
             }
-        } while (true);
+        }
+        return null;
     }
 
     /**
      * 递归选中节点
-     * @param nodes          多个树
-     * @param checkingKeys   选中的id集合
-     * @return  递归后最终选中的id集合
+     *
+     * @param nodes        多个树
+     * @param checkingKeys 选中的id集合
+     * @return 递归后最终选中的id集合
      */
     public static <N extends TreeNode<N, Key>, Key extends Serializable> Set<Key> cascadeCheckKeys(List<N> nodes, Collection<Key> checkingKeys) {
-        if(nodes == null || nodes.isEmpty()) {
+        if (nodes == null || nodes.isEmpty()) {
             return Collections.emptySet();
         }
-        if(checkingKeys == null || checkingKeys.isEmpty()) {
+        if (checkingKeys == null || checkingKeys.isEmpty()) {
             return Collections.emptySet();
         }
 
@@ -151,7 +142,7 @@ public class TreeUtils {
 
         List<N> roots = buildTree(nodes);
 
-        if(roots.isEmpty()) {
+        if (roots.isEmpty()) {
             return Collections.emptySet();
         }
 
@@ -162,15 +153,16 @@ public class TreeUtils {
 
     /**
      * 递归选中节点
-     * @param nodes          多个树
-     * @param checkingKeys   选中的id集合
-     * @return  递归后最终选中的id集合
+     *
+     * @param nodes        多个树
+     * @param checkingKeys 选中的id集合
+     * @return 递归后最终选中的id集合
      */
     public static <N extends TreeNode<N, Key>, Key extends Serializable> Pair<List<N>, Set<Key>> buildTreeAndCascadeCheckKeys(List<N> nodes, Collection<Key> checkingKeys) {
-        if(nodes == null || nodes.isEmpty()) {
+        if (nodes == null || nodes.isEmpty()) {
             return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
-        if(checkingKeys == null || checkingKeys.isEmpty()) {
+        if (checkingKeys == null || checkingKeys.isEmpty()) {
             return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
 
@@ -178,7 +170,7 @@ public class TreeUtils {
 
         List<N> roots = buildTree(nodes);
 
-        if(roots.isEmpty()) {
+        if (roots.isEmpty()) {
             return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
         Set<Key> checkedKeys = cascadeCheckNodes(roots);
@@ -189,20 +181,20 @@ public class TreeUtils {
     private static <N extends TreeNode<N, Key>, Key extends Serializable> Set<Key> cascadeCheckNodes(List<N> roots) {
         Set<Key> checkedKeys = new HashSet<>();
 
-        for(N root : roots) {
+        for (N root : roots) {
             Deque<N> stack = new ArrayDeque<>();
             stack.push(root);
             while (!stack.isEmpty()) {
                 N node = stack.pop();
                 boolean parentChecked = false;
-                if(node.getChecked() != null && node.getChecked()) {
+                if (node.getChecked() != null && node.getChecked()) {
                     checkedKeys.add(node.getId());
                     parentChecked = true;
                 }
                 if (node.getChildren() != null && !node.getChildren().isEmpty()) {
                     Boolean allChildrenChecked = parentChecked ? true : null;
                     for (N child : node.getChildren()) {
-                        if(parentChecked) {
+                        if (parentChecked) {
                             child.setChecked(true);
                         } else {
                             if (child.getChecked() != null && child.getChecked()) {
