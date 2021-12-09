@@ -16,6 +16,9 @@ public class TreeUtils {
     private final static Logger logger = LoggerFactory.getLogger(TreeUtils.class);
 
     public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTree(List<N> nodes) {
+        if(nodes == null || nodes.isEmpty()) {
+            return Collections.emptyList();
+        }
         Map<String, List<N>> cildrenMap = nodes.stream().collect(Collectors.groupingBy(n -> n.getParentId() == null ? StringUtils.EMPTY : n.getParentId().toString()));
         List<N> roots = cildrenMap.get(StringUtils.EMPTY);
         for (N root : roots) {
@@ -25,6 +28,9 @@ public class TreeUtils {
     }
 
     private static <N extends TreeNode<N, Key>, Key extends Serializable> void forEach(Map<String, List<N>> childrenMap, N node) {
+        if (childrenMap == null || childrenMap.isEmpty()) {
+            return;
+        }
         String key = node.getId().toString();
         List<N> children = childrenMap.get(key);
         if (childrenMap.get(key) != null) {
