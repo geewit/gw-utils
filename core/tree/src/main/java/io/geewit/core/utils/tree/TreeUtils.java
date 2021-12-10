@@ -21,7 +21,13 @@ public class TreeUtils {
         }
         Map<String, List<N>> cildrenMap = nodes.stream().collect(Collectors.groupingBy(n -> n.getParentId() == null ? StringUtils.EMPTY : n.getParentId().toString()));
         List<N> roots = cildrenMap.get(StringUtils.EMPTY);
+        if (roots == null || roots.isEmpty()) {
+            return Collections.emptyList();
+        }
         for (N root : roots) {
+            if (root == null) {
+                continue;
+            }
             forEach(cildrenMap, root);
         }
         return roots;
@@ -33,9 +39,11 @@ public class TreeUtils {
         }
         String key = node.getId().toString();
         List<N> children = childrenMap.get(key);
-        if (childrenMap.get(key) != null) {
+        if (children != null) {
             node.setChildren(children);
-            node.getChildren().forEach(t -> forEach(childrenMap, t));
+            if (!children.isEmpty()) {
+                children.forEach(child -> forEach(childrenMap, child));
+            }
         }
     }
 
