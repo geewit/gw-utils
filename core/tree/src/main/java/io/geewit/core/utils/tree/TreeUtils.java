@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author geewit
@@ -15,22 +16,45 @@ import java.util.stream.Collectors;
 public class TreeUtils {
     private final static Logger logger = LoggerFactory.getLogger(TreeUtils.class);
 
-    public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTree(List<N> nodes) {
+    public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTree(List<N> nodes, Key rootId) {
         if(nodes == null || nodes.isEmpty()) {
             return Collections.emptyList();
         }
-        Map<String, List<N>> cildrenMap = nodes.stream().collect(Collectors.groupingBy(n -> n.getParentId() == null ? StringUtils.EMPTY : n.getParentId().toString()));
-        List<N> roots = cildrenMap.get(StringUtils.EMPTY);
-        if (roots == null || roots.isEmpty()) {
+        Map<String, List<N>> childrenMap = nodes.stream().collect(Collectors.groupingBy(n -> n.getParentId() == null ? StringUtils.EMPTY : n.getParentId().toString()));
+        List<N> roots;
+        if (rootId == null) {
+            roots = childrenMap.get(StringUtils.EMPTY);
+        } else {
+            roots = childrenMap.get(rootId.toString());
+        }
+
+        if (roots == null) {
+            final Set<Key> allIds = nodes.stream().map(N::getId).filter(Objects::nonNull).collect(Collectors.toSet());
+            final Set<String> rootKeys;
+            if (rootId == null) {
+                rootKeys = nodes.stream()
+                        .filter(n -> n.getParentId() == null || !allIds.contains(n.getParentId()))
+                        .map(n -> n.getId().toString())
+                        .collect(Collectors.toSet());
+            } else {
+                rootKeys = Stream.of(rootId.toString()).collect(Collectors.toSet());
+            }
+
+            roots = nodes.stream().filter(n -> rootKeys.contains(n.getId().toString())).collect(Collectors.toList());
+            if (roots.isEmpty()) {
+                return Collections.emptyList();
+            }
+        }
+
+        if (roots.isEmpty()) {
             return Collections.emptyList();
         }
-        for (N root : roots) {
-            if (root == null) {
-                continue;
-            }
-            forEach(cildrenMap, root);
-        }
+        roots.stream().filter(Objects::nonNull).forEach(root -> forEach(childrenMap, root));
         return roots;
+    }
+
+    public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTree(List<N> nodes) {
+        return buildTree(nodes, null);
     }
 
     private static <N extends TreeNode<N, Key>, Key extends Serializable> void forEach(Map<String, List<N>> childrenMap, N node) {
@@ -160,9 +184,7 @@ public class TreeUtils {
             return Collections.emptySet();
         }
 
-        Set<Key> checkedKeys = cascadeCheckNodes(roots);
-
-        return checkedKeys;
+        return cascadeCheckNodes(roots);
     }
 
     /**
