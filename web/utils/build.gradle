@@ -9,6 +9,5 @@ project(':web:utils') {
 
         api("org.springframework:spring-context:$spring_version")
         api("org.springframework:spring-web:$spring_version")
-
     }
 }
