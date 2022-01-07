@@ -2,6 +2,7 @@ package io.geewit.core.utils.reflection;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.FatalBeanException;
+import org.springframework.cglib.beans.BeanMap;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
@@ -9,6 +10,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  反射实现的bean和bean之间的属性copy
@@ -217,5 +220,30 @@ public class BeanUtils {
             } catch (IllegalAccessException | InvocationTargetException ignore) {
             }
         }
+    }
+
+    private static final ConcurrentMap<String, BeanMap> BEAN_MAP_CACHE = new ConcurrentHashMap<>();
+
+    private static BeanMap toBeanMap(Object object) {
+        BeanMap beanMap = BEAN_MAP_CACHE.get(object.getClass().getName());
+        if (beanMap == null) {
+            beanMap = BeanMap.create(object);
+            BEAN_MAP_CACHE.put(object.getClass().getName(), beanMap);
+        }
+        return beanMap;
+    }
+
+    //如果使用BeanMap缓存，这个性能最好。
+    public static Map<String, Object> pojoToMap(Object pojo) {
+
+        BeanMap beanMap = toBeanMap(pojo);
+        beanMap.setBean(pojo);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> toMap = beanMap;
+
+        toMap.entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .forEach(entry -> toMap.put(entry.getKey(), entry.getValue()));
+        return toMap;
     }
 }
