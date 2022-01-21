@@ -24,8 +24,10 @@ import java.util.List;
 public class JsonUtils {
     private final static Logger logger = LoggerFactory.getLogger(JsonUtils.class);
 
-    public JsonUtils() {
+    private JsonUtils() {
     }
+
+    private final static ObjectMapper objectMapper = objectMapper();
 
 
     public static ObjectMapper objectMapper() {
@@ -55,7 +57,7 @@ public class JsonUtils {
 
     public static String toJson(Object value) {
         try {
-            return objectMapper().writeValueAsString(value);
+            return objectMapper.writeValueAsString(value);
         } catch (Exception e) {
             logger.warn(e.getMessage());
             throw new RuntimeException(e);
@@ -64,7 +66,6 @@ public class JsonUtils {
 
     public static String toJson(Object value, boolean useIgnore) {
         try {
-            ObjectMapper objectMapper = objectMapper();
             if(!useIgnore) {
                 objectMapper.disable(MapperFeature.USE_ANNOTATIONS);
             }
@@ -77,7 +78,6 @@ public class JsonUtils {
 
     public static String toJson(Object value, Class<?> jsonView) {
         try {
-            ObjectMapper objectMapper = objectMapper();
             boolean defaultViewInclusionEnabled = objectMapper.isEnabled(MapperFeature.DEFAULT_VIEW_INCLUSION);
             if(defaultViewInclusionEnabled) {
                 objectMapper.disable(MapperFeature.DEFAULT_VIEW_INCLUSION);
@@ -95,7 +95,7 @@ public class JsonUtils {
 
     public static <T> T fromJson(String json, Class<T> valueType) {
         try {
-            return objectMapper().readValue(json, valueType);
+            return objectMapper.readValue(json, valueType);
         } catch (Exception e) {
             logger.warn(e.getMessage() + ", json : " + json);
             throw new RuntimeException(e);
@@ -105,7 +105,7 @@ public class JsonUtils {
 
     public static <T> T fromJson(String json, TypeReference<T> typeReference) {
         try {
-            return objectMapper().readValue(json, typeReference);
+            return objectMapper.readValue(json, typeReference);
         } catch (Exception e) {
             logger.warn(e.getMessage() + ", json : " + json);
             throw new RuntimeException(e);
@@ -114,7 +114,7 @@ public class JsonUtils {
 
     public static <T> T fromJson(String json, JavaType javaType) {
         try {
-            return objectMapper().readValue(json, javaType);
+            return objectMapper.readValue(json, javaType);
         } catch (Exception e) {
             logger.warn(e.getMessage() + ", json : " + json);
             throw new RuntimeException(e);
@@ -122,7 +122,6 @@ public class JsonUtils {
     }
 
     public static <T> List<T> toList(String json, Class<T> clazz) {
-        ObjectMapper objectMapper = objectMapper();
         TypeFactory factory = objectMapper.getTypeFactory();
         CollectionType javaType = factory.constructCollectionType(ArrayList.class, clazz);
         try {

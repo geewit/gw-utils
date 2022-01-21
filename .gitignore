@@ -70,4 +70,19 @@
 /web/utils/target
 /web/utils/out
 /web/utils/.gradle
+/web/utils/core/*.iml
+/web/utils/core/logs
+/web/utils/core/target
+/web/utils/core/out
+/web/utils/core/.gradle
+/web/utils/json/*.iml
+/web/utils/json/logs
+/web/utils/json/target
+/web/utils/json/out
+/web/utils/json/.gradle
+/web/utils/xml/*.iml
+/web/utils/xml/logs
+/web/utils/xml/target
+/web/utils/xml/out
+/web/utils/xml/.gradle
 
