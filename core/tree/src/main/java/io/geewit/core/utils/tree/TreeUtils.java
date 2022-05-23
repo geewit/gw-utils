@@ -188,11 +188,11 @@ public class TreeUtils {
     }
 
     /**
-     * 递归选中节点
+     * 递归选中树节点(可能多颗树)
      *
-     * @param nodes        多个树
-     * @param checkingKeys 选中的id集合
-     * @return 递归后最终选中的id集合
+     * @param nodes        树节点集合
+     * @param checkingKeys 选中的树节点id集合
+     * @return 递归后最终选中的树节点id集合
      */
     public static <N extends TreeNode<N, Key>, Key extends Serializable> Pair<List<N>, Set<Key>> buildTreeAndCascadeCheckKeys(List<N> nodes, Collection<Key> checkingKeys) {
         if (nodes == null || nodes.isEmpty()) {
@@ -214,6 +214,13 @@ public class TreeUtils {
         return Pair.of(roots, checkedKeys);
     }
 
+    /**
+     * 递归选中树节点
+     * @param roots   多个树的根节点
+     * @return        选中的根节点id集合
+     * @param <N>     树节点
+     * @param <Key>   树节点id
+     */
     private static <N extends TreeNode<N, Key>, Key extends Serializable> Set<Key> cascadeCheckNodes(List<N> roots) {
         Set<Key> checkedKeys = new HashSet<>();
 
@@ -230,16 +237,10 @@ public class TreeUtils {
                 if (node.getChildren() != null && !node.getChildren().isEmpty()) {
                     Boolean allChildrenChecked = parentChecked ? true : null;
                     for (N child : node.getChildren()) {
-                        if (parentChecked) {
+                        if (allChildrenChecked != null && allChildrenChecked) {
                             child.setChecked(true);
-                        } else {
-                            if (child.getChecked() != null && child.getChecked()) {
-                                if (allChildrenChecked == null) {
-                                    allChildrenChecked = true;
-                                }
-                            } else {
-                                allChildrenChecked = false;
-                            }
+                        } else if (allChildrenChecked == null) {
+                            allChildrenChecked = child.getChecked() != null && child.getChecked();
                         }
                         stack.push(child);
                     }
