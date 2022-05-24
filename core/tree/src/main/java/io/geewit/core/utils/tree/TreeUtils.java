@@ -253,4 +253,57 @@ public class TreeUtils {
         }
         return checkedKeys;
     }
+
+    /**
+     * 递归选中节点
+     *
+     * @param nodes        多个树
+     * @param nodeSigns 选中的树节点标记对象集合
+     * @return 递归后最终选中的树节点对象集合
+     */
+    public static <N extends TreeNode<N, Key>, Key extends Serializable> Set<NodeSign<Key>> cascadeSignNodes(List<N> nodes, Collection<NodeSign<Key>> nodeSigns) {
+        if (nodes == null || nodes.isEmpty()) {
+            return Collections.emptySet();
+        }
+        if (nodeSigns == null || nodeSigns.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        nodes.forEach(node -> node.sign(nodeSigns.stream().filter(nodeSign -> nodeSign.key.equals(node.id)).filter(nodeSign -> nodeSign.sign != null).mapToInt(nodeSign -> nodeSign.sign).reduce(0, (a, b) -> a | b)));
+
+        List<N> roots = buildTree(nodes);
+
+        if (roots.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        return nodes.stream().map(node -> new NodeSign<>(node.id, node.sign)).collect(Collectors.toSet());
+    }
+
+    /**
+     * 递归选中树节点(可能多颗树)
+     *
+     * @param nodes        树节点集合
+     * @param nodeSigns   选中的树节点标记对象集合
+     * @return 递归后最终选中的树节点对象集合
+     */
+    public static <N extends TreeNode<N, Key>, Key extends Serializable> Pair<List<N>, Set<NodeSign<Key>>> buildTreeAndCascadeSignNodes(List<N> nodes, Collection<NodeSign<Key>> nodeSigns) {
+        if (nodes == null || nodes.isEmpty()) {
+            return Pair.of(Collections.emptyList(), Collections.emptySet());
+        }
+        if (nodeSigns == null || nodeSigns.isEmpty()) {
+            return Pair.of(Collections.emptyList(), Collections.emptySet());
+        }
+
+        nodes.forEach(node -> node.sign(nodeSigns.stream().filter(nodeSign -> nodeSign.key.equals(node.id)).filter(nodeSign -> nodeSign.sign != null).mapToInt(nodeSign -> nodeSign.sign).reduce(0, (a, b) -> a | b)));
+
+        List<N> roots = buildTree(nodes);
+
+        if (roots.isEmpty()) {
+            return Pair.of(Collections.emptyList(), Collections.emptySet());
+        }
+
+        Set<NodeSign<Key>> nodeSignSet = nodes.stream().map(node -> new NodeSign<>(node.id, node.sign)).collect(Collectors.toSet());
+        return Pair.of(roots, nodeSignSet);
+    }
 }

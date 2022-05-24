@@ -28,16 +28,20 @@ public abstract class TreeNode<N extends TreeNode<N, Key>, Key extends Serializa
      * @return
      */
     protected Key parentId;
-
+    /**
+     * 路径枚举
+     */
     protected String parentIds;
-
     /**
      * 是否选中
      */
     protected Boolean checked;
     /**
+     * 标记
+     */
+    protected Integer sign;
+    /**
      * 父级节点
-     * @return
      */
     protected N parent;
 
@@ -50,6 +54,14 @@ public abstract class TreeNode<N extends TreeNode<N, Key>, Key extends Serializa
             if (children.stream().filter(Objects::nonNull).map(N::getId).filter(Objects::nonNull).noneMatch(id -> id.equals(child.getId()))) {
                 children.add(child);
             }
+        }
+    }
+
+    public void sign(int sign) {
+        if (this.sign == null) {
+            this.sign = sign;
+        } else {
+            this.sign = this.sign | sign;
         }
     }
 
