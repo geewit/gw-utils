@@ -37,10 +37,6 @@ public abstract class TreeNode<N extends TreeNode<N, Key>, Key extends Serializa
      */
     protected Boolean checked;
     /**
-     * 标记
-     */
-    protected Integer sign;
-    /**
      * 父级节点
      */
     protected N parent;
@@ -57,14 +53,6 @@ public abstract class TreeNode<N extends TreeNode<N, Key>, Key extends Serializa
         }
     }
 
-    public void sign(int sign) {
-        if (this.sign == null) {
-            this.sign = sign;
-        } else {
-            this.sign = this.sign | sign;
-        }
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -73,12 +61,12 @@ public abstract class TreeNode<N extends TreeNode<N, Key>, Key extends Serializa
         if (!(o instanceof TreeNode)) {
             return false;
         }
-        TreeNode<N, Key> treeNode = (TreeNode<N, Key>) o;
-        return getId().equals(treeNode.getId());
+        TreeNode<N, Key> that = (TreeNode<N, Key>) o;
+        return this.id.equals(that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId());
+        return Objects.hash(this.id);
     }
 }

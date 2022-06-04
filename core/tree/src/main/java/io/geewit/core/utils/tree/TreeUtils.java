@@ -261,7 +261,7 @@ public class TreeUtils {
      * @param nodeSigns 选中的树节点标记对象集合
      * @return 递归后最终选中的树节点对象集合
      */
-    public static <N extends TreeNode<N, Key>, Key extends Serializable> Set<NodeSign<Key>> cascadeSignNodes(List<N> nodes, Collection<NodeSign<Key>> nodeSigns) {
+    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable, S extends NodeSign<Key>> Set<SimpleNodeSign<Key>> cascadeSignNodes(List<N> nodes, Collection<S> nodeSigns) {
         if (nodes == null || nodes.isEmpty()) {
             return Collections.emptySet();
         }
@@ -269,7 +269,7 @@ public class TreeUtils {
             return Collections.emptySet();
         }
 
-        nodes.forEach(node -> node.sign(nodeSigns.stream().filter(nodeSign -> nodeSign.key.equals(node.id)).filter(nodeSign -> nodeSign.sign != null).mapToInt(nodeSign -> nodeSign.sign).reduce(0, (a, b) -> a | b)));
+        nodes.forEach(node -> node.sign(nodeSigns.stream().filter(nodeSign -> nodeSign.getKey().equals(node.id)).filter(nodeSign -> nodeSign.getSign() != null).mapToInt(NodeSign::getSign).reduce(0, (a, b) -> a | b)));
 
         List<N> roots = buildTree(nodes);
 
@@ -277,7 +277,7 @@ public class TreeUtils {
             return Collections.emptySet();
         }
 
-        return nodes.stream().map(node -> new NodeSign<>(node.id, node.sign)).collect(Collectors.toSet());
+        return nodes.stream().map(node -> new SimpleNodeSign<>(node.id, node.sign)).collect(Collectors.toSet());
     }
 
     /**
@@ -287,7 +287,7 @@ public class TreeUtils {
      * @param nodeSigns   选中的树节点标记对象集合
      * @return 递归后最终选中的树节点对象集合
      */
-    public static <N extends TreeNode<N, Key>, Key extends Serializable> Pair<List<N>, Set<NodeSign<Key>>> buildTreeAndCascadeSignNodes(List<N> nodes, Collection<NodeSign<Key>> nodeSigns) {
+    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable, S extends NodeSign<Key>> Pair<List<N>, Set<SimpleNodeSign<Key>>> buildTreeAndCascadeSignNodes(List<N> nodes, Collection<S> nodeSigns) {
         if (nodes == null || nodes.isEmpty()) {
             return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
@@ -295,7 +295,7 @@ public class TreeUtils {
             return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
 
-        nodes.forEach(node -> node.sign(nodeSigns.stream().filter(nodeSign -> nodeSign.key.equals(node.id)).filter(nodeSign -> nodeSign.sign != null).mapToInt(nodeSign -> nodeSign.sign).reduce(0, (a, b) -> a | b)));
+        nodes.forEach(node -> node.sign(nodeSigns.stream().filter(nodeSign -> nodeSign.getKey().equals(node.id)).filter(nodeSign -> nodeSign.getSign() != null).mapToInt(NodeSign::getSign).reduce(0, (a, b) -> a | b)));
 
         List<N> roots = buildTree(nodes);
 
@@ -303,7 +303,7 @@ public class TreeUtils {
             return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
 
-        Set<NodeSign<Key>> nodeSignSet = nodes.stream().map(node -> new NodeSign<>(node.id, node.sign)).collect(Collectors.toSet());
+        Set<SimpleNodeSign<Key>> nodeSignSet = nodes.stream().map(node -> new SimpleNodeSign<>(node.id, node.sign)).collect(Collectors.toSet());
         return Pair.of(roots, nodeSignSet);
     }
 }
