@@ -7,7 +7,7 @@ import java.util.Objects;
 
 @Setter
 @Getter
-public class Org extends TreeNode<Org, Long> {
+public class Org extends SignedTreeNode<Org, Long> {
     private String name;
 
     @Override

@@ -255,29 +255,88 @@ public class TreeUtils {
     }
 
     /**
-     * 递归选中节点
+     * 从根节点开始递归标记所有节点
      *
-     * @param nodes        多个树
-     * @param nodeSigns 选中的树节点标记对象集合
+     * @param roots        多个树的根节点集合
+     * @return 递归后最终标记的树节点对象集合
+     */
+    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable, S extends NodeSign<Key>> Set<SimpleNodeSign<Key>> cascadeSignRoots(List<N> roots) {
+        Set<SimpleNodeSign<Key>> simpleNodeSigns = new HashSet<>();
+
+        for (N root : roots) {
+            Deque<N> stack = new ArrayDeque<>();
+            stack.push(root);
+            while (!stack.isEmpty()) {
+                N node = stack.pop();
+                Integer parentSign = null;
+                if (node.getSign() != null) {
+                    simpleNodeSigns.add(SimpleNodeSign.<Key>builder().id(node.getId()).sign(node.getSign()).build());
+                    parentSign = node.getSign();
+                }
+                //region allChildrenSign = (&所有子节点的sign) | 父节点的sign
+                if (node.getChildren() != null && !node.getChildren().isEmpty()) {
+                    Integer allChildrenSign = null;
+                    for (N child : node.getChildren()) {
+                        if (child.getSign() == null) {
+                            if (parentSign != null) {
+                                child.sign(parentSign);
+                            }
+                            continue;
+                        }
+                        int sign = child.getSign();
+                        if (allChildrenSign == null) {
+                            allChildrenSign = sign;
+                        } else {
+                            allChildrenSign &= sign;
+                        }
+
+
+                        if (parentSign != null) {
+                            sign |= parentSign;
+                            child.sign(sign);
+                        }
+                        stack.push(child);
+                    }
+                    simpleNodeSigns.add(SimpleNodeSign.<Key>builder().id(node.getId()).sign(allChildrenSign).build());
+                }
+                //endregion
+            }
+        }
+        return simpleNodeSigns;
+    }
+
+    /**
+     * 递归标记树节点(可能多颗树)
+     *
+     * @param nodes        树节点集合
+     * @param keySignMap   选中的标记过的树节点集合的集合
      * @return 递归后最终选中的树节点对象集合
      */
-    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable, S extends NodeSign<Key>> Set<SimpleNodeSign<Key>> cascadeSignNodes(List<N> nodes, Collection<S> nodeSigns) {
+    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable> Pair<List<N>, Set<SimpleNodeSign<Key>>> buildTreeAndCascadeSignNodes(List<N> nodes, KeySignMap<Key> keySignMap) {
         if (nodes == null || nodes.isEmpty()) {
-            return Collections.emptySet();
+            return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
-        if (nodeSigns == null || nodeSigns.isEmpty()) {
-            return Collections.emptySet();
+        if (keySignMap == null) {
+            return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
 
-        nodes.forEach(node -> node.sign(nodeSigns.stream().filter(nodeSign -> nodeSign.getKey().equals(node.id)).filter(nodeSign -> nodeSign.getSign() != null).mapToInt(NodeSign::getSign).reduce(0, (a, b) -> a | b)));
+        nodes.forEach(node -> {
+            Integer existValue = keySignMap.get(node.id);
+            if (existValue != null) {
+                node.sign(existValue);
+            }
+        });
 
         List<N> roots = buildTree(nodes);
 
         if (roots.isEmpty()) {
-            return Collections.emptySet();
+            return Pair.of(Collections.emptyList(), Collections.emptySet());
         }
 
-        return nodes.stream().map(node -> new SimpleNodeSign<>(node.id, node.sign)).collect(Collectors.toSet());
+        cascadeSignRoots(roots);
+
+        Set<SimpleNodeSign<Key>> nodeSignSet = nodes.stream().map(node -> new SimpleNodeSign<>(node.id, node.sign)).collect(Collectors.toSet());
+        return Pair.of(roots, nodeSignSet);
     }
 
     /**
@@ -288,22 +347,22 @@ public class TreeUtils {
      * @return 递归后最终选中的树节点对象集合
      */
     public static <N extends SignedTreeNode<N, Key>, Key extends Serializable, S extends NodeSign<Key>> Pair<List<N>, Set<SimpleNodeSign<Key>>> buildTreeAndCascadeSignNodes(List<N> nodes, Collection<S> nodeSigns) {
-        if (nodes == null || nodes.isEmpty()) {
-            return Pair.of(Collections.emptyList(), Collections.emptySet());
-        }
-        if (nodeSigns == null || nodeSigns.isEmpty()) {
-            return Pair.of(Collections.emptyList(), Collections.emptySet());
-        }
+        KeySignMap<Key> keySignMap = new KeySignMap<>(nodeSigns);
 
-        nodes.forEach(node -> node.sign(nodeSigns.stream().filter(nodeSign -> nodeSign.getKey().equals(node.id)).filter(nodeSign -> nodeSign.getSign() != null).mapToInt(NodeSign::getSign).reduce(0, (a, b) -> a | b)));
+        return buildTreeAndCascadeSignNodes(nodes, keySignMap);
+    }
 
-        List<N> roots = buildTree(nodes);
 
-        if (roots.isEmpty()) {
-            return Pair.of(Collections.emptyList(), Collections.emptySet());
-        }
+    /**
+     * 递归选中树节点(可能多颗树)
+     *
+     * @param nodes        树节点集合
+     * @param signKeysMap   选中的树节点标记对象集合
+     * @return 递归后最终选中的树节点对象集合
+     */
+    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable, S extends NodeSign<Key>> Pair<List<N>, Set<SimpleNodeSign<Key>>> buildTreeAndCascadeSignNodes(List<N> nodes, SignKeysMap<Key> signKeysMap) {
+        KeySignMap<Key> keySignMap = new KeySignMap<>(signKeysMap);
 
-        Set<SimpleNodeSign<Key>> nodeSignSet = nodes.stream().map(node -> new SimpleNodeSign<>(node.id, node.sign)).collect(Collectors.toSet());
-        return Pair.of(roots, nodeSignSet);
+        return buildTreeAndCascadeSignNodes(nodes, keySignMap);
     }
 }

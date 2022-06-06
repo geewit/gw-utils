@@ -12,7 +12,7 @@ public interface NodeSign<Key extends Serializable> {
     /**
      * 节点id
      */
-    Key getKey();
+    Key getId();
 
     /**
      * 标记

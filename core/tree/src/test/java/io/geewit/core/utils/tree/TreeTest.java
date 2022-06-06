@@ -2,6 +2,7 @@ package io.geewit.core.utils.tree;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,9 +39,9 @@ public class TreeTest {
             for (int breadth = 0; breadth < maxBreadth; breadth++) {
                 Org org;
                 if (parent == null) {
-                    org = buildOrg(depth, breadth, null);
+                    org = this.buildOrg(depth, breadth, null);
                 } else {
-                    org = buildOrg(depth, breadth, parent);
+                    org = this.buildOrg(depth, breadth, parent);
                 }
                 if (org.parentId == null) {
                     parent = org;
@@ -59,13 +60,14 @@ public class TreeTest {
      */
     private Org buildOrg(int depth, int breadth, Org parent) {
         Org org = new Org();
-        double log10 = Math.ceil(Math.log10(maxIndex));
-        long pow = Double.valueOf(Math.pow(10, log10) * depth).longValue();
+        double log10 = Math.ceil(depth * Math.log10(maxIndex + 1));
+        long pow = Double.valueOf(Math.pow(10, log10)).longValue();
 
         long id = pow + breadth;
         org.setId(id);
         String name = UUID.randomUUID().toString();
         org.setName(name);
+        org.setSign(1 << RandomUtils.nextInt(0, 3));
         if (parent != null) {
             org.setParentId(parent.id);
             org.setParentIds(parent.parentIds + id + "#");
@@ -133,4 +135,20 @@ public class TreeTest {
         }
     }
 
+    @Test
+    public void testSign() {
+        Set<SimpleNodeSign<Long>> nodeSigns = Stream.of(
+                SimpleNodeSign.<Long>builder().id(1L).sign(1).build(),
+                SimpleNodeSign.<Long>builder().id(100L).sign(2).build(),
+                SimpleNodeSign.<Long>builder().id(10002L).sign(4).build()
+        ).collect(Collectors.toSet());
+        Pair<List<Org>, Set<SimpleNodeSign<Long>>> pair = TreeUtils.buildTreeAndCascadeSignNodes(nodes, nodeSigns);
+        try {
+            logger.info("tree: {}", objectMapper.writeValueAsString(pair.getLeft()));
+            logger.info("signedNodes: {}", objectMapper.writeValueAsString(pair.getRight()));
+        } catch (JsonProcessingException e) {
+            logger.warn(e.getMessage());
+        }
+
+    }
 }

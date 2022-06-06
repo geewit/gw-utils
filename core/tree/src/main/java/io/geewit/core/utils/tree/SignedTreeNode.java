@@ -12,7 +12,7 @@ import java.util.Objects;
  */
 @Setter
 @Getter
-public abstract class SignedTreeNode<N extends SignedTreeNode<N, Key>, Key extends Serializable> extends TreeNode<N, Key> {
+public abstract class SignedTreeNode<N extends SignedTreeNode<N, Key>, Key extends Serializable> extends TreeNode<N, Key> implements NodeSign<Key> {
     /**
      * 标记
      */
