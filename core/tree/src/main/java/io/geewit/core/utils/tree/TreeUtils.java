@@ -360,7 +360,7 @@ public class TreeUtils {
      * @param signKeysMap   选中的树节点标记对象集合
      * @return 递归后最终选中的树节点对象集合
      */
-    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable, S extends NodeSign<Key>> Pair<List<N>, Set<SimpleNodeSign<Key>>> buildTreeAndCascadeSignNodes(List<N> nodes, SignKeysMap<Key> signKeysMap) {
+    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable> Pair<List<N>, Set<SimpleNodeSign<Key>>> buildTreeAndCascadeSignNodes(List<N> nodes, SignKeysMap<Key> signKeysMap) {
         KeySignMap<Key> keySignMap = new KeySignMap<>(signKeysMap);
 
         return buildTreeAndCascadeSignNodes(nodes, keySignMap);
