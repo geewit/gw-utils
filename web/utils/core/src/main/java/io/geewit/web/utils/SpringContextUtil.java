@@ -21,19 +21,20 @@ public class SpringContextUtil implements ApplicationContextAware {
     }
 
     public static <T> T getBean(String name, Class<T> clazz) throws BeansException {
-        return applicationContext.getBean(name, clazz);
+        return getBean(name, clazz, applicationContext);
     }
 
     public static <T> T getBean(Class<T> clazz) {
-        return getBean(clazz, applicationContext);
+        return getBean(null, clazz, applicationContext);
     }
 
-    public static <T> T getBean(Class<T> clazz, ApplicationContext ctx) {
+    public static <T> T getBean(String name, Class<T> clazz, ApplicationContext ctx) {
         Map<String, T> map = ctx.getBeansOfType(clazz);
-        if (map.size() == 0) {
+        if (map.isEmpty()) {
             return null;
-        } else if (map.size() > 1) {
-            new IllegalArgumentException("bean is not unique.").printStackTrace();
+        }
+        if (name != null) {
+            return map.get(name);
         }
         return map.values().iterator().next();
     }
