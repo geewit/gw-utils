@@ -268,36 +268,27 @@ public class TreeUtils {
             stack.push(root);
             while (!stack.isEmpty()) {
                 N node = stack.pop();
-                Integer parentSign = null;
+                Integer sign = null;
                 if (node.getSign() != null) {
                     simpleNodeSigns.add(SimpleNodeSign.<Key>builder().id(node.getId()).sign(node.getSign()).build());
-                    parentSign = node.getSign();
+                    sign = node.getSign();
                 }
-                //region allChildrenSign = (&所有子节点的sign) | 父节点的sign
+                //region sign = sign | 父节点的sign
                 if (node.getChildren() != null && !node.getChildren().isEmpty()) {
-                    Integer allChildrenSign = null;
                     for (N child : node.getChildren()) {
+                        boolean tagSign = false;
                         if (child.getSign() == null) {
-                            if (parentSign != null) {
-                                child.sign(parentSign);
+                            if (sign != null) {
+                                child.sign(sign);
+                                tagSign = true;
                             }
-                            continue;
                         }
-                        int sign = child.getSign();
-                        if (allChildrenSign == null) {
-                            allChildrenSign = sign;
-                        } else {
-                            allChildrenSign &= sign;
+                        if (child.getChildren() != null && !child.getChildren().isEmpty()) {
+                            stack.push(child);
+                        } else if (tagSign) {
+                            simpleNodeSigns.add(SimpleNodeSign.<Key>builder().id(child.getId()).sign(sign).build());
                         }
-
-
-                        if (parentSign != null) {
-                            sign |= parentSign;
-                            child.sign(sign);
-                        }
-                        stack.push(child);
                     }
-                    simpleNodeSigns.add(SimpleNodeSign.<Key>builder().id(node.getId()).sign(allChildrenSign).build());
                 }
                 //endregion
             }

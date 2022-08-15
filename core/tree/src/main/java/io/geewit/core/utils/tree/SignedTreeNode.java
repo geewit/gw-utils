@@ -36,7 +36,7 @@ public abstract class SignedTreeNode<N extends SignedTreeNode<N, Key>, Key exten
             return false;
         }
         SignedTreeNode<N, Key> that = (SignedTreeNode<N, Key>) o;
-        return super.id.equals(that.id);
+        return Objects.equals(super.id, that.id);
     }
 
     @Override

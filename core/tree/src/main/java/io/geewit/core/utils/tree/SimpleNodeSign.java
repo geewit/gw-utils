@@ -3,6 +3,7 @@ package io.geewit.core.utils.tree;
 import lombok.*;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * 树节点标记
@@ -34,16 +35,14 @@ public class SimpleNodeSign<Key extends Serializable> implements NodeSign<Key> {
 
         SimpleNodeSign<?> that = (SimpleNodeSign<?>) o;
 
-        if (!this.id.equals(that.id)) {
+        if (!Objects.equals(this.id, that.id)) {
             return false;
         }
-        return this.sign.equals(that.sign);
+        return Objects.equals(this.sign, that.sign);
     }
 
     @Override
     public int hashCode() {
-        int result = this.id.hashCode();
-        result = 31 * result + this.sign.hashCode();
-        return result;
+        return Objects.hash(id, sign);
     }
 }

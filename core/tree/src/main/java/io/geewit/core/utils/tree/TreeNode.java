@@ -62,7 +62,7 @@ public abstract class TreeNode<N extends TreeNode<N, Key>, Key extends Serializa
             return false;
         }
         TreeNode<N, Key> that = (TreeNode<N, Key>) o;
-        return this.id.equals(that.id);
+        return Objects.equals(this.id, that.id);
     }
 
     @Override

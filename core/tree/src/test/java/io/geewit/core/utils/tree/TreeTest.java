@@ -19,8 +19,8 @@ public class TreeTest {
 
     private List<Org> nodes;
 
-    private int maxLevel = 4;
-    private int maxIndex = 10;
+    private int maxLevel = 5;
+    private int maxIndex = 3;
 
     @BeforeEach
     public void init() {
@@ -34,8 +34,9 @@ public class TreeTest {
      */
     private List<Org> buildTreeNodes(int maxDepth, int maxBreadth) {
         List<Org> orgs = new ArrayList<>();
+        Org parent = null;
         for (int depth = 0; depth < maxDepth; depth++) {
-            Org parent = null;
+
             for (int breadth = 0; breadth < maxBreadth; breadth++) {
                 Org org;
                 if (parent == null) {
@@ -149,6 +150,22 @@ public class TreeTest {
         } catch (JsonProcessingException e) {
             logger.warn(e.getMessage());
         }
+    }
 
+
+    @Test
+    public void testCascadeSignRoots() {
+        Set<SimpleNodeSign<Long>> nodeSigns = Stream.of(
+                SimpleNodeSign.<Long>builder().id(1L).sign(1).build(),
+                SimpleNodeSign.<Long>builder().id(100L).sign(2).build(),
+                SimpleNodeSign.<Long>builder().id(10002L).sign(4).build()
+        ).collect(Collectors.toSet());
+        Pair<List<Org>, Set<SimpleNodeSign<Long>>> pair = TreeUtils.buildTreeAndCascadeSignNodes(nodes, nodeSigns);
+        try {
+            logger.info("tree: {}", objectMapper.writeValueAsString(pair.getLeft()));
+            logger.info("signedNodes: {}", objectMapper.writeValueAsString(pair.getRight()));
+        } catch (JsonProcessingException e) {
+            logger.warn(e.getMessage());
+        }
     }
 }
