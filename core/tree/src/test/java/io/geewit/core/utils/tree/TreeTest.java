@@ -2,7 +2,6 @@ package io.geewit.core.utils.tree;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,64 +18,47 @@ public class TreeTest {
 
     private List<Org> nodes;
 
-    private int maxLevel = 5;
-    private int maxIndex = 3;
-
     @BeforeEach
     public void init() {
-        nodes = this.buildTreeNodes(maxLevel, maxIndex);
-    }
-
-    /**
-     * @param maxDepth   最大深度
-     * @param maxBreadth 最大广度
-     * @return
-     */
-    private List<Org> buildTreeNodes(int maxDepth, int maxBreadth) {
-        List<Org> orgs = new ArrayList<>();
-        Org parent = null;
-        for (int depth = 0; depth < maxDepth; depth++) {
-
-            for (int breadth = 0; breadth < maxBreadth; breadth++) {
-                Org org;
-                if (parent == null) {
-                    org = this.buildOrg(depth, breadth, null);
-                } else {
-                    org = this.buildOrg(depth, breadth, parent);
-                }
-                if (org.parentId == null) {
-                    parent = org;
-                }
-                orgs.add(org);
-            }
-        }
-        return orgs;
-    }
-
-    /**
-     * @param depth   深度
-     * @param breadth 广度
-     * @param parent  父节点
-     * @return
-     */
-    private Org buildOrg(int depth, int breadth, Org parent) {
-        Org org = new Org();
-        double log10 = Math.ceil(depth * Math.log10(maxIndex + 1));
-        long pow = Double.valueOf(Math.pow(10, log10)).longValue();
-
-        long id = pow + breadth;
-        org.setId(id);
-        String name = UUID.randomUUID().toString();
-        org.setName(name);
-        org.setSign(1 << RandomUtils.nextInt(0, 3));
-        if (parent != null) {
-            org.setParentId(parent.id);
-            org.setParentIds(parent.parentIds + id + "#");
-        } else {
-            org.setParentIds(id + "#");
-        }
-        logger.debug("org.id = {}, org.name = {}", id, name);
-        return org;
+        nodes = new ArrayList<>();
+        Org root = new Org();
+        root.setId(1L);
+        root.setName("root");
+//        root.setSign(2);
+        nodes.add(root);
+        Org child1_1 = new Org();
+        child1_1.setId(11L);
+        child1_1.setParentId(1L);
+        child1_1.setName("child1_1");
+        nodes.add(child1_1);
+        Org child1_2 = new Org();
+        child1_2.setId(12L);
+        child1_2.setParentId(1L);
+        child1_2.setName("child1_2");
+        child1_2.setSign(1);
+        nodes.add(child1_2);
+        Org child2_1 = new Org();//
+        child2_1.setId(101L);
+        child2_1.setParentId(11L);
+        child2_1.setName("child2_1");
+        child2_1.setSign(2);
+        nodes.add(child2_1);
+        Org child2_2 = new Org();
+        child2_2.setId(102L);
+        child2_2.setParentId(11L);
+        child2_2.setSign(1);
+        child2_2.setName("child2_2");
+        nodes.add(child2_2);
+        Org child3_1 = new Org();
+        child3_1.setId(1001L);
+        child3_1.setParentId(101L);
+        child3_1.setName("child3_1");
+        nodes.add(child3_1);
+        Org child4_1 = new Org();
+        child4_1.setId(10001L);
+        child4_1.setParentId(1001L);
+        child4_1.setName("child4_1");
+        nodes.add(child4_1);
     }
 
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -84,8 +66,14 @@ public class TreeTest {
     @Test
     public void testBuildTree() {
         long start = System.currentTimeMillis();
-        TreeUtils.buildTree(nodes);
+        SignContext<Org, Long> signContext = SignContext.<Org, Long>builder().nodes(nodes).build();
+        signContext.buildTree();
         long end = System.currentTimeMillis();
+        try {
+            logger.info("tree: " + objectMapper.writeValueAsString(signContext.getRoots()));
+        } catch (JsonProcessingException e) {
+            logger.warn(e.getMessage());
+        }
         logger.info("buildTree cost: {}ms", (end - start));
     }
 
@@ -108,7 +96,7 @@ public class TreeTest {
 
     @Test
     public void testBuildTreeAndCheck() {
-        Set<Long> checkingKeys = Stream.of(1L, 11L, 12L, 13L, 100L, 1000L, 10001L, 10002L, 10003L, 10004L).collect(Collectors.toSet());
+        Set<Long> checkingKeys = Stream.of(1L, 11L, 12L).collect(Collectors.toSet());
         Pair<List<Org>, Set<Long>> pair = TreeUtils.buildTreeAndCascadeCheckKeys(nodes, checkingKeys);
         try {
             logger.info("tree: " + objectMapper.writeValueAsString(pair.getLeft()));
@@ -138,34 +126,17 @@ public class TreeTest {
 
     @Test
     public void testSign() {
-        Set<SimpleNodeSign<Long>> nodeSigns = Stream.of(
-                SimpleNodeSign.<Long>builder().id(1L).sign(1).build(),
-                SimpleNodeSign.<Long>builder().id(100L).sign(2).build(),
-                SimpleNodeSign.<Long>builder().id(10002L).sign(4).build()
-        ).collect(Collectors.toSet());
-        Pair<List<Org>, Set<SimpleNodeSign<Long>>> pair = TreeUtils.buildTreeAndCascadeSignNodes(nodes, nodeSigns);
+        long start = System.currentTimeMillis();
+        SignContext<Org, Long> signContext = SignContext.<Org, Long>builder().nodes(nodes).build();
+        signContext.buildTree();
+        signContext.cascadeSignRoots();
+        long end = System.currentTimeMillis();
         try {
-            logger.info("tree: {}", objectMapper.writeValueAsString(pair.getLeft()));
-            logger.info("signedNodes: {}", objectMapper.writeValueAsString(pair.getRight()));
+            logger.info("tree: " + objectMapper.writeValueAsString(signContext.getRoots()));
         } catch (JsonProcessingException e) {
             logger.warn(e.getMessage());
         }
+        logger.info("buildTree cost: {}ms", (end - start));
     }
 
-
-    @Test
-    public void testCascadeSignRoots() {
-        Set<SimpleNodeSign<Long>> nodeSigns = Stream.of(
-                SimpleNodeSign.<Long>builder().id(1L).sign(1).build(),
-                SimpleNodeSign.<Long>builder().id(100L).sign(2).build(),
-                SimpleNodeSign.<Long>builder().id(10002L).sign(4).build()
-        ).collect(Collectors.toSet());
-        Pair<List<Org>, Set<SimpleNodeSign<Long>>> pair = TreeUtils.buildTreeAndCascadeSignNodes(nodes, nodeSigns);
-        try {
-            logger.info("tree: {}", objectMapper.writeValueAsString(pair.getLeft()));
-            logger.info("signedNodes: {}", objectMapper.writeValueAsString(pair.getRight()));
-        } catch (JsonProcessingException e) {
-            logger.warn(e.getMessage());
-        }
-    }
 }

@@ -1,9 +1,7 @@
 package io.geewit.core.utils.tree;
 
-import org.apache.commons.lang3.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.*;
@@ -13,34 +11,45 @@ import java.util.stream.Stream;
 /**
  * @author geewit
  */
+@Slf4j
 public class TreeUtils {
-    private final static Logger logger = LoggerFactory.getLogger(TreeUtils.class);
 
     public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTree(List<N> nodes, Key rootId) {
         if(nodes == null || nodes.isEmpty()) {
             return Collections.emptyList();
         }
-        Map<String, List<N>> childrenMap = nodes.stream().collect(Collectors.groupingBy(n -> n.getParentId() == null ? StringUtils.EMPTY : n.getParentId().toString()));
-        List<N> roots;
-        if (rootId == null) {
-            roots = childrenMap.get(StringUtils.EMPTY);
-        } else {
-            roots = childrenMap.get(rootId.toString());
+        List<N> roots = null;
+        Map<Key, List<N>> childrenMap = new HashMap<>();
+        for (N node : nodes) {
+            if (node.getParentId() == null) {
+                if (rootId == null) {
+                    if (roots == null) {
+                        roots = Stream.of(node).collect(Collectors.toList());
+                    } else {
+                        roots.add(node);
+                    }
+                }
+            } else {
+                childrenMap.computeIfAbsent(node.getParentId(), k -> new ArrayList<>()).add(node);
+            }
+        }
+        if (rootId != null) {
+            roots = childrenMap.get(rootId);
         }
 
         if (roots == null) {
             final Set<Key> allIds = nodes.stream().map(N::getId).filter(Objects::nonNull).collect(Collectors.toSet());
-            final Set<String> rootKeys;
+            final Set<Key> rootKeys;
             if (rootId == null) {
                 rootKeys = nodes.stream()
                         .filter(n -> n.getParentId() == null || !allIds.contains(n.getParentId()))
-                        .map(n -> n.getId().toString())
+                        .map(TreeNode::getId)
                         .collect(Collectors.toSet());
             } else {
-                rootKeys = Stream.of(rootId.toString()).collect(Collectors.toSet());
+                rootKeys = Stream.of(rootId).collect(Collectors.toSet());
             }
 
-            roots = nodes.stream().filter(n -> rootKeys.contains(n.getId().toString())).collect(Collectors.toList());
+            roots = nodes.stream().filter(n -> rootKeys.contains(n.getId())).collect(Collectors.toList());
             if (roots.isEmpty()) {
                 return Collections.emptyList();
             }
@@ -57,11 +66,11 @@ public class TreeUtils {
         return buildTree(nodes, null);
     }
 
-    private static <N extends TreeNode<N, Key>, Key extends Serializable> void forEach(Map<String, List<N>> childrenMap, N node) {
+    private static <N extends TreeNode<N, Key>, Key extends Serializable> void forEach(Map<Key, List<N>> childrenMap, N node) {
         if (childrenMap == null || childrenMap.isEmpty()) {
             return;
         }
-        String key = node.getId().toString();
+        Key key = node.getId();
         List<N> children = childrenMap.get(key);
         if (children != null) {
             node.setChildren(children);
@@ -109,21 +118,21 @@ public class TreeUtils {
             if (stack.isEmpty()) {
                 treeRoots.add(nodeObj);
                 stack.push(nodeObj);
-                logger.debug("set tree root = " + nodeObj.getId() + ")");
+                log.debug("set tree root = " + nodeObj.getId() + ")");
             } else {
                 N parent = findParent(stack, nodeObj.getParentId());
                 if (parent == null) {
-                    logger.debug("TreeNode(" + nodeObj.getId() + ").parent(" + nodeObj.getParentId() + ") == null, continue");
+                    log.debug("TreeNode(" + nodeObj.getId() + ").parent(" + nodeObj.getParentId() + ") == null, continue");
                     continue;
                 }
-                logger.debug("TreeNode(" + nodeObj.getId() + ").parent = " + parent.getId() + ")");
+                log.debug("TreeNode(" + nodeObj.getId() + ").parent = " + parent.getId() + ")");
                 stack.push(nodeObj);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("stack.push " + nodeObj.getId() + ")");
+                if (log.isDebugEnabled()) {
+                    log.debug("stack.push " + nodeObj.getId() + ")");
                     String stackLog = stack.stream().map(org -> org.getId().toString()).collect(Collectors.joining(","));
-                    logger.debug("stack.push " + nodeObj.getId() + "), stack: [" + stackLog + "]");
+                    log.debug("stack.push " + nodeObj.getId() + "), stack: [" + stackLog + "]");
                 }
-                logger.debug("TreeNode(" + parent.getId() + ").addChild " + nodeObj.getId());
+                log.debug("TreeNode(" + parent.getId() + ").addChild " + nodeObj.getId());
                 parent.addChild(nodeObj);
             }
         }
@@ -139,23 +148,23 @@ public class TreeUtils {
      */
     private static <N extends TreeNode<N, Key>, Key extends Serializable> N findParent(Deque<N> stack, Key parentId) {
         if (parentId == null) {
-            logger.debug("parentId == null, return null");
+            log.debug("parentId == null, return null");
             return null;
         }
-        if (logger.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             String stackLog = stack.stream().map(org -> org.getId().toString()).collect(Collectors.joining(","));
-            logger.debug("parentId = " + parentId + ", stack: [" + stackLog + "]");
+            log.debug("parentId = " + parentId + ", stack: [" + stackLog + "]");
         }
         while (!stack.isEmpty()) {
             N node = stack.peek();
-            logger.debug("stack.peek = " + node.getId());
-            logger.debug("node.id = " + node.getId() + ", parentId = " + parentId);
+            log.debug("stack.peek = " + node.getId());
+            log.debug("node.id = " + node.getId() + ", parentId = " + parentId);
             if (Objects.equals(node.getId(), parentId)) {
-                logger.debug("found parent = " + node.getId());
+                log.debug("found parent = " + node.getId());
                 return node;
             } else {
                 N popNode = stack.pop();
-                logger.debug("not a parent, stack.pop: " + popNode.getId() + ")");
+                log.debug("not a parent, stack.pop: " + popNode.getId() + ")");
             }
         }
         return null;
@@ -252,108 +261,5 @@ public class TreeUtils {
             }
         }
         return checkedKeys;
-    }
-
-    /**
-     * 从根节点开始递归标记所有节点
-     *
-     * @param roots        多个树的根节点集合
-     * @return 递归后最终标记的树节点对象集合
-     */
-    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable, S extends NodeSign<Key>> Set<SimpleNodeSign<Key>> cascadeSignRoots(List<N> roots) {
-        Set<SimpleNodeSign<Key>> simpleNodeSigns = new HashSet<>();
-
-        for (N root : roots) {
-            Deque<N> stack = new ArrayDeque<>();
-            stack.push(root);
-            while (!stack.isEmpty()) {
-                N node = stack.pop();
-                Integer sign = null;
-                if (node.getSign() != null) {
-                    simpleNodeSigns.add(SimpleNodeSign.<Key>builder().id(node.getId()).sign(node.getSign()).build());
-                    sign = node.getSign();
-                }
-                //region sign = sign | 父节点的sign
-                if (node.getChildren() != null && !node.getChildren().isEmpty()) {
-                    for (N child : node.getChildren()) {
-                        boolean tagSign = false;
-                        if (child.getSign() == null) {
-                            if (sign != null) {
-                                child.sign(sign);
-                                tagSign = true;
-                            }
-                        }
-                        if (child.getChildren() != null && !child.getChildren().isEmpty()) {
-                            stack.push(child);
-                        } else if (tagSign) {
-                            simpleNodeSigns.add(SimpleNodeSign.<Key>builder().id(child.getId()).sign(sign).build());
-                        }
-                    }
-                }
-                //endregion
-            }
-        }
-        return simpleNodeSigns;
-    }
-
-    /**
-     * 递归标记树节点(可能多颗树)
-     *
-     * @param nodes        树节点集合
-     * @param keySignMap   选中的标记过的树节点集合的集合
-     * @return 递归后最终选中的树节点对象集合
-     */
-    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable> Pair<List<N>, Set<SimpleNodeSign<Key>>> buildTreeAndCascadeSignNodes(List<N> nodes, KeySignMap<Key> keySignMap) {
-        if (nodes == null || nodes.isEmpty()) {
-            return Pair.of(Collections.emptyList(), Collections.emptySet());
-        }
-        if (keySignMap == null) {
-            return Pair.of(Collections.emptyList(), Collections.emptySet());
-        }
-
-        nodes.forEach(node -> {
-            Integer existValue = keySignMap.get(node.id);
-            if (existValue != null) {
-                node.sign(existValue);
-            }
-        });
-
-        List<N> roots = buildTree(nodes);
-
-        if (roots.isEmpty()) {
-            return Pair.of(Collections.emptyList(), Collections.emptySet());
-        }
-
-        cascadeSignRoots(roots);
-
-        Set<SimpleNodeSign<Key>> nodeSignSet = nodes.stream().map(node -> new SimpleNodeSign<>(node.id, node.sign)).collect(Collectors.toSet());
-        return Pair.of(roots, nodeSignSet);
-    }
-
-    /**
-     * 递归选中树节点(可能多颗树)
-     *
-     * @param nodes        树节点集合
-     * @param nodeSigns   选中的树节点标记对象集合
-     * @return 递归后最终选中的树节点对象集合
-     */
-    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable, S extends NodeSign<Key>> Pair<List<N>, Set<SimpleNodeSign<Key>>> buildTreeAndCascadeSignNodes(List<N> nodes, Collection<S> nodeSigns) {
-        KeySignMap<Key> keySignMap = new KeySignMap<>(nodeSigns);
-
-        return buildTreeAndCascadeSignNodes(nodes, keySignMap);
-    }
-
-
-    /**
-     * 递归选中树节点(可能多颗树)
-     *
-     * @param nodes        树节点集合
-     * @param signKeysMap   选中的树节点标记对象集合
-     * @return 递归后最终选中的树节点对象集合
-     */
-    public static <N extends SignedTreeNode<N, Key>, Key extends Serializable> Pair<List<N>, Set<SimpleNodeSign<Key>>> buildTreeAndCascadeSignNodes(List<N> nodes, SignKeysMap<Key> signKeysMap) {
-        KeySignMap<Key> keySignMap = new KeySignMap<>(signKeysMap);
-
-        return buildTreeAndCascadeSignNodes(nodes, keySignMap);
     }
 }

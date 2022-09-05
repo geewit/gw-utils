@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.BiFunction;
 
 /**
  * 标记过的树节点集合
@@ -54,14 +55,16 @@ public class KeySignMap<Key extends Serializable> implements Map<Key, Integer> {
         }
     }
 
-    public KeySignMap(SignKeysMap<Key> signKeysMap) {
+    public KeySignMap(SignKeysMap<Key> signKeysMap, BiFunction<Integer, Integer, Integer> signFunction) {
         this.map = new HashMap<>();
         if (signKeysMap == null || signKeysMap.isEmpty()) {
             return;
         }
         for (Entry<Integer, Set<Key>> entry : signKeysMap.entrySet()) {
-            for (Key key : entry.getValue()) {
-                this.add(key, entry.getKey());
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                for (Key key : entry.getValue()) {
+                    this.add(key, entry.getKey(), signFunction);
+                }
             }
         }
     }
@@ -173,7 +176,9 @@ public class KeySignMap<Key extends Serializable> implements Map<Key, Integer> {
         }
         for (Map.Entry<? extends Key, ? extends Integer> entry : toMerge.entrySet()) {
             Key key = entry.getKey();
-            this.put(key, entry.getValue());
+            if (entry.getValue() != null) {
+                this.put(key, entry.getValue());
+            }
         }
     }
 
@@ -201,16 +206,12 @@ public class KeySignMap<Key extends Serializable> implements Map<Key, Integer> {
         return map.entrySet();
     }
 
-    public void add(Key key, Integer sign) {
+    public void add(Key key, int sign, BiFunction<Integer, Integer, Integer> signFunction) {
         if (key == null) {
             return;
         }
         Integer existSign = this.map.get(key);
-        if (existSign == null) {
-            existSign = sign;
-        } else {
-            existSign |= sign;
-        }
+        existSign = signFunction.apply(existSign, sign);
         this.map.put(key, existSign);
     }
 }

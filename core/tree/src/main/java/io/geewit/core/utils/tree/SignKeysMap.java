@@ -187,8 +187,4 @@ public class SignKeysMap<Key extends Serializable> implements Map<Integer, Set<K
         }
         this.map = newMap;
     }
-
-    public KeySignMap<Key> toKeySignMap() {
-        return new KeySignMap<>(this);
-    }
 }
