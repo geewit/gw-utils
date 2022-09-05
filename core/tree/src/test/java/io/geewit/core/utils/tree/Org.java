@@ -12,8 +12,8 @@ public class Org extends SignedTreeNode<Org, Long> {
 
     @Override
     public Integer apply(Integer sign) {
-        if (sign == null) {
-            return 0;
+        if (sign == null || sign == 0) {
+            return super.sign == null ? 0 : super.sign;
         } else {
             return 1;
         }
@@ -24,6 +24,8 @@ public class Org extends SignedTreeNode<Org, Long> {
         if (sign == null) {
             if (parentSign != null && (parentSign == 1 || parentSign == 2)) {
                 super.sign = 1;
+            } else {
+                super.sign = 0;
             }
         } else if (sign == 1) {
             if (super.sign != null && super.sign == 2) {

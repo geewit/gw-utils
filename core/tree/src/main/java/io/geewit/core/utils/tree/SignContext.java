@@ -122,32 +122,38 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
             Map<Key, N> changedNodeMap = new HashMap<>();
             while (!rootStack.isEmpty()) {
                 N parentNode = rootStack.pop();
+                if (parentNode.getSign() == null) {
+                    parentNode.setSign(0);
+                }
                 Integer originNodeSign = parentNode.getSign();
-                Integer sign;
-                if (originNodeSign == null) {
-                    sign = null;
-                } else {
+                Integer parentSign;
+                if (originNodeSign > 0) {
                     this.addSimpleNodeSigns(SimpleNodeSign.<Key>builder().id(parentNode.getId()).sign(originNodeSign).build());
-                    sign = originNodeSign;
+                    parentSign = originNodeSign;
+                } else {
+                    parentSign = 0;
                 }
                 //region sign = sign | 父节点的sign
                 List<N> children = parentNode.getChildren();
                 if (children != null && !children.isEmpty()) {
                     Integer allChildrenSign = null;
                     for (N child : children) {
-                        sign = child.apply(sign);
-                        Integer originChildSign = child.getSign();
-                        if (originChildSign == null) {
-                            if (sign != null) {
-                                child.accept(parentNode.getSign(), sign);
-                            }
+                        /*
+                         * 父节点sign传递逻辑
+                         */
+                        if (child.getSign() == null) {
+                            child.setSign(0);
                         }
-                        if (child.getSign() != null) {
-                            child.accept(parentNode.getSign(), sign);
+                        Integer originChildSign = child.getSign();
+                        Integer sign = child.apply(parentSign);
+                        if (sign > 0) {
+                            /*
+                             * 根据父节点sign和传入的sign设置当前节点sign
+                             */
+                            child.accept(parentSign, sign);
                             Integer newSign = child.getSign();
-                            child.setSign(newSign);
                             if (allChildrenSign == null || allChildrenSign > 0) {
-                                if (newSign == (child.getSign() & newSign)) {
+                                if (newSign == (originChildSign & newSign)) {
                                     allChildrenSign = newSign;
                                 }
                             }
