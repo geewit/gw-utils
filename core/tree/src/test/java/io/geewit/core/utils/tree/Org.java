@@ -13,10 +13,11 @@ public class Org extends SignedTreeNode<Org, Long> {
     @Override
     public Integer apply(Integer sign) {
         if (sign == null || sign == 0) {
-            return super.sign == null ? 0 : super.sign;
+            super.sign = super.sign == null ? 0 : super.sign;
         } else {
-            return 1;
+            super.sign = 1;
         }
+        return super.sign;
     }
 
     @Override

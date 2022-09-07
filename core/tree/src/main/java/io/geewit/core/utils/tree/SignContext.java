@@ -171,14 +171,11 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                         if (child.getChildren() != null && !child.getChildren().isEmpty()) {
                             rootStack.push(child);
                         }
-                        if (!Objects.equals(child.getSign(), originChildSign)) {
-                            changedNodeMap.put(child.getId(), child);
-                        }
                     }
                     if (allChildrenSign > 0) {
-                        parentNode.accept(null, allChildrenSign);
+                        parentSign = parentNode.apply(allChildrenSign);
                     }
-                    if (!Objects.equals(parentNode.getSign(), originNodeSign)) {
+                    if (!Objects.equals(parentSign, originNodeSign)) {
                         changedNodeMap.put(parentNode.getId(), parentNode);
                     }
                 }
@@ -193,6 +190,7 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                     if (siblings != null && !siblings.isEmpty()) {
                         for (N sibling : siblings) {
                             if (Objects.equals(sibling.getId(), changeNode.getId())) {
+                                allChildrenSign = changeNode.getSign();
                                 continue;
                             }
                             if (allChildrenSign != null && allChildrenSign > 0) {
@@ -209,6 +207,7 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                                 if (!Objects.equals(originParentNodeSign, allChildrenSign)) {
                                     changedNodeMap.put(parentNode.getId(), parentNode);
                                 }
+                                this.addSimpleNodeSigns(SimpleNodeSign.<Key>builder().id(parentNode.getId()).sign(parentNode.getSign()).build());
                             }
                         }
                     }
