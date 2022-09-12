@@ -35,14 +35,11 @@ public class SimpleNodeSign<Key extends Serializable> implements NodeSign<Key> {
 
         SimpleNodeSign<?> that = (SimpleNodeSign<?>) o;
 
-        if (!Objects.equals(this.id, that.id)) {
-            return false;
-        }
-        return Objects.equals(this.sign, that.sign);
+        return Objects.equals(this.id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, sign);
+        return Objects.hash(id);
     }
 }

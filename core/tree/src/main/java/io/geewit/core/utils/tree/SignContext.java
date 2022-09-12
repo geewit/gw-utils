@@ -112,7 +112,7 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
      *
      * @return 递归后最终标记的树节点对象集合
      */
-    public void cascadeSignRoots() {
+    public void cascadeSignRoots(BiFunction<Integer, Integer, Integer> signFunction) {
         for (N root : roots) {
             // 自上而下的缓存栈
             Deque<N> rootStack = new ArrayDeque<>();
@@ -125,11 +125,10 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                 if (parentNode.getSign() == null) {
                     parentNode.setSign(0);
                 }
-                Integer originNodeSign = parentNode.getSign();
+                Integer originParentSign = parentNode.getSign();
                 Integer parentSign;
-                if (originNodeSign > 0) {
-                    this.addSimpleNodeSigns(SimpleNodeSign.<Key>builder().id(parentNode.getId()).sign(originNodeSign).build());
-                    parentSign = originNodeSign;
+                if (originParentSign > 0) {
+                    parentSign = originParentSign;
                 } else {
                     parentSign = 0;
                 }
@@ -166,7 +165,7 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                         }
 
                         if (child.getSign() != null) {
-                            this.addSimpleNodeSigns(SimpleNodeSign.<Key>builder().id(child.getId()).sign(child.getSign()).build());
+                            this.addSimpleNodeSigns(SimpleNodeSign.<Key>builder().id(child.getId()).sign(child.getSign()).build(), signFunction);
                         }
                         if (child.getChildren() != null && !child.getChildren().isEmpty()) {
                             rootStack.push(child);
@@ -175,9 +174,12 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                     if (allChildrenSign > 0) {
                         parentSign = parentNode.apply(allChildrenSign);
                     }
-                    if (!Objects.equals(parentSign, originNodeSign)) {
-                        changedNodeMap.put(parentNode.getId(), parentNode);
-                    }
+                }
+                if (parentSign != null && parentSign > 0) {
+                    this.addSimpleNodeSigns(SimpleNodeSign.<Key>builder().id(parentNode.getId()).sign(parentSign).build(), signFunction);
+                }
+                if (!Objects.equals(parentSign, originParentSign)) {
+                    changedNodeMap.put(parentNode.getId(), parentNode);
                 }
                 //endregion
             }
@@ -202,12 +204,12 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                         if (allChildrenSign != null && allChildrenSign > 0) {
                             N parentNode = this.nodes.stream().filter(n -> n.getId().equals(changeNode.getParentId())).findFirst().orElse(null);
                             if (parentNode != null) {
-                                Integer originParentNodeSign = parentNode.getSign();
-                                parentNode.accept(originParentNodeSign, allChildrenSign);
-                                if (!Objects.equals(originParentNodeSign, allChildrenSign)) {
+                                Integer originParentSign = parentNode.getSign();
+                                parentNode.accept(originParentSign, allChildrenSign);
+                                if (!Objects.equals(originParentSign, allChildrenSign)) {
                                     changedNodeMap.put(parentNode.getId(), parentNode);
                                 }
-                                this.addSimpleNodeSigns(SimpleNodeSign.<Key>builder().id(parentNode.getId()).sign(parentNode.getSign()).build());
+                                this.addSimpleNodeSigns(SimpleNodeSign.<Key>builder().id(parentNode.getId()).sign(parentNode.getSign()).build(), signFunction);
                             }
                         }
                     }
@@ -218,11 +220,20 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
         }
     }
 
-    private void addSimpleNodeSigns(SimpleNodeSign<Key> simpleNodeSign) {
+    private void addSimpleNodeSigns(SimpleNodeSign<Key> simpleNodeSign, BiFunction<Integer, Integer, Integer> signFunction) {
         if (this.simpleNodeSigns == null) {
             simpleNodeSigns = Stream.of(simpleNodeSign).collect(Collectors.toSet());
         } else {
-            this.simpleNodeSigns.add(simpleNodeSign);
+            Optional<SimpleNodeSign<Key>> simpleNodeSignOptional = this.simpleNodeSigns.stream()
+                    .filter(item -> Objects.equals(item.getId(), simpleNodeSign.getId()))
+                    .findFirst();
+            if (simpleNodeSignOptional.isPresent()) {
+                SimpleNodeSign<Key> exitSimpleNodeSign = simpleNodeSignOptional.get();
+                Integer sign = signFunction.apply(exitSimpleNodeSign.getSign(), simpleNodeSign.getSign());
+                exitSimpleNodeSign.setSign(sign);
+            } else {
+                this.simpleNodeSigns.add(simpleNodeSign);
+            }
         }
     }
 
@@ -238,7 +249,7 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
             }
         });
         this.buildTree();
-        this.cascadeSignRoots();
+        this.cascadeSignRoots(signFunction);
         return Pair.of(this.roots, this.simpleNodeSigns);
     }
 }
