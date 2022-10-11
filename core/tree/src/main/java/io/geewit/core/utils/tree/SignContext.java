@@ -111,8 +111,11 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
      * 从根节点开始递归标记所有节点
      *
      * @return 递归后最终标记的树节点对象集合
+     * @param signFunction 节点sign传递逻辑 first param: 当前节点已存在的sign, secend param: 传入的sign
+     * @param signDependParentFunction 根据父节点sign和传入的sign以及当前sign计算当前节点sign逻辑 first param: 当前节点已存在的sign, secend param: SignParams.parentSign 传入的父节点sign, SignParams.sign 传入的sign
      */
-    public void cascadeSignRoots(BiFunction<Integer, Integer, Integer> signFunction) {
+    public void cascadeSignRoots(BiFunction<Integer, Integer, Integer> signFunction,
+                                 BiFunction<Integer, SignParams, Integer> signDependParentFunction) {
         for (N root : roots) {
             // 自上而下的缓存栈
             Deque<N> rootStack = new ArrayDeque<>();
@@ -144,16 +147,15 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                             child.setSign(0);
                         }
                         Integer originChildSign = child.getSign();
-                        Integer sign = child.apply(parentSign);
+                        /*
+                         * 根据父节点sign和传入的sign设置当前节点sign
+                         */
+                        Integer sign = signDependParentFunction.apply(child.getSign(), SignParams.builder().sign(child.getSign()).parentSign(parentSign).build());
+                        child.setSign(sign);
                         if (sign > 0) {
-                            /*
-                             * 根据父节点sign和传入的sign设置当前节点sign
-                             */
-                            child.accept(parentSign, sign);
-                            Integer newSign = child.getSign();
                             if (allChildrenSign == null || allChildrenSign > 0) {
-                                if (newSign == (originChildSign & newSign)) {
-                                    allChildrenSign = newSign;
+                                if (sign == (originChildSign & sign)) {
+                                    allChildrenSign = sign;
                                 }
                             }
                         } else {
@@ -172,7 +174,7 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                         }
                     }
                     if (allChildrenSign > 0) {
-                        parentSign = parentNode.apply(allChildrenSign);
+                        parentSign = signFunction.apply(parentNode.getSign(), allChildrenSign);
                     }
                 }
                 if (parentSign != null && parentSign > 0) {
@@ -205,7 +207,7 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                             N parentNode = this.nodes.stream().filter(n -> n.getId().equals(changeNode.getParentId())).findFirst().orElse(null);
                             if (parentNode != null) {
                                 Integer originParentSign = parentNode.getSign();
-                                parentNode.accept(originParentSign, allChildrenSign);
+                                parentNode.setSign(signFunction.apply(originParentSign, allChildrenSign));
                                 if (!Objects.equals(originParentSign, allChildrenSign)) {
                                     changedNodeMap.put(parentNode.getId(), parentNode);
                                 }
@@ -237,7 +239,9 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
         }
     }
 
-    public Pair<List<N>, Set<SimpleNodeSign<Key>>> getPairOfRootsAndNodeSigns(SignKeysMap<Key> signKeysMap, BiFunction<Integer, Integer, Integer> signFunction) {
+    public Pair<List<N>, Set<SimpleNodeSign<Key>>> getPairOfRootsAndNodeSigns(SignKeysMap<Key> signKeysMap,
+                                                                              BiFunction<Integer, Integer, Integer> signFunction,
+                                                                              BiFunction<Integer, SignParams, Integer> signDependParentFunction) {
         KeySignMap<Key> keySignMap = new KeySignMap<>(signKeysMap, signFunction);
 
         nodes.forEach(node -> {
@@ -249,7 +253,7 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
             }
         });
         this.buildTree();
-        this.cascadeSignRoots(signFunction);
+        this.cascadeSignRoots(signFunction, signDependParentFunction);
         return Pair.of(this.roots, this.simpleNodeSigns);
     }
 }

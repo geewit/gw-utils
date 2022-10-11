@@ -5,8 +5,6 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 /**
  * 树节点
@@ -15,9 +13,7 @@ import java.util.function.Function;
 @Setter
 @Getter
 public abstract class SignedTreeNode<N extends SignedTreeNode<N, Key>, Key extends Serializable> extends TreeNode<N, Key>
-        implements NodeSign<Key>,
-        BiConsumer<Integer, Integer>,
-        Function<Integer, Integer> {
+        implements NodeSign<Key> {
     /**
      * 标记
      */
