@@ -181,6 +181,7 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                     this.addSimpleNodeSigns(SimpleNodeSign.<Key>builder().id(parentNode.getId()).sign(parentSign).build(), signFunction);
                 }
                 if (!Objects.equals(parentSign, originParentSign)) {
+                    parentNode.setSign(parentSign);
                     changedNodeMap.put(parentNode.getId(), parentNode);
                 }
                 //endregion
