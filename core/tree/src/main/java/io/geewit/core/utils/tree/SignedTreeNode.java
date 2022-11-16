@@ -2,6 +2,7 @@ package io.geewit.core.utils.tree;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldNameConstants;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -10,6 +11,7 @@ import java.util.Objects;
  * 树节点
  * @author geewit
  */
+@FieldNameConstants
 @Setter
 @Getter
 public abstract class SignedTreeNode<N extends SignedTreeNode<N, Key>, Key extends Serializable> extends TreeNode<N, Key>

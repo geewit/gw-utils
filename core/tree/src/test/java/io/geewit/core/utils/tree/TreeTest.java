@@ -197,7 +197,6 @@ public class TreeTest {
         long start = System.currentTimeMillis();
         SignContext<Org, Long> signContext = SignContext.<Org, Long>builder().nodes(nodes1).build();
         signContext.buildTree();
-        signContext.cascadeSignRoots();
         long end = System.currentTimeMillis();
         try {
             logger.info("tree: " + objectMapper.writeValueAsString(signContext.getRoots()));
@@ -213,7 +212,6 @@ public class TreeTest {
         long start = System.currentTimeMillis();
         SignContext<Org, Long> signContext = SignContext.<Org, Long>builder().nodes(nodes2).build();
         signContext.buildTree();
-        signContext.cascadeSignRoots();
         long end = System.currentTimeMillis();
         try {
             logger.info("tree: " + objectMapper.writeValueAsString(signContext.getRoots()));

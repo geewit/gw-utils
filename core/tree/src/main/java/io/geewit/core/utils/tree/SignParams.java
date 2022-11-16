@@ -2,7 +2,9 @@ package io.geewit.core.utils.tree;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.FieldNameConstants;
 
+@FieldNameConstants
 @Getter
 @Builder
 public class SignParams {

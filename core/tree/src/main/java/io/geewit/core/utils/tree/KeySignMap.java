@@ -3,6 +3,7 @@ package io.geewit.core.utils.tree;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldNameConstants;
 
 import java.io.Serializable;
 import java.util.*;
@@ -13,6 +14,7 @@ import java.util.function.BiFunction;
  * @author geewit
  */
 @Builder
+@FieldNameConstants
 @Setter
 @Getter
 public class KeySignMap<Key extends Serializable> implements Map<Key, Integer> {

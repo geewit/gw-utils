@@ -3,6 +3,7 @@ package io.geewit.core.utils.tree;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldNameConstants;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.Serializable;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Builder
+@FieldNameConstants
 @Setter
 @Getter
 public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializable> {

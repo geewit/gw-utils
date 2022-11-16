@@ -1,6 +1,7 @@
 package io.geewit.core.utils.reflection;
 
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,15 +10,13 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 
 /**
  * 反射工具类.
- *
  * 提供调用getter/setter方法, 访问私有变量, 调用私有方法, 获取泛型类型Class, 被AOP过的真实类等工具函数.
  *
  * @author geewit
@@ -381,54 +380,64 @@ public class Reflections {
         return getterFields;
     }
 
-    public static Collection<Class<?>> getClassesByPackageName(final Path classpath) {
-        final ArrayList<Class<?>> classes = new ArrayList<>();
+    public static Collection<Class<?>> getClassesByPackageName(final String packageName) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        String path = packageName.replace('.', '/');
+        Enumeration<URL> resources;
         try {
-            Files.walkFileTree(classpath, new SimpleFileVisitor<Path>() {
-                // 访问文件时候触发该方法
-                @Override
-                public FileVisitResult visitFile(Path classFile, BasicFileAttributes attrs) {
-                    String filename = classFile.getFileName().toString();
-                    //logger.debug("filename = " + filename);
-                    // 忽略文件
-                    if (org.apache.commons.lang3.StringUtils.endsWith(filename.toLowerCase(), ".class")) {
-                        String classPath = classFile.toAbsolutePath().toString();
-                        //logger.debug("classPath = " + classPath + " , classpath = " + classpath);
-                        String classname = org.apache.commons.lang3.StringUtils.substringAfterLast(classPath, classpath.toString()).substring(1);
-                        //logger.debug("classname = " + classname);
-                        classname = org.apache.commons.lang3.StringUtils.substringBeforeLast(classname, ".class");
-                        //logger.debug("classname = " + classname);
-                        classname = org.apache.commons.lang3.StringUtils.replace(classname, File.separator, ".");
-                        //logger.debug("classname = " + classname);
-                        Class<?> clazz = null;
-                        try {
-                            clazz = Class.forName(classname);
-                        } catch (ClassNotFoundException e) {
-                            logger.warn(e.getMessage(), e);
+            resources = classLoader.getResources(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        List<File> dirs = new ArrayList<>();
+        while (resources.hasMoreElements()) {
+            URL resource = resources.nextElement();
+            dirs.add(new File(resource.getFile()));
+        }
+
+        final ArrayList<Class<?>> classes = new ArrayList<>();
+        for (File directory : dirs) {
+            if (!directory.exists()) {
+                continue;
+            }
+            try {
+                Files.walkFileTree(directory.toPath(), new SimpleFileVisitor<Path>() {
+                    // 访问文件时候触发该方法
+                    @Override
+                    public FileVisitResult visitFile(Path classFile, BasicFileAttributes attrs) {
+                        String filename = classFile.getFileName().toString();
+                        //logger.debug("filename = " + filename);
+                        // 忽略文件
+                        if (org.apache.commons.lang3.StringUtils.endsWith(filename.toLowerCase(), ".class")) {
+                            String classPath = classFile.toAbsolutePath().toString();
+                            String className = org.apache.commons.lang3.StringUtils.replace(classPath, directory.toString(), "");
+                            className = org.apache.commons.lang3.StringUtils.replace(className, ".class", "");
+                            className = org.apache.commons.lang3.StringUtils.replace(className, File.separator, ".");
+                            className = StringUtils.prependIfMissing(className, packageName);
+                            Class<?> clazz;
+                            try {
+                                clazz = classLoader.loadClass(className);
+                                classes.add(clazz);
+                            } catch (ClassNotFoundException e) {
+                                logger.warn(e.getMessage(), e);
+                            }
                         }
-                        if (clazz != null) {
-                            classes.add(clazz);
-                        }
+
+                        return FileVisitResult.CONTINUE;
                     }
 
-                    return FileVisitResult.CONTINUE;
-                }
-
-                // 开始访问目录时触发该方法
-                @Override
-                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                    //logger.debug("dir : " + dir.toString());
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            logger.warn(e.getMessage(), e);
+                    // 开始访问目录时触发该方法
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                        //logger.debug("dir : " + dir.toString());
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException e) {
+                logger.warn(e.getMessage(), e);
+            }
         }
 
         return classes;
-    }
-
-    public static Collection<Class<?>> getClassesByPackageName(final String classpath) {
-        return getClassesByPackageName(Paths.get(classpath));
     }
 }

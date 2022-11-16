@@ -1,6 +1,7 @@
 package io.geewit.core.utils.tree;
 
 import lombok.*;
+import lombok.experimental.FieldNameConstants;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -10,10 +11,11 @@ import java.util.Objects;
  * @author geewit
  */
 @Builder
-@Setter
-@Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@FieldNameConstants
+@Setter
+@Getter
 public class SimpleNodeSign<Key extends Serializable> implements NodeSign<Key> {
     /**
      * 节点id

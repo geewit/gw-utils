@@ -2,6 +2,8 @@ package io.geewit.core.utils.tree;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.FieldNameConstants;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -14,8 +16,10 @@ import java.util.stream.Stream;
  * 树节点
  * @author geewit
  */
+@FieldNameConstants
 @Setter
 @Getter
+@ToString
 public abstract class TreeNode<N extends TreeNode<N, Key>, Key extends Serializable> {
     /**
      * 主键
