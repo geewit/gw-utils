@@ -1,19 +1,22 @@
 package io.geewit.core.utils.reflection;
 
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.util.ClassUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
-import java.net.URL;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 反射工具类.
@@ -30,6 +33,8 @@ public class Reflections {
     private static final String GETTER_PREFIX = "get";
 
     private static final String CGLIB_CLASS_SEPARATOR = "$$";
+
+    private final static String RESOURCE_CLASS_PATTERN = "/**/*.class";
 
     /**
      * 调用Getter方法.
@@ -381,63 +386,29 @@ public class Reflections {
     }
 
     public static Collection<Class<?>> getClassesByPackageName(final String packageName) {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        String path = packageName.replace('.', '/');
-        Enumeration<URL> resources;
+
+        ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
         try {
-            resources = classLoader.getResources(path);
+            String pattern = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
+                    ClassUtils.convertClassNameToResourcePath(packageName) + RESOURCE_CLASS_PATTERN;
+            Resource[] resources = resourcePatternResolver.getResources(pattern);
+            //MetadataReader 的工厂类
+            MetadataReaderFactory readerfactory = new CachingMetadataReaderFactory(resourcePatternResolver);
+            final List<Class<?>> classes = Arrays.stream(resources).map(resource -> {
+                try {
+                    MetadataReader reader = readerfactory.getMetadataReader(resource);
+                    String classname = reader.getClassMetadata().getClassName();
+                    Class<?> clazz = Class.forName(classname);
+                    return clazz;
+                } catch (IOException | ClassNotFoundException e) {
+                    logger.info(e.getMessage(), e);
+                    return null;
+                }
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+            return classes;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            logger.warn(e.getMessage(), e);
+            return Collections.emptyList();
         }
-        List<File> dirs = new ArrayList<>();
-        while (resources.hasMoreElements()) {
-            URL resource = resources.nextElement();
-            dirs.add(new File(resource.getFile()));
-        }
-
-        final ArrayList<Class<?>> classes = new ArrayList<>();
-        for (File directory : dirs) {
-            if (!directory.exists()) {
-                continue;
-            }
-            try {
-                Files.walkFileTree(directory.toPath(), new SimpleFileVisitor<Path>() {
-                    // 访问文件时候触发该方法
-                    @Override
-                    public FileVisitResult visitFile(Path classFile, BasicFileAttributes attrs) {
-                        String filename = classFile.getFileName().toString();
-                        //logger.debug("filename = " + filename);
-                        // 忽略文件
-                        if (org.apache.commons.lang3.StringUtils.endsWith(filename.toLowerCase(), ".class")) {
-                            String classPath = classFile.toAbsolutePath().toString();
-                            String className = org.apache.commons.lang3.StringUtils.replace(classPath, directory.toString(), "");
-                            className = org.apache.commons.lang3.StringUtils.replace(className, ".class", "");
-                            className = org.apache.commons.lang3.StringUtils.replace(className, File.separator, ".");
-                            className = StringUtils.prependIfMissing(className, packageName);
-                            Class<?> clazz;
-                            try {
-                                clazz = classLoader.loadClass(className);
-                                classes.add(clazz);
-                            } catch (ClassNotFoundException e) {
-                                logger.warn(e.getMessage(), e);
-                            }
-                        }
-
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    // 开始访问目录时触发该方法
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                        //logger.debug("dir : " + dir.toString());
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            } catch (IOException e) {
-                logger.warn(e.getMessage(), e);
-            }
-        }
-
-        return classes;
     }
 }
