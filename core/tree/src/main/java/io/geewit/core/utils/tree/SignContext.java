@@ -148,23 +148,20 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                         if (child.getSign() == null) {
                             child.setSign(0);
                         }
-                        Integer originChildSign = child.getSign();
                         /*
                          * 根据父节点sign和传入的sign设置当前节点sign
                          */
                         Integer sign = signDependParentFunction.apply(child.getSign(), SignParams.builder().sign(child.getSign()).parentSign(parentSign).build());
                         child.setSign(sign);
                         if (sign > 0) {
-                            if (allChildrenSign == null || allChildrenSign > 0) {
-                                if (sign == (originChildSign & sign)) {
+                            if (allChildrenSign == null) {
+                                allChildrenSign = sign;
+                            } else {
+                                if (sign == (allChildrenSign & sign)) {
                                     allChildrenSign = sign;
                                 }
                             }
                         } else {
-                            allChildrenSign = 0;
-                        }
-
-                        if (allChildrenSign == null) {
                             allChildrenSign = 0;
                         }
 
