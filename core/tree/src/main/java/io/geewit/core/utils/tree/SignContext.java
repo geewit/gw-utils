@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.Serializable;
@@ -113,10 +114,12 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
      * 从根节点开始递归标记所有节点
      *
      * @return 递归后最终标记的树节点对象集合
+     * @param keySignMap 标记过的树节点集合
      * @param signFunction 节点sign传递逻辑 first param: 当前节点已存在的sign, secend param: 传入的sign
      * @param signDependParentFunction 根据父节点sign和传入的sign以及当前sign计算当前节点sign逻辑 first param: 当前节点已存在的sign, secend param: SignParams.parentSign 传入的父节点sign, SignParams.sign 传入的sign
      */
-    public void cascadeSignRoots(BiFunction<Integer, Integer, Integer> signFunction,
+    public void cascadeSignRoots(KeySignMap<Key> keySignMap,
+                                 BiFunction<Integer, Integer, Integer> signFunction,
                                  BiFunction<Integer, SignParams, Integer> signDependParentFunction) {
         for (N root : roots) {
             // 自上而下的缓存栈
@@ -130,14 +133,11 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                 if (parentNode.getSign() == null) {
                     parentNode.setSign(0);
                 }
-                Integer originParentSign = parentNode.getSign();
-                Integer parentSign;
-                if (originParentSign > 0) {
-                    parentSign = originParentSign;
-                } else {
-                    parentSign = 0;
-                }
-                //region sign = sign | 父节点的sign
+                Integer originParentSign = ObjectUtils.defaultIfNull(parentNode.getSign(), 0);
+                originParentSign = ObjectUtils.defaultIfNull(keySignMap.get(parentNode.getId()), originParentSign);
+                parentNode.setSign(originParentSign);
+                Integer parentSign = originParentSign;
+                        //region sign = sign | 父节点的sign
                 List<N> children = parentNode.getChildren();
                 if (children != null && !children.isEmpty()) {
                     Integer allChildrenSign = null;
@@ -151,7 +151,8 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                         /*
                          * 根据父节点sign和传入的sign设置当前节点sign
                          */
-                        Integer sign = signDependParentFunction.apply(child.getSign(), SignParams.builder().sign(child.getSign()).parentSign(parentSign).build());
+                        Integer sign = ObjectUtils.defaultIfNull(keySignMap.get(child.getId()), child.getSign());
+                        sign = signDependParentFunction.apply(child.getSign(), SignParams.builder().sign(sign).parentSign(originParentSign).build());
                         child.setSign(sign);
                         if (sign > 0) {
                             if (allChildrenSign == null) {
@@ -223,10 +224,10 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
     }
 
     private void addSimpleNodeSigns(SimpleNodeSign<Key> simpleNodeSign, BiFunction<Integer, Integer, Integer> signFunction) {
-        if (this.simpleNodeSigns == null) {
+        if (simpleNodeSigns == null) {
             simpleNodeSigns = Stream.of(simpleNodeSign).collect(Collectors.toSet());
         } else {
-            Optional<SimpleNodeSign<Key>> simpleNodeSignOptional = this.simpleNodeSigns.stream()
+            Optional<SimpleNodeSign<Key>> simpleNodeSignOptional = simpleNodeSigns.stream()
                     .filter(item -> Objects.equals(item.getId(), simpleNodeSign.getId()))
                     .findFirst();
             if (simpleNodeSignOptional.isPresent()) {
@@ -234,7 +235,7 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
                 Integer sign = signFunction.apply(exitSimpleNodeSign.getSign(), simpleNodeSign.getSign());
                 exitSimpleNodeSign.setSign(sign);
             } else {
-                this.simpleNodeSigns.add(simpleNodeSign);
+                simpleNodeSigns.add(simpleNodeSign);
             }
         }
     }
@@ -245,15 +246,12 @@ public class SignContext<N extends SignedTreeNode<N, Key>, Key extends Serializa
         KeySignMap<Key> keySignMap = new KeySignMap<>(signKeysMap, signFunction);
 
         nodes.forEach(node -> {
-            Integer existValue = keySignMap.get(node.id);
-            if (existValue == null) {
+            if (node.getSign() == null) {
                 node.setSign(0);
-            } else {
-                node.setSign(existValue);
             }
         });
         this.buildTree();
-        this.cascadeSignRoots(signFunction, signDependParentFunction);
+        this.cascadeSignRoots(keySignMap, signFunction, signDependParentFunction);
         return Pair.of(this.roots, this.simpleNodeSigns);
     }
 }
