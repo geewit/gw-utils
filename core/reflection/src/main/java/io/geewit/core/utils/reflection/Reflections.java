@@ -56,7 +56,7 @@ public class Reflections {
      * 直接读取对象属性值, 无视private/protected修饰符, 不经过getter函数.
      */
     public static Object getFieldValue(final Object obj, final String fieldName) {
-        Field field = getAccessibleField(obj, fieldName);
+        Field field = getField(obj, fieldName);
 
         if (field == null) {
             throw new IllegalArgumentException("Could not find field [" + fieldName + "] on target [" + obj + "]");
@@ -64,7 +64,14 @@ public class Reflections {
 
         Object result = null;
         try {
+            boolean accessible = field.isAccessible();
+            if (!accessible) {
+                field.setAccessible(true);
+            }
             result = field.get(obj);
+            if (!accessible) {
+                field.setAccessible(false);
+            }
         } catch (IllegalAccessException e) {
             logger.error("不可能抛出的异常{}", e.getMessage());
         }
@@ -82,7 +89,7 @@ public class Reflections {
      * 直接设置对象属性值, 无视private/protected修饰符, 不经过setter函数.
      */
     public static void setFieldValue(final Object obj, final String fieldName, final Object value, boolean silent) {
-        Field field = getAccessibleField(obj, fieldName);
+        Field field = getField(obj, fieldName);
 
         if (field == null) {
             if(silent) {
@@ -93,7 +100,14 @@ public class Reflections {
         }
 
         try {
+            boolean accessible = field.isAccessible();
+            if (!accessible) {
+                field.setAccessible(true);
+            }
             field.set(obj, value);
+            if (!accessible) {
+                field.setAccessible(false);
+            }
         } catch (IllegalAccessException e) {
             logger.error("不可能抛出的异常:{}", e.getMessage());
         }
@@ -110,13 +124,21 @@ public class Reflections {
      */
     public static Object invokeMethod(final Object obj, final String methodName, final Class<?>[] parameterTypes,
                                       final Object[] args) {
-        Method method = getAccessibleMethod(obj, methodName, parameterTypes);
+        Method method = getMethod(obj, methodName, parameterTypes);
         if (method == null) {
             throw new IllegalArgumentException("Could not find method [" + methodName + "] on target [" + obj + "]");
         }
 
         try {
-            return method.invoke(obj, args);
+            boolean accessible = method.isAccessible();
+            if (!accessible) {
+                method.setAccessible(true);
+            }
+            Object value = method.invoke(obj, args);
+            if (!accessible) {
+                method.setAccessible(false);
+            }
+            return value;
         } catch (Exception e) {
             throw convertReflectionExceptionToUnchecked(e);
         }
@@ -143,7 +165,7 @@ public class Reflections {
      * @param args           参数
      */
     public static Object invokeMethodByName(final Object obj, final String methodName, final Object[] args, boolean silent) {
-        Method method = getAccessibleMethodByName(obj, methodName);
+        Method method = getMethodByName(obj, methodName);
         if (method == null) {
             if(silent) {
                 return null;
@@ -153,7 +175,15 @@ public class Reflections {
         }
 
         try {
-            return method.invoke(obj, args);
+            boolean accessible = method.isAccessible();
+            if (!accessible) {
+                method.setAccessible(true);
+            }
+            Object value = method.invoke(obj, args);
+            if (!accessible) {
+                method.setAccessible(false);
+            }
+            return value;
         } catch (Exception e) {
             throw convertReflectionExceptionToUnchecked(e);
         }
@@ -166,15 +196,13 @@ public class Reflections {
      * @param obj            目标对象
      * @param fieldName      目标属性
      */
-    public static Field getAccessibleField(final Object obj, final String fieldName) {
+    public static Field getField(final Object obj, final String fieldName) {
         Validate.notNull(obj, "object can't be null");
         Validate.notBlank(fieldName, "fieldName can't be blank");
         Class<?> superClass = obj.getClass();
         while (superClass != Object.class) {
             try {
-                Field field = superClass.getDeclaredField(fieldName);
-                makeAccessible(field);
-                return field;
+                return superClass.getDeclaredField(fieldName);
             } catch (NoSuchFieldException ignore) {
                 // Field不在当前类定义,继续向上转型
             }
@@ -193,7 +221,7 @@ public class Reflections {
      * @param methodName     目标方法
      * @param parameterTypes 参数类型
      */
-    public static Method getAccessibleMethod(final Object obj, final String methodName,
+    public static Method getMethod(final Object obj, final String methodName,
                                              final Class<?>... parameterTypes) {
         Validate.notNull(obj, "object can't be null");
         Validate.notBlank(methodName, "methodName can't be blank");
@@ -201,9 +229,7 @@ public class Reflections {
         Class<?> searchType = obj.getClass();
         while (searchType != Object.class) {
             try {
-                Method method = searchType.getDeclaredMethod(methodName, parameterTypes);
-                makeAccessible(method);
-                return method;
+                return searchType.getDeclaredMethod(methodName, parameterTypes);
             } catch (NoSuchMethodException ignore) {
                 // Method不在当前类定义,继续向上转型
             }
@@ -219,7 +245,7 @@ public class Reflections {
      *
      * 用于方法需要被多次调用的情况. 先使用本函数先取得Method,然后调用Method.invoke(Object obj, Object... args)
      */
-    public static Method getAccessibleMethodByName(final Object obj, final String methodName) {
+    public static Method getMethodByName(final Object obj, final String methodName) {
         Validate.notNull(obj, "object can't be null");
         Validate.notBlank(methodName, "methodName can't be blank");
 
@@ -228,33 +254,12 @@ public class Reflections {
             Method[] methods = searchType.getDeclaredMethods();
             for (Method method : methods) {
                 if (method.getName().equals(methodName)) {
-                    makeAccessible(method);
                     return method;
                 }
             }
             searchType = searchType.getSuperclass();
         }
         return null;
-    }
-
-    /**
-     * 改变private/protected的方法为public，尽量不调用实际改动的语句，避免JDK的SecurityManager抱怨。
-     */
-    public static void makeAccessible(Method method) {
-        if ((!Modifier.isPublic(method.getModifiers()) || !Modifier.isPublic(method.getDeclaringClass().getModifiers()))
-                && !method.isAccessible()) {
-            method.setAccessible(true);
-        }
-    }
-
-    /**
-     * 改变private/protected的成员变量为public，尽量不调用实际改动的语句，避免JDK的SecurityManager抱怨。
-     */
-    public static void makeAccessible(Field field) {
-        if ((!Modifier.isPublic(field.getModifiers()) || !Modifier.isPublic(field.getDeclaringClass().getModifiers()) || Modifier
-                .isFinal(field.getModifiers())) && !field.isAccessible()) {
-            field.setAccessible(true);
-        }
     }
 
     /**

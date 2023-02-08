@@ -26,6 +26,11 @@ public class SimpleNodeSign<Key extends Serializable> implements NodeSign<Key> {
      */
     private Integer sign;
 
+    /**
+     * 是否向下传递标记
+     */
+    private Boolean transmission;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -1,9 +1,11 @@
 package io.geewit.core.utils.tree;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.stream.Stream;
  * 树节点
  * @author geewit
  */
+@SuperBuilder
 @FieldNameConstants
 @Setter
 @Getter
@@ -37,14 +40,11 @@ public abstract class TreeNode<N extends TreeNode<N, Key>, Key extends Serializa
      */
     protected String parentIds;
     /**
-     * 是否选中
-     */
-    protected Boolean checked;
-    /**
      * 父级节点
      */
     protected N parent;
 
+    @Builder.Default
     protected List<N> children = new ArrayList<>();
 
     public void addChild(N child) {

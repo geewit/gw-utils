@@ -18,4 +18,9 @@ public interface NodeSign<Key extends Serializable> {
      * 标记
      */
     Integer getSign();
+
+    /**
+     * 是否向下传递标记
+     */
+    Boolean getTransmission();
 }

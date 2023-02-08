@@ -2,18 +2,23 @@ package io.geewit.core.utils.tree;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.util.Objects;
 
+@SuperBuilder
 @Setter
 @Getter
 public class Org extends SignedTreeNode<Org, Long> {
-    private String name;
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Org)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Org)) {
+            return false;
+        }
         Org org = (Org) o;
         return Objects.equals(this.id, org.id);
     }
