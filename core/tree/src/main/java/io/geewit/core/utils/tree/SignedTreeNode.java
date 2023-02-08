@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * 树节点
+ * 带sign的树节点
  * @author geewit
  */
 @SuperBuilder
@@ -17,8 +17,7 @@ import java.util.Objects;
 @Setter
 @Getter
 public abstract class SignedTreeNode<N extends SignedTreeNode<N, Key>, Key extends Serializable>
-        extends TreeNode<N, Key>
-        implements NodeSign<Key> {
+        extends TreeNode<N, Key> {
     /**
      * 标记
      */

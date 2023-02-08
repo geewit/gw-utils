@@ -56,9 +56,9 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
     /**
      * 递归后最终标记的树节点对象集合
      */
-    private Collection<SimpleNodeSign<Key>> signs;
+    private Collection<NodeSignParameter<Key>> signs;
 
-    private Map<Key, SimpleNodeSign<Key>> signMap;
+    private Map<Key, NodeSignParameter<Key>> signMap;
 
     private SignNodeConsumer<N, Key> signNodeConsumer;
     /**
@@ -102,8 +102,8 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
         }
         signMap = signs.stream()
                 .filter(s -> s.getId() != null && s.getSign() != null)
-                .collect(Collectors.toMap(SimpleNodeSign::getId,
-                        s -> SimpleNodeSign.<Key>builder()
+                .collect(Collectors.toMap(NodeSignParameter::getId,
+                        s -> NodeSignParameter.<Key>builder()
                                 .id(s.getId())
                                 .sign(s.getSign())
                                 .transmission(s.getTransmission())
@@ -141,7 +141,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                     Integer allChildrenSign = null;
                     for (N childNode : parentNode.children) {
                         //传入的sign
-                        SimpleNodeSign<Key> simpleNodeSign = this.nodeSign(childNode);
+                        NodeSignParameter<Key> simpleNodeSign = this.nodeSign(childNode);
                         //父节点sign传递逻辑, 根据父节点sign和传入的sign设置当前节点sign
                         signChildConsumer.accept(parentNode, childNode, simpleNodeSign);
                         Integer sign = childNode.sign;
@@ -236,18 +236,18 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
         }
     }
 
-    private SimpleNodeSign<Key> nodeSign(N node) {
-        SimpleNodeSign<Key> variableSimpleNodeSign = signMap.get(node.id);
-        SimpleNodeSign<Key> simpleNodeSign;
+    private NodeSignParameter<Key> nodeSign(N node) {
+        NodeSignParameter<Key> variableSimpleNodeSign = signMap.get(node.id);
+        NodeSignParameter<Key> simpleNodeSign;
         if (variableSimpleNodeSign == null) {
             if (overwrite) {
-                simpleNodeSign = SimpleNodeSign.<Key>builder()
+                simpleNodeSign = NodeSignParameter.<Key>builder()
                         .id(node.id)
                         .sign(0)
                         .transmission(node.transmission)
                         .build();
             } else {
-                simpleNodeSign = SimpleNodeSign.<Key>builder()
+                simpleNodeSign = NodeSignParameter.<Key>builder()
                         .id(node.id)
                         .sign(node.sign)
                         .transmission(node.transmission)

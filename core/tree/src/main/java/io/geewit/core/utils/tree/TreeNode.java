@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * 树节点
+ * 简单树节点
  * @author geewit
  */
 @SuperBuilder
@@ -51,7 +51,7 @@ public abstract class TreeNode<N extends TreeNode<N, Key>, Key extends Serializa
         if(children == null) {
             children = Stream.of(child).collect(Collectors.toList());
         } else {
-            if (children.stream().filter(Objects::nonNull).map(N::getId).filter(Objects::nonNull).noneMatch(id -> id.equals(child.getId()))) {
+            if (children.stream().filter(Objects::nonNull).map(TreeNode::getId).filter(Objects::nonNull).noneMatch(id -> id.equals(child.getId()))) {
                 children.add(child);
             }
         }

@@ -73,10 +73,10 @@ public class TreeTraverseContextTest {
         nodes.add(Org.builder().id(10L).parentId(9L).sign(2).build());
         nodes.add(Org.builder().id(11L).parentId(10L).sign(2).build());
 
-        Set<SimpleNodeSign<Long>> signs = new HashSet<>();
-        signs.add(SimpleNodeSign.<Long>builder().id(2L).sign(1).build());
-        signs.add(SimpleNodeSign.<Long>builder().id(6L).sign(2).build());
-        signs.add(SimpleNodeSign.<Long>builder().id(8L).sign(2).build());
+        Set<NodeSignParameter<Long>> signs = new HashSet<>();
+        signs.add(NodeSignParameter.<Long>builder().id(2L).sign(1).build());
+        signs.add(NodeSignParameter.<Long>builder().id(6L).sign(2).build());
+        signs.add(NodeSignParameter.<Long>builder().id(8L).sign(2).build());
 
         TreeTraverseContext<Org, Long> treeTraversalContext = TreeTraverseContext.<Org, Long>builder()
                 .nodes(nodes)

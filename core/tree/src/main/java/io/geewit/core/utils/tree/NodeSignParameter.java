@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * 树节点标记
+ * 树节点标记参数
  * @author geewit
  */
 @Builder
@@ -16,7 +16,7 @@ import java.util.Objects;
 @FieldNameConstants
 @Setter
 @Getter
-public class SimpleNodeSign<Key extends Serializable> implements NodeSign<Key> {
+public class NodeSignParameter<Key extends Serializable> {
     /**
      * 节点id
      */
@@ -36,11 +36,11 @@ public class SimpleNodeSign<Key extends Serializable> implements NodeSign<Key> {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof SimpleNodeSign)) {
+        if (!(o instanceof NodeSignParameter)) {
             return false;
         }
 
-        SimpleNodeSign<?> that = (SimpleNodeSign<?>) o;
+        NodeSignParameter<?> that = (NodeSignParameter<?>) o;
 
         return Objects.equals(this.id, that.id);
     }
