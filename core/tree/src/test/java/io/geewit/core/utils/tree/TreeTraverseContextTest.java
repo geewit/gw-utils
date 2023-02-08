@@ -59,7 +59,7 @@ public class TreeTraverseContextTest {
     };
 
     @Test
-    void testBuildTreeAndMarkNodes() {
+    void testBuildTreeAndMarkNodes01() {
         List<Org> nodes = new ArrayList<>();
         nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
         nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
@@ -105,4 +105,230 @@ public class TreeTraverseContextTest {
         assertEquals(0, nodes.stream().filter(n -> n.id.equals(11L)).findFirst().get().sign);
     }
 
+    @Test
+    void testBuildTreeAndMarkNodes02() {
+        List<Org> nodes = new ArrayList<>();
+        nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
+        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
+        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
+        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
+        nodes.add(Org.builder().id(5L).parentId(3L).sign(2).build());
+        nodes.add(Org.builder().id(6L).parentId(4L).sign(2).build());
+        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
+        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
+        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
+        nodes.add(Org.builder().id(10L).parentId(9L).sign(2).build());
+        nodes.add(Org.builder().id(11L).parentId(10L).sign(2).build());
+
+        Set<NodeSignParameter<Long>> signs = new HashSet<>();
+        signs.add(NodeSignParameter.<Long>builder().id(1L).sign(1).build());
+
+        TreeTraverseContext<Org, Long> treeTraversalContext = TreeTraverseContext.<Org, Long>builder()
+                .nodes(nodes)
+                .signs(signs)
+                .overwrite(true)
+                .transmission(true)
+                .needCompress(true)
+                .signNodeConsumer(signNodeConsumer)
+                .signChildConsumer(signChildConsumer)
+                .signParentConsumer(signParentConsumer)
+                .compressChildConsumer(compressChildConsumer)
+                .transmissionChildConsumer(transmissionChildConsumer)
+                .build();
+        treeTraversalContext.cascadeSign();
+
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(1L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(2L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(3L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(4L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(5L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(6L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(7L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(8L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(9L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(10L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(11L)).findFirst().get().sign);
+    }
+
+    @Test
+    void testBuildTreeAndMarkNodes03() {
+        List<Org> nodes = new ArrayList<>();
+        nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
+        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
+        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
+        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
+        nodes.add(Org.builder().id(5L).parentId(3L).sign(2).build());
+        nodes.add(Org.builder().id(6L).parentId(4L).sign(2).build());
+        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
+        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
+        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
+        nodes.add(Org.builder().id(10L).parentId(9L).sign(2).build());
+        nodes.add(Org.builder().id(11L).parentId(10L).sign(2).build());
+
+        Set<NodeSignParameter<Long>> signs = new HashSet<>();
+        signs.add(NodeSignParameter.<Long>builder().id(1L).sign(1).build());
+
+        TreeTraverseContext<Org, Long> treeTraversalContext = TreeTraverseContext.<Org, Long>builder()
+                .nodes(nodes)
+                .signs(signs)
+                .overwrite(false)
+                .transmission(true)
+                .needCompress(true)
+                .signNodeConsumer(signNodeConsumer)
+                .signChildConsumer(signChildConsumer)
+                .signParentConsumer(signParentConsumer)
+                .compressChildConsumer(compressChildConsumer)
+                .transmissionChildConsumer(transmissionChildConsumer)
+                .build();
+        treeTraversalContext.cascadeSign();
+
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(1L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(2L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(3L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(4L)).findFirst().get().sign);
+        assertEquals(2, nodes.stream().filter(n -> n.id.equals(5L)).findFirst().get().sign);
+        assertEquals(2, nodes.stream().filter(n -> n.id.equals(6L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(7L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(8L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(9L)).findFirst().get().sign);
+        assertEquals(2, nodes.stream().filter(n -> n.id.equals(10L)).findFirst().get().sign);
+        assertEquals(2, nodes.stream().filter(n -> n.id.equals(11L)).findFirst().get().sign);
+    }
+
+    @Test
+    void testBuildTreeAndMarkNodes04() {
+        List<Org> nodes = new ArrayList<>();
+        nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
+        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
+        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
+        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
+        nodes.add(Org.builder().id(5L).parentId(3L).sign(1).build());
+        nodes.add(Org.builder().id(6L).parentId(4L).sign(1).build());
+        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
+        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
+        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
+        nodes.add(Org.builder().id(10L).parentId(9L).sign(1).build());
+        nodes.add(Org.builder().id(11L).parentId(10L).sign(1).build());
+
+        Set<NodeSignParameter<Long>> signs = new HashSet<>();
+        signs.add(NodeSignParameter.<Long>builder().id(1L).sign(1).build());
+
+        TreeTraverseContext<Org, Long> treeTraversalContext = TreeTraverseContext.<Org, Long>builder()
+                .nodes(nodes)
+                .signs(signs)
+                .overwrite(false)
+                .transmission(true)
+                .needCompress(true)
+                .signNodeConsumer(signNodeConsumer)
+                .signChildConsumer(signChildConsumer)
+                .signParentConsumer(signParentConsumer)
+                .compressChildConsumer(compressChildConsumer)
+                .transmissionChildConsumer(transmissionChildConsumer)
+                .build();
+        treeTraversalContext.cascadeSign();
+
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(1L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(2L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(3L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(4L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(5L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(6L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(7L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(8L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(9L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(10L)).findFirst().get().sign);
+        assertEquals(0, nodes.stream().filter(n -> n.id.equals(11L)).findFirst().get().sign);
+    }
+
+    @Test
+    void testBuildTreeAndMarkNodes05() {
+        List<Org> nodes = new ArrayList<>();
+        nodes.add(Org.builder().id(1L).parentId(null).sign(0).build());
+        nodes.add(Org.builder().id(2L).parentId(1L).sign(0).build());
+        nodes.add(Org.builder().id(3L).parentId(2L).sign(0).build());
+        nodes.add(Org.builder().id(4L).parentId(2L).sign(0).build());
+        nodes.add(Org.builder().id(5L).parentId(3L).sign(0).build());
+        nodes.add(Org.builder().id(6L).parentId(4L).sign(0).build());
+        nodes.add(Org.builder().id(7L).parentId(6L).sign(0).build());
+        nodes.add(Org.builder().id(8L).parentId(7L).sign(0).build());
+        nodes.add(Org.builder().id(9L).parentId(8L).sign(0).build());
+        nodes.add(Org.builder().id(10L).parentId(9L).sign(0).build());
+        nodes.add(Org.builder().id(11L).parentId(10L).sign(0).build());
+
+        Set<NodeSignParameter<Long>> signs = new HashSet<>();
+        signs.add(NodeSignParameter.<Long>builder().id(1L).sign(2).build());
+
+        TreeTraverseContext<Org, Long> treeTraversalContext = TreeTraverseContext.<Org, Long>builder()
+                .nodes(nodes)
+                .signs(signs)
+                .overwrite(false)
+                .transmission(true)
+                .needCompress(false)
+                .signNodeConsumer(signNodeConsumer)
+                .signChildConsumer(signChildConsumer)
+                .signParentConsumer(signParentConsumer)
+                .compressChildConsumer(compressChildConsumer)
+                .transmissionChildConsumer(transmissionChildConsumer)
+                .build();
+        treeTraversalContext.cascadeSign();
+
+        assertEquals(2, nodes.stream().filter(n -> n.id.equals(1L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(2L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(3L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(4L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(5L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(6L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(7L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(8L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(9L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(10L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(11L)).findFirst().get().sign);
+    }
+
+
+    @Test
+    void testBuildTreeAndMarkNodes06() {
+        List<Org> nodes = new ArrayList<>();
+        nodes.add(Org.builder().id(1L).parentId(null).sign(0).build());
+        nodes.add(Org.builder().id(2L).parentId(1L).sign(0).build());
+        nodes.add(Org.builder().id(3L).parentId(2L).sign(0).build());
+        nodes.add(Org.builder().id(4L).parentId(2L).sign(0).build());
+        nodes.add(Org.builder().id(5L).parentId(3L).sign(0).build());
+        nodes.add(Org.builder().id(6L).parentId(4L).sign(0).build());
+        nodes.add(Org.builder().id(7L).parentId(6L).sign(0).build());
+        nodes.add(Org.builder().id(8L).parentId(7L).sign(0).build());
+        nodes.add(Org.builder().id(9L).parentId(8L).sign(0).build());
+        nodes.add(Org.builder().id(10L).parentId(9L).sign(0).build());
+        nodes.add(Org.builder().id(11L).parentId(10L).sign(0).build());
+
+        Set<NodeSignParameter<Long>> signs = new HashSet<>();
+        signs.add(NodeSignParameter.<Long>builder().id(3L).sign(2).build());
+        signs.add(NodeSignParameter.<Long>builder().id(4L).sign(2).build());
+
+        TreeTraverseContext<Org, Long> treeTraversalContext = TreeTraverseContext.<Org, Long>builder()
+                .nodes(nodes)
+                .signs(signs)
+                .overwrite(false)
+                .transmission(true)
+                .needCompress(false)
+                .signNodeConsumer(signNodeConsumer)
+                .signChildConsumer(signChildConsumer)
+                .signParentConsumer(signParentConsumer)
+                .compressChildConsumer(compressChildConsumer)
+                .transmissionChildConsumer(transmissionChildConsumer)
+                .build();
+        treeTraversalContext.cascadeSign();
+
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(1L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(2L)).findFirst().get().sign);
+        assertEquals(2, nodes.stream().filter(n -> n.id.equals(3L)).findFirst().get().sign);
+        assertEquals(2, nodes.stream().filter(n -> n.id.equals(4L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(5L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(6L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(7L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(8L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(9L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(10L)).findFirst().get().sign);
+        assertEquals(1, nodes.stream().filter(n -> n.id.equals(11L)).findFirst().get().sign);
+    }
 }

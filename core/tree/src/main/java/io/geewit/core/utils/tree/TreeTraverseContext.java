@@ -174,11 +174,14 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                 N changeNode = changedNodeEntry.getValue();
                 Integer allChildrenSign = changeNode.sign;
                 if (changeNode.parentId != null) {
-                    List<N> siblings = changeNode.children;
+                    N changeParentNode = nodeMap.get(changeNode.parentId);
+                    if (changeParentNode == null) {
+                        continue;
+                    }
+                    List<N> siblings = changeParentNode.children;
                     if (siblings != null && !siblings.isEmpty()) {
                         for (N sibling : siblings) {
                             if (Objects.equals(sibling.id, changeNode.id)) {
-                                allChildrenSign = changeNode.sign;
                                 continue;
                             }
                             if (allChildrenSign != null && allChildrenSign > 0) {
