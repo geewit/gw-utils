@@ -54,7 +54,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
      * 是否需要压缩标记(sign)
      */
     @Builder.Default
-    private boolean needCompress = Boolean.FALSE;
+    private boolean compress = Boolean.FALSE;
 
     /**
      * 输入的节点标记参数集合
@@ -143,7 +143,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
         }
         //region 向下传递sign, 修复已存在sign可能缺漏
         if (transmission) {
-            this.transmissionAndCompressDownSign(Boolean.FALSE);
+            this.transmissionAndCompressDownSign(Boolean.TRUE, Boolean.FALSE);
         }
         //endregion
 
@@ -153,8 +153,8 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
 
         this.signByParameters();
 
-        if (transmission) {
-            this.transmissionAndCompressDownSign(Boolean.TRUE);
+        if (compress) {
+            this.transmissionAndCompressDownSign(Boolean.FALSE, Boolean.TRUE);
         }
     }
 
@@ -268,7 +268,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
     /**
      * 自下而上地根据父节点传递下级节点的sign, 并在需要时压缩sign
      */
-    private void transmissionAndCompressDownSign(Boolean compress) {
+    private void transmissionAndCompressDownSign(Boolean transmission, Boolean compress) {
 
         for (N root : roots) {
             Stack<N> stack = new Stack<>();
@@ -284,10 +284,10 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                 if (node.parentId != null) {
                     N parentNode = nodeMap.get(node.parentId);
                     if (parentNode != null) {
-                        if (transmission) {
+                        if (transmission && this.transmission) {
                             transmissionChildConsumer.accept(parentNode, node);
                         }
-                        if (compress && needCompress) {
+                        if (compress && this.compress) {
                             compressChildConsumer.accept(parentNode, node);
                         }
                     }
