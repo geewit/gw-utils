@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Getter
 public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends Serializable> {
     /**
-     * 初始化的节点列表
+     * 输入的初始化的节点列表
      */
     private List<N> nodes;
 
@@ -42,25 +42,30 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
     /**
      * 是否向下传递标记(sign)
      */
-    private boolean transmission;
+    @Builder.Default
+    private boolean transmission = Boolean.TRUE;
 
     /**
      * 是否覆盖 是: 如果没有传 id则设置sign == 0
      */
-    private boolean overwrite;
+    @Builder.Default
+    private boolean overwrite = Boolean.TRUE;
     /**
      * 是否需要压缩标记(sign)
      */
-    private boolean needCompress;
+    @Builder.Default
+    private boolean needCompress = Boolean.FALSE;
 
     /**
-     * 递归后最终标记的树节点对象集合
+     * 输入的节点标记参数集合
      */
-    private Collection<NodeSignParameter<Key>> signs;
+    private Collection<NodeSignParameter<Key>> signParameters;
 
-    private Map<Key, NodeSignParameter<Key>> signMap;
+    /**
+     * 输入的节点标记参数Map(方便获取)
+     */
+    private Map<Key, NodeSignParameter<Key>> signParametersMap;
 
-    private SignNodeConsumer<N, Key> signNodeConsumer;
     /**
      * 节点sign传递逻辑 first param: 当前节点已存在的sign, secend param: 传入的sign
      */
@@ -69,8 +74,16 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
      * 根据父节点sign和传入的sign以及当前sign计算当前节点sign逻辑 first param: 当前节点已存在的sign, secend param: SignParams.parentSign 传入的父节点sign, SignParams.sign 传入的sign
      */
     private SignParentConsumer<N, Key> signParentConsumer;
-    private CompressChildConsumer<N, Key> compressChildConsumer;
+
+    /**
+     * parentNode向下childNode传递sign的处理逻辑
+     */
     private TransmissionChildConsumer<N, Key> transmissionChildConsumer;
+
+    /**
+     * 压缩子节点的sign, 根据父节点处理子节点的处理逻辑
+     */
+    private CompressChildConsumer<N, Key> compressChildConsumer;
 
     private void buildTree() {
         if (this.nodes == null || this.nodes.isEmpty()) {
@@ -96,11 +109,14 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
         });
     }
 
-    private void buildSignMap() {
-        if (signs == null || signs.isEmpty()) {
+    /**
+     * 根据 signParameters 构造 signMap
+     */
+    private void buildSignParametersMap() {
+        if (signParameters == null || signParameters.isEmpty()) {
             return;
         }
-        signMap = signs.stream()
+        signParametersMap = signParameters.stream()
                 .filter(s -> s.getId() != null && s.getSign() != null)
                 .collect(Collectors.toMap(NodeSignParameter::getId,
                         s -> NodeSignParameter.<Key>builder()
@@ -118,32 +134,62 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
         if (nodes == null || nodes.isEmpty()) {
             return;
         }
-        if (signs == null || signs.isEmpty()) {
+        if (signParameters == null || signParameters.isEmpty()) {
             return;
         }
         this.buildTree();
         if (roots == null || roots.isEmpty()) {
             return;
         }
-        this.buildSignMap();
+        //region 向下传递sign, 修复已存在sign可能缺漏
+        if (transmission) {
+            this.transmissionAndCompressDownSign(Boolean.FALSE);
+        }
+        //endregion
+
+        //region 构造 signMap
+        this.buildSignParametersMap();
+        //endregion
+
+        this.signByParameters();
+
+        if (transmission) {
+            this.transmissionAndCompressDownSign(Boolean.TRUE);
+        }
+    }
+
+    /**
+     * 自下而上根据 signParameters 标记树节点
+     */
+    private void signByParameters() {
         for (N root : roots) {
             // 自上而下的缓存栈
-            Deque<N> rootStack = new ArrayDeque<>();
-            rootStack.push(root);
-
+            Stack<N> stack = new Stack<>();
+            stack.push(root);
             // 自下而上的缓存栈
-            Map<Key, N> changedNodeMap = new HashMap<>();
-            while (!rootStack.isEmpty()) {
-                N parentNode = rootStack.pop();
+            Stack<N> nodeStack = new Stack<>();
+
+            while (!stack.isEmpty()) {
+                N node = stack.pop();
+                nodeStack.push(node);
+                node.children.forEach(stack::push);
+            }
+
+            // 修改过sign的节点缓存栈
+            Stack<N> changedNodeStack = new Stack<>();
+
+            while (!nodeStack.isEmpty()) {
+                N parentNode = nodeStack.pop();
                 Integer originParentSign = parentNode.sign;
-                signNodeConsumer.accept(parentNode, this.nodeSign(parentNode), needCompress);
+                NodeSignParameter<Key> parentSignParameter = this.nodeSign(parentNode);
+                parentNode.setSign(parentSignParameter.getSign());
                 if (parentNode.children != null && !parentNode.children.isEmpty()) {
                     Integer allChildrenSign = null;
                     for (N childNode : parentNode.children) {
                         //传入的sign
-                        NodeSignParameter<Key> simpleNodeSign = this.nodeSign(childNode);
+                        NodeSignParameter<Key> signParameter = this.nodeSign(childNode);
                         //父节点sign传递逻辑, 根据父节点sign和传入的sign设置当前节点sign
-                        signChildConsumer.accept(parentNode, childNode, simpleNodeSign);
+                        signChildConsumer.accept(parentNode, childNode, signParameter);
                         Integer sign = childNode.sign;
                         if (sign > 0) {
                             if (allChildrenSign == null) {
@@ -158,7 +204,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                         }
 
                         if (childNode.children != null && !childNode.children.isEmpty()) {
-                            rootStack.push(childNode);
+                            nodeStack.push(childNode);
                         }
                     }
                     if (allChildrenSign > 0) {
@@ -166,22 +212,26 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                     }
                 }
                 if (!Objects.equals(parentNode.sign, originParentSign)) {
-                    changedNodeMap.put(parentNode.id, parentNode);
+                    changedNodeStack.push(parentNode);
                 }
             }
-            while (!changedNodeMap.isEmpty()) {
-                Map.Entry<Key, N> changedNodeEntry = changedNodeMap.entrySet().stream().findFirst().get();
-                N changeNode = changedNodeEntry.getValue();
-                Integer allChildrenSign = changeNode.sign;
-                if (changeNode.parentId != null) {
-                    N changeParentNode = nodeMap.get(changeNode.parentId);
-                    if (changeParentNode == null) {
+            while (!changedNodeStack.isEmpty()) {
+                N changedNode = changedNodeStack.pop();
+                if (changedNode == null) {
+                    continue;
+                }
+                Integer allChildrenSign = changedNode.sign;
+                //region 处理 siblings
+                if (changedNode.parentId != null) {
+                    N changedNodeParent = nodeMap.get(changedNode.parentId);
+                    if (changedNodeParent == null) {
                         continue;
                     }
-                    List<N> siblings = changeParentNode.children;
+
+                    List<N> siblings = changedNodeParent.children;
                     if (siblings != null && !siblings.isEmpty()) {
                         for (N sibling : siblings) {
-                            if (Objects.equals(sibling.id, changeNode.id)) {
+                            if (Objects.equals(sibling.id, changedNode.id)) {
                                 continue;
                             }
                             if (allChildrenSign != null && allChildrenSign > 0) {
@@ -191,27 +241,34 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                             }
                         }
                         if (allChildrenSign != null && allChildrenSign > 0) {
-                            N parentNode = this.nodes.stream().filter(n -> Objects.equals(n.id, changeNode.parentId)).findFirst().orElse(null);
-                            if (parentNode != null) {
-                                Integer originParentSign = parentNode.sign;
-                                signParentConsumer.accept(parentNode, allChildrenSign, transmission);
-                                if (!Objects.equals(originParentSign, allChildrenSign)) {
-                                    changedNodeMap.put(parentNode.id, parentNode);
-                                }
+                            Integer originParentSign = changedNodeParent.sign;
+                            signParentConsumer.accept(changedNodeParent, allChildrenSign, transmission);
+                            if (!Objects.equals(originParentSign, allChildrenSign)) {
+                                changedNodeStack.push(changedNodeParent);
                             }
                         }
                     }
                 }
+                //endregion
 
-                changedNodeMap.remove(changedNodeEntry.getKey());
+                List<N> children = changedNode.children;
+                if (children != null && !children.isEmpty()) {
+                    for (N child : children) {
+                        Integer originChildSign = child.sign;
+                        transmissionChildConsumer.accept(changedNode, child);
+                        if (!Objects.equals(child.sign, originChildSign)) {
+                            changedNodeStack.push(child);
+                        }
+                    }
+                }
             }
-        }
-        if (transmission) {
-            this.transmissionSign();
         }
     }
 
-    private void transmissionSign() {
+    /**
+     * 自下而上地根据父节点传递下级节点的sign, 并在需要时压缩sign
+     */
+    private void transmissionAndCompressDownSign(Boolean compress) {
 
         for (N root : roots) {
             Stack<N> stack = new Stack<>();
@@ -230,7 +287,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                         if (transmission) {
                             transmissionChildConsumer.accept(parentNode, node);
                         }
-                        if (needCompress) {
+                        if (compress && needCompress) {
                             compressChildConsumer.accept(parentNode, node);
                         }
                     }
@@ -240,7 +297,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
     }
 
     private NodeSignParameter<Key> nodeSign(N node) {
-        NodeSignParameter<Key> variableSimpleNodeSign = signMap.get(node.id);
+        NodeSignParameter<Key> variableSimpleNodeSign = signParametersMap.get(node.id);
         NodeSignParameter<Key> simpleNodeSign;
         if (variableSimpleNodeSign == null) {
             if (overwrite) {

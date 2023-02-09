@@ -8,5 +8,5 @@ import java.io.Serializable;
  */
 @FunctionalInterface
 public interface SignChildConsumer<N extends SignedTreeNode<N, Key>, Key extends Serializable> {
-    void accept(N parentNode, N childNode, NodeSignParameter<Key> simpleNodeSign);
+    void accept(N parentNode, N childNode, NodeSignParameter<Key> signParameter);
 }
