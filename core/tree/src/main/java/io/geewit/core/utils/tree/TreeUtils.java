@@ -21,7 +21,7 @@ public class TreeUtils {
         Map<Key, N> nodeMap = nodes.stream().collect(Collectors.toMap(TreeNode::getId, node -> node));
         nodes.forEach(node -> {
 
-            if (Objects.equals(node.parentId, rootId)) {
+            if ((rootId != null && Objects.equals(node.parentId, rootId)) || node.parentId == null) {
                 roots.add(node);
             } else {
                 N parent = nodeMap.get(node.parentId);
