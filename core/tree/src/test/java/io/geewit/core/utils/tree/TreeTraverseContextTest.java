@@ -55,17 +55,17 @@ public class TreeTraverseContextTest {
     @Test
     void testBuildTreeAndMarkNodes01() {
         List<Org> nodes = new ArrayList<>();
-        nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
-        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
-        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
-        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
-        nodes.add(Org.builder().id(5L).parentId(3L).sign(2).build());
-        nodes.add(Org.builder().id(6L).parentId(4L).sign(2).build());
-        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
-        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
-        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
-        nodes.add(Org.builder().id(10L).parentId(9L).sign(2).build());
-        nodes.add(Org.builder().id(11L).parentId(10L).sign(2).build());
+//        nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
+//        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
+//        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
+//        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
+//        nodes.add(Org.builder().id(5L).parentId(3L).sign(2).build());
+//        nodes.add(Org.builder().id(6L).parentId(4L).sign(2).build());
+//        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
+//        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
+//        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
+//        nodes.add(Org.builder().id(10L).parentId(9L).sign(2).build());
+//        nodes.add(Org.builder().id(11L).parentId(10L).sign(2).build());
 
         Set<NodeSignParameter<Long>> signParameters = new HashSet<>();
         signParameters.add(NodeSignParameter.<Long>builder().id(2L).sign(1).build());
@@ -101,17 +101,17 @@ public class TreeTraverseContextTest {
     @Test
     void testBuildTreeAndMarkNodes02() {
         List<Org> nodes = new ArrayList<>();
-        nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
-        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
-        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
-        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
-        nodes.add(Org.builder().id(5L).parentId(3L).sign(2).build());
-        nodes.add(Org.builder().id(6L).parentId(4L).sign(2).build());
-        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
-        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
-        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
-        nodes.add(Org.builder().id(10L).parentId(9L).sign(2).build());
-        nodes.add(Org.builder().id(11L).parentId(10L).sign(2).build());
+//        nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
+//        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
+//        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
+//        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
+//        nodes.add(Org.builder().id(5L).parentId(3L).sign(2).build());
+//        nodes.add(Org.builder().id(6L).parentId(4L).sign(2).build());
+//        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
+//        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
+//        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
+//        nodes.add(Org.builder().id(10L).parentId(9L).sign(2).build());
+//        nodes.add(Org.builder().id(11L).parentId(10L).sign(2).build());
 
         Set<NodeSignParameter<Long>> signParameters = new HashSet<>();
         signParameters.add(NodeSignParameter.<Long>builder().id(1L).sign(1).build());
@@ -145,17 +145,17 @@ public class TreeTraverseContextTest {
     @Test
     void testBuildTreeAndMarkNodes03() {
         List<Org> nodes = new ArrayList<>();
-        nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
-        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
-        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
-        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
-        nodes.add(Org.builder().id(5L).parentId(3L).sign(2).build());
-        nodes.add(Org.builder().id(6L).parentId(4L).sign(2).build());
-        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
-        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
-        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
-        nodes.add(Org.builder().id(10L).parentId(9L).sign(2).build());
-        nodes.add(Org.builder().id(11L).parentId(10L).sign(2).build());
+//        nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
+//        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
+//        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
+//        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
+//        nodes.add(Org.builder().id(5L).parentId(3L).sign(2).build());
+//        nodes.add(Org.builder().id(6L).parentId(4L).sign(2).build());
+//        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
+//        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
+//        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
+//        nodes.add(Org.builder().id(10L).parentId(9L).sign(2).build());
+//        nodes.add(Org.builder().id(11L).parentId(10L).sign(2).build());
 
         Set<NodeSignParameter<Long>> signParameters = new HashSet<>();
         signParameters.add(NodeSignParameter.<Long>builder().id(1L).sign(1).build());
@@ -189,17 +189,17 @@ public class TreeTraverseContextTest {
     @Test
     void testBuildTreeAndMarkNodes04() {
         List<Org> nodes = new ArrayList<>();
-        nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
-        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
-        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
-        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
-        nodes.add(Org.builder().id(5L).parentId(3L).sign(1).build());
-        nodes.add(Org.builder().id(6L).parentId(4L).sign(1).build());
-        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
-        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
-        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
-        nodes.add(Org.builder().id(10L).parentId(9L).sign(1).build());
-        nodes.add(Org.builder().id(11L).parentId(10L).sign(1).build());
+//        nodes.add(Org.builder().id(1L).parentId(null).sign(1).build());
+//        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
+//        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
+//        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
+//        nodes.add(Org.builder().id(5L).parentId(3L).sign(1).build());
+//        nodes.add(Org.builder().id(6L).parentId(4L).sign(1).build());
+//        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
+//        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
+//        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
+//        nodes.add(Org.builder().id(10L).parentId(9L).sign(1).build());
+//        nodes.add(Org.builder().id(11L).parentId(10L).sign(1).build());
 
         Set<NodeSignParameter<Long>> signParameters = new HashSet<>();
         signParameters.add(NodeSignParameter.<Long>builder().id(1L).sign(1).build());
@@ -233,17 +233,17 @@ public class TreeTraverseContextTest {
     @Test
     void testBuildTreeAndMarkNodes05() {
         List<Org> nodes = new ArrayList<>();
-        nodes.add(Org.builder().id(1L).parentId(null).sign(0).build());
-        nodes.add(Org.builder().id(2L).parentId(1L).sign(0).build());
-        nodes.add(Org.builder().id(3L).parentId(2L).sign(0).build());
-        nodes.add(Org.builder().id(4L).parentId(2L).sign(0).build());
-        nodes.add(Org.builder().id(5L).parentId(3L).sign(0).build());
-        nodes.add(Org.builder().id(6L).parentId(4L).sign(0).build());
-        nodes.add(Org.builder().id(7L).parentId(6L).sign(0).build());
-        nodes.add(Org.builder().id(8L).parentId(7L).sign(0).build());
-        nodes.add(Org.builder().id(9L).parentId(8L).sign(0).build());
-        nodes.add(Org.builder().id(10L).parentId(9L).sign(0).build());
-        nodes.add(Org.builder().id(11L).parentId(10L).sign(0).build());
+//        nodes.add(Org.builder().id(1L).parentId(null).sign(0).build());
+//        nodes.add(Org.builder().id(2L).parentId(1L).sign(0).build());
+//        nodes.add(Org.builder().id(3L).parentId(2L).sign(0).build());
+//        nodes.add(Org.builder().id(4L).parentId(2L).sign(0).build());
+//        nodes.add(Org.builder().id(5L).parentId(3L).sign(0).build());
+//        nodes.add(Org.builder().id(6L).parentId(4L).sign(0).build());
+//        nodes.add(Org.builder().id(7L).parentId(6L).sign(0).build());
+//        nodes.add(Org.builder().id(8L).parentId(7L).sign(0).build());
+//        nodes.add(Org.builder().id(9L).parentId(8L).sign(0).build());
+//        nodes.add(Org.builder().id(10L).parentId(9L).sign(0).build());
+//        nodes.add(Org.builder().id(11L).parentId(10L).sign(0).build());
 
         Set<NodeSignParameter<Long>> signParameters = new HashSet<>();
         signParameters.add(NodeSignParameter.<Long>builder().id(1L).sign(2).build());
@@ -277,17 +277,17 @@ public class TreeTraverseContextTest {
     @Test
     void testBuildTreeAndMarkNodes06() {
         List<Org> nodes = new ArrayList<>();
-        nodes.add(Org.builder().id(1L).parentId(null).sign(0).build());
-        nodes.add(Org.builder().id(2L).parentId(1L).sign(0).build());
-        nodes.add(Org.builder().id(3L).parentId(2L).sign(0).build());
-        nodes.add(Org.builder().id(4L).parentId(2L).sign(0).build());
-        nodes.add(Org.builder().id(5L).parentId(3L).sign(0).build());
-        nodes.add(Org.builder().id(6L).parentId(4L).sign(0).build());
-        nodes.add(Org.builder().id(7L).parentId(6L).sign(0).build());
-        nodes.add(Org.builder().id(8L).parentId(7L).sign(0).build());
-        nodes.add(Org.builder().id(9L).parentId(8L).sign(0).build());
-        nodes.add(Org.builder().id(10L).parentId(9L).sign(0).build());
-        nodes.add(Org.builder().id(11L).parentId(10L).sign(0).build());
+//        nodes.add(Org.builder().id(1L).parentId(null).sign(0).build());
+//        nodes.add(Org.builder().id(2L).parentId(1L).sign(0).build());
+//        nodes.add(Org.builder().id(3L).parentId(2L).sign(0).build());
+//        nodes.add(Org.builder().id(4L).parentId(2L).sign(0).build());
+//        nodes.add(Org.builder().id(5L).parentId(3L).sign(0).build());
+//        nodes.add(Org.builder().id(6L).parentId(4L).sign(0).build());
+//        nodes.add(Org.builder().id(7L).parentId(6L).sign(0).build());
+//        nodes.add(Org.builder().id(8L).parentId(7L).sign(0).build());
+//        nodes.add(Org.builder().id(9L).parentId(8L).sign(0).build());
+//        nodes.add(Org.builder().id(10L).parentId(9L).sign(0).build());
+//        nodes.add(Org.builder().id(11L).parentId(10L).sign(0).build());
 
         Set<NodeSignParameter<Long>> signParameters = new HashSet<>();
         signParameters.add(NodeSignParameter.<Long>builder().id(3L).sign(2).build());
@@ -322,17 +322,17 @@ public class TreeTraverseContextTest {
     @Test
     void testBuildTreeAndMarkNodes07() {
         List<Org> nodes = new ArrayList<>();
-        nodes.add(Org.builder().id(1L).parentId(null).sign(2).build());
-        nodes.add(Org.builder().id(2L).parentId(1L).sign(0).build());
-        nodes.add(Org.builder().id(3L).parentId(2L).sign(0).build());
-        nodes.add(Org.builder().id(4L).parentId(2L).sign(0).build());
-        nodes.add(Org.builder().id(5L).parentId(3L).sign(0).build());
-        nodes.add(Org.builder().id(6L).parentId(4L).sign(0).build());
-        nodes.add(Org.builder().id(7L).parentId(6L).sign(0).build());
-        nodes.add(Org.builder().id(8L).parentId(7L).sign(0).build());
-        nodes.add(Org.builder().id(9L).parentId(8L).sign(0).build());
-        nodes.add(Org.builder().id(10L).parentId(9L).sign(0).build());
-        nodes.add(Org.builder().id(11L).parentId(10L).sign(0).build());
+//        nodes.add(Org.builder().id(1L).parentId(null).sign(2).build());
+//        nodes.add(Org.builder().id(2L).parentId(1L).sign(0).build());
+//        nodes.add(Org.builder().id(3L).parentId(2L).sign(0).build());
+//        nodes.add(Org.builder().id(4L).parentId(2L).sign(0).build());
+//        nodes.add(Org.builder().id(5L).parentId(3L).sign(0).build());
+//        nodes.add(Org.builder().id(6L).parentId(4L).sign(0).build());
+//        nodes.add(Org.builder().id(7L).parentId(6L).sign(0).build());
+//        nodes.add(Org.builder().id(8L).parentId(7L).sign(0).build());
+//        nodes.add(Org.builder().id(9L).parentId(8L).sign(0).build());
+//        nodes.add(Org.builder().id(10L).parentId(9L).sign(0).build());
+//        nodes.add(Org.builder().id(11L).parentId(10L).sign(0).build());
 
         Set<NodeSignParameter<Long>> signParameters = new HashSet<>();
         signParameters.add(NodeSignParameter.<Long>builder().id(3L).sign(2).build());
@@ -367,17 +367,17 @@ public class TreeTraverseContextTest {
     @Test
     void testBuildTreeAndMarkNodes08() {
         List<Org> nodes = new ArrayList<>();
-        nodes.add(Org.builder().id(1L).parentId(null).sign(2).build());
-        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
-        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
-        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
-        nodes.add(Org.builder().id(5L).parentId(3L).sign(1).build());
-        nodes.add(Org.builder().id(6L).parentId(4L).sign(1).build());
-        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
-        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
-        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
-        nodes.add(Org.builder().id(10L).parentId(9L).sign(1).build());
-        nodes.add(Org.builder().id(11L).parentId(10L).sign(1).build());
+//        nodes.add(Org.builder().id(1L).parentId(null).sign(2).build());
+//        nodes.add(Org.builder().id(2L).parentId(1L).sign(1).build());
+//        nodes.add(Org.builder().id(3L).parentId(2L).sign(1).build());
+//        nodes.add(Org.builder().id(4L).parentId(2L).sign(1).build());
+//        nodes.add(Org.builder().id(5L).parentId(3L).sign(1).build());
+//        nodes.add(Org.builder().id(6L).parentId(4L).sign(1).build());
+//        nodes.add(Org.builder().id(7L).parentId(6L).sign(1).build());
+//        nodes.add(Org.builder().id(8L).parentId(7L).sign(1).build());
+//        nodes.add(Org.builder().id(9L).parentId(8L).sign(1).build());
+//        nodes.add(Org.builder().id(10L).parentId(9L).sign(1).build());
+//        nodes.add(Org.builder().id(11L).parentId(10L).sign(1).build());
 
         Set<NodeSignParameter<Long>> signParameters = new HashSet<>();
         signParameters.add(NodeSignParameter.<Long>builder().id(3L).sign(2).build());

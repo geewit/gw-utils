@@ -3,7 +3,6 @@ package io.geewit.core.utils.tree;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
-import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -12,7 +11,6 @@ import java.util.Objects;
  * 带sign的树节点
  * @author geewit
  */
-@SuperBuilder
 @FieldNameConstants
 @Setter
 @Getter

@@ -1,6 +1,5 @@
 package io.geewit.core.utils.reflection;
 
-
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +40,7 @@ public class Reflections {
      */
     public static Object invokeGetter(Object obj, String propertyName) {
         String getterMethodName = GETTER_PREFIX + org.apache.commons.lang3.StringUtils.capitalize(propertyName);
-        return invokeMethod(obj, getterMethodName, new Class[] {}, new Object[] {});
+        return invokeMethod(obj, getterMethodName, new Class[]{}, new Object[]{});
     }
 
     /**
@@ -49,7 +48,7 @@ public class Reflections {
      */
     public static void invokeSetter(Object obj, String propertyName, Object value) {
         String setterMethodName = SETTER_PREFIX + org.apache.commons.lang3.StringUtils.capitalize(propertyName);
-        invokeMethodByName(obj, setterMethodName, new Object[] { value });
+        invokeMethodByName(obj, setterMethodName, new Object[]{value});
     }
 
     /**
@@ -92,7 +91,7 @@ public class Reflections {
         Field field = getField(obj, fieldName);
 
         if (field == null) {
-            if(silent) {
+            if (silent) {
                 return;
             } else {
                 throw new IllegalArgumentException("Could not find field [" + fieldName + "] on target [" + obj + "]");
@@ -117,6 +116,7 @@ public class Reflections {
      * 直接调用对象方法, 无视private/protected修饰符.
      * 用于一次性调用的情况，否则应使用getAccessibleMethod()函数获得Method后反复调用.
      * 同时匹配方法名+参数类型，
+     *
      * @param obj            目标对象
      * @param methodName     目标方法
      * @param parameterTypes 参数类型
@@ -148,9 +148,10 @@ public class Reflections {
      * 直接调用对象方法, 无视private/protected修饰符，
      * 用于一次性调用的情况，否则应使用getAccessibleMethodByName()函数获得Method后反复调用.
      * 只匹配函数名，如果有多个同名函数调用第一个。
-     * @param obj            目标对象
-     * @param methodName     目标方法
-     * @param args           参数
+     *
+     * @param obj        目标对象
+     * @param methodName 目标方法
+     * @param args       参数
      */
     public static Object invokeMethodByName(final Object obj, final String methodName, final Object[] args) {
         return invokeMethodByName(obj, methodName, args, true);
@@ -160,14 +161,15 @@ public class Reflections {
      * 直接调用对象方法, 无视private/protected修饰符，
      * 用于一次性调用的情况，否则应使用getAccessibleMethodByName()函数获得Method后反复调用.
      * 只匹配函数名，如果有多个同名函数调用第一个。
-     * @param obj            目标对象
-     * @param methodName     目标方法
-     * @param args           参数
+     *
+     * @param obj        目标对象
+     * @param methodName 目标方法
+     * @param args       参数
      */
     public static Object invokeMethodByName(final Object obj, final String methodName, final Object[] args, boolean silent) {
         Method method = getMethodByName(obj, methodName);
         if (method == null) {
-            if(silent) {
+            if (silent) {
                 return null;
             } else {
                 throw new IllegalArgumentException("Could not find method [" + methodName + "] on target [" + obj + "]");
@@ -191,10 +193,11 @@ public class Reflections {
 
     /**
      * 循环向上转型, 获取对象的DeclaredField, 并强制设置为可访问.
-     *
+     * <p>
      * 如向上转型到Object仍无法找到, 返回null.
-     * @param obj            目标对象
-     * @param fieldName      目标属性
+     *
+     * @param obj       目标对象
+     * @param fieldName 目标属性
      */
     public static Field getField(final Object obj, final String fieldName) {
         Validate.notNull(obj, "object can't be null");
@@ -215,14 +218,15 @@ public class Reflections {
      * 循环向上转型, 获取对象的DeclaredMethod,并强制设置为可访问.
      * 如向上转型到Object仍无法找到, 返回null.
      * 匹配函数名+参数类型。
-     *
+     * <p>
      * 用于方法需要被多次调用的情况. 先使用本函数先取得Method,然后调用Method.invoke(Object obj, Object... args)
+     *
      * @param obj            目标对象
      * @param methodName     目标方法
      * @param parameterTypes 参数类型
      */
     public static Method getMethod(final Object obj, final String methodName,
-                                             final Class<?>... parameterTypes) {
+                                   final Class<?>... parameterTypes) {
         Validate.notNull(obj, "object can't be null");
         Validate.notBlank(methodName, "methodName can't be blank");
 
@@ -242,7 +246,7 @@ public class Reflections {
      * 循环向上转型, 获取对象的DeclaredMethod,并强制设置为可访问.
      * 如向上转型到Object仍无法找到, 返回null.
      * 只匹配函数名。
-     *
+     * <p>
      * 用于方法需要被多次调用的情况. 先使用本函数先取得Method,然后调用Method.invoke(Object obj, Object... args)
      */
     public static Method getMethodByName(final Object obj, final String methodName) {
@@ -265,6 +269,7 @@ public class Reflections {
     /**
      * 通过反射, 获得Class定义中声明的泛型参数的类型, 注意泛型必须定义在父类处
      * 如无法找到, 返回Object.class.
+     *
      * @param clazz The class to introspect
      * @return the first generic declaration, or Object.class if cannot be determined
      */
@@ -343,7 +348,7 @@ public class Reflections {
     }
 
     /**
-    *  @return 获取clazz的有对应getter方法的属性
+     * @return 获取clazz的有对应getter方法的属性
      */
     public static <T> Field[] getPublicGetters(Class<T> clazz) {
         Field[] fields = clazz.getFields();
@@ -353,7 +358,7 @@ public class Reflections {
         for (Method method : methods) {
             if (Modifier.isPublic(method.getModifiers())) {
                 for (Field field : result) {
-                    if((GETTER_PREFIX + org.apache.commons.lang3.StringUtils.capitalize(field.getName())).equals(method.getName()) && field.getType().getName().equals(method.getReturnType().getName())) {
+                    if ((GETTER_PREFIX + org.apache.commons.lang3.StringUtils.capitalize(field.getName())).equals(method.getName()) && field.getType().getName().equals(method.getReturnType().getName())) {
                         getterFields = org.apache.commons.lang3.ArrayUtils.add(getterFields, field);
                     }
                 }
@@ -363,7 +368,7 @@ public class Reflections {
     }
 
     /**
-    *  @return 获取clazz的有对应getter方法的属性
+     * @return 获取clazz的有对应getter方法的属性
      */
     @SuppressWarnings("unchecked")
     public static <T> Field[] getPublicGetters(Class<T> clazz, Class<? extends Annotation>... excluedAnnotations) {
@@ -371,17 +376,18 @@ public class Reflections {
         Field[] result = Arrays.stream(fields).filter(field -> !Modifier.isStatic(field.getModifiers())).toArray(Field[]::new);
         Method[] methods = clazz.getDeclaredMethods();
         Field[] getterFields = {};
-        outer: for (Method method : methods) {
-            if(org.apache.commons.lang3.ArrayUtils.isNotEmpty(excluedAnnotations)) {
-                for(Class<? extends Annotation> excluedAnnotation : excluedAnnotations) {
-                    if(method.isAnnotationPresent(excluedAnnotation)) {
+        outer:
+        for (Method method : methods) {
+            if (org.apache.commons.lang3.ArrayUtils.isNotEmpty(excluedAnnotations)) {
+                for (Class<? extends Annotation> excluedAnnotation : excluedAnnotations) {
+                    if (method.isAnnotationPresent(excluedAnnotation)) {
                         continue outer;
                     }
                 }
             }
             if (Modifier.isPublic(method.getModifiers())) {
                 for (Field field : result) {
-                    if((GETTER_PREFIX + org.apache.commons.lang3.StringUtils.capitalize(field.getName())).equals(method.getName()) && field.getType().getName().equals(method.getReturnType().getName())) {
+                    if ((GETTER_PREFIX + org.apache.commons.lang3.StringUtils.capitalize(field.getName())).equals(method.getName()) && field.getType().getName().equals(method.getReturnType().getName())) {
                         getterFields = org.apache.commons.lang3.ArrayUtils.add(getterFields, field);
                     }
                 }
@@ -403,8 +409,7 @@ public class Reflections {
                 try {
                     MetadataReader reader = readerfactory.getMetadataReader(resource);
                     String classname = reader.getClassMetadata().getClassName();
-                    Class<?> clazz = Class.forName(classname);
-                    return clazz;
+                    return Class.forName(classname);
                 } catch (IOException | ClassNotFoundException e) {
                     logger.info(e.getMessage(), e);
                     return null;

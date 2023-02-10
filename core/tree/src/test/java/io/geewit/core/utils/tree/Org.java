@@ -2,11 +2,9 @@ package io.geewit.core.utils.tree;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.experimental.SuperBuilder;
 
 import java.util.Objects;
 
-@SuperBuilder
 @Setter
 @Getter
 public class Org extends SignedTreeNode<Org, Long> {
