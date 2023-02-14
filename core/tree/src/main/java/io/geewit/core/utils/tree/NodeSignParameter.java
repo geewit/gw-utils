@@ -29,7 +29,8 @@ public class NodeSignParameter<Key extends Serializable> {
     /**
      * 是否向下传递标记
      */
-    private Boolean transmission;
+    @Builder.Default
+    private Boolean transmission = Boolean.TRUE;
 
     @Override
     public boolean equals(Object o) {

@@ -124,6 +124,34 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                                 .sign(s.getSign())
                                 .transmission(s.getTransmission())
                                 .build()));
+        signParameters.forEach(sp -> {
+            if (sp.getTransmission() != null && sp.getTransmission()) {
+                if (sp.getSign() != null && sp.getSign() == 0) {
+                    N node = nodeMap.get(sp.getId());
+                    if (node != null) {
+                        Stack<N> stack = new Stack<>();
+                        stack.push(node);
+                        while (!stack.isEmpty()) {
+                            N current = stack.pop();
+                            NodeSignParameter<Key> childSignParameter = signParametersMap.get(current.id);
+                            if (childSignParameter == null) {
+                                signParametersMap.put(current.id, NodeSignParameter.<Key>builder()
+                                        .id(current.id)
+                                        .sign(0)
+                                        .transmission(Boolean.TRUE)
+                                        .build());
+                            }
+                            List<N> children = current.children;
+                            if (children != null && !children.isEmpty()) {
+                                for (N child : children) {
+                                    stack.push(child);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
 
@@ -181,15 +209,12 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
             while (!nodeStack.isEmpty()) {
                 N parentNode = nodeStack.pop();
                 Integer originParentSign = parentNode.sign;
-                NodeSignParameter<Key> parentSignParameter = this.nodeSign(parentNode);
-                parentNode.setSign(parentSignParameter.getSign());
+                this.setNodeSign(parentNode);
                 if (parentNode.children != null && !parentNode.children.isEmpty()) {
                     Integer allChildrenSign = null;
                     for (N childNode : parentNode.children) {
                         //传入的sign
-                        NodeSignParameter<Key> signParameter = this.nodeSign(childNode);
-                        //父节点sign传递逻辑, 根据父节点sign和传入的sign设置当前节点sign
-                        signChildConsumer.accept(parentNode, childNode, signParameter);
+                        this.setNodeSign(childNode);
                         Integer sign = childNode.sign;
                         if (sign > 0) {
                             if (allChildrenSign == null) {
@@ -207,9 +232,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                             nodeStack.push(childNode);
                         }
                     }
-                    if (allChildrenSign > 0) {
-                        signParentConsumer.accept(parentNode, allChildrenSign, transmission);
-                    }
+                    signParentConsumer.accept(parentNode, allChildrenSign, overwrite);
                 }
                 if (!Objects.equals(parentNode.sign, originParentSign)) {
                     changedNodeStack.push(parentNode);
@@ -220,7 +243,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                 if (changedNode == null) {
                     continue;
                 }
-                Integer allChildrenSign = changedNode.sign;
+                Integer changedSign = changedNode.sign;
                 //region 处理 siblings
                 if (changedNode.parentId != null) {
                     N changedNodeParent = nodeMap.get(changedNode.parentId);
@@ -234,16 +257,16 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                             if (Objects.equals(sibling.id, changedNode.id)) {
                                 continue;
                             }
-                            if (allChildrenSign != null && allChildrenSign > 0) {
-                                if (allChildrenSign != (sibling.sign & allChildrenSign)) {
-                                    allChildrenSign = 0;
+                            if (changedSign != null) {
+                                if (changedSign != (sibling.sign & changedSign)) {
+                                    changedSign = 0;
                                 }
                             }
                         }
-                        if (allChildrenSign != null && allChildrenSign > 0) {
+                        if (changedSign != null && changedSign > 0) {
                             Integer originParentSign = changedNodeParent.sign;
-                            signParentConsumer.accept(changedNodeParent, allChildrenSign, transmission);
-                            if (!Objects.equals(originParentSign, allChildrenSign)) {
+                            signParentConsumer.accept(changedNodeParent, changedSign, transmission);
+                            if (!Objects.equals(originParentSign, changedSign)) {
                                 changedNodeStack.push(changedNodeParent);
                             }
                         }
@@ -296,26 +319,39 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
         }
     }
 
-    private NodeSignParameter<Key> nodeSign(N node) {
-        NodeSignParameter<Key> variableSimpleNodeSign = signParametersMap.get(node.id);
-        NodeSignParameter<Key> simpleNodeSign;
-        if (variableSimpleNodeSign == null) {
-            if (overwrite) {
-                simpleNodeSign = NodeSignParameter.<Key>builder()
-                        .id(node.id)
-                        .sign(0)
-                        .transmission(node.transmission)
-                        .build();
-            } else {
-                simpleNodeSign = NodeSignParameter.<Key>builder()
-                        .id(node.id)
-                        .sign(node.sign)
-                        .transmission(node.transmission)
-                        .build();
-            }
-        } else {
-            simpleNodeSign = variableSimpleNodeSign;
+    private void setNodeSign(N thisNode) {
+        if (thisNode == null) {
+            return;
         }
-        return simpleNodeSign;
+        N parentNode = null;
+        if (thisNode.parentId != null) {
+            parentNode = nodeMap.get(thisNode.parentId);
+        }
+        NodeSignParameter<Key> thisNodeSignParameter = signParametersMap.get(thisNode.id);
+        Integer thisSign;
+        if (thisNodeSignParameter == null) {
+            if (overwrite) {
+                thisSign = 0;
+            } else {
+                thisSign = thisNode.sign;
+                if (parentNode != null) {
+                    NodeSignParameter<Key> parentNodeSignParameter = signParametersMap.get(parentNode.id);
+                    if (parentNodeSignParameter != null) {
+                        Integer parentSign = parentNodeSignParameter.getSign();
+                        if (parentSign == 0) {
+                            thisSign = 0;
+                        }
+                    }
+                }
+            }
+
+        } else {
+            thisSign = thisNodeSignParameter.getSign();
+        }
+        signChildConsumer.accept(parentNode, thisNode, NodeSignParameter.<Key>builder()
+                .id(thisNode.id)
+                .sign(thisSign)
+                .transmission(thisNode.transmission)
+                .build());
     }
 }
