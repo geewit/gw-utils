@@ -49,7 +49,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
      * 是否覆盖 是: 如果没有传 id则设置sign == 0
      */
     @Builder.Default
-    private boolean overwrite = Boolean.TRUE;
+    private boolean overwrite = Boolean.FALSE;
     /**
      * 是否需要压缩标记(sign)
      */
@@ -119,32 +119,50 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
         signParametersMap = signParameters.stream()
                 .filter(s -> s.getId() != null && s.getSign() != null)
                 .collect(Collectors.toMap(NodeSignParameter::getId,
-                        s -> NodeSignParameter.<Key>builder()
-                                .id(s.getId())
-                                .sign(s.getSign())
-                                .transmission(s.getTransmission())
-                                .build()));
+                        s -> s));
         signParameters.forEach(sp -> {
-            if (sp.getTransmission() != null && sp.getTransmission()) {
+            if ((sp.getTransmissionDown() != null && sp.getTransmissionDown()) || (sp.getTransmissionUp() != null && sp.getTransmissionUp())) {
                 if (sp.getSign() != null && sp.getSign() == 0) {
                     N node = nodeMap.get(sp.getId());
                     if (node != null) {
-                        Stack<N> stack = new Stack<>();
-                        stack.push(node);
-                        while (!stack.isEmpty()) {
-                            N current = stack.pop();
-                            NodeSignParameter<Key> childSignParameter = signParametersMap.get(current.id);
-                            if (childSignParameter == null) {
-                                signParametersMap.put(current.id, NodeSignParameter.<Key>builder()
-                                        .id(current.id)
-                                        .sign(0)
-                                        .transmission(Boolean.TRUE)
-                                        .build());
+                        if (sp.getTransmissionDown() != null && sp.getTransmissionDown()) {
+                            Stack<N> downStack = new Stack<>();
+                            downStack.push(node);
+                            while (!downStack.isEmpty()) {
+                                N current = downStack.pop();
+                                NodeSignParameter<Key> childSignParameter = signParametersMap.get(current.id);
+                                if (childSignParameter == null) {
+                                    signParametersMap.put(current.id, NodeSignParameter.<Key>builder()
+                                            .id(current.id)
+                                            .sign(0)
+                                            .input(Boolean.FALSE)
+                                            .build());
+                                }
+                                List<N> children = current.children;
+                                if (children != null && !children.isEmpty()) {
+                                    for (N child : children) {
+                                        downStack.push(child);
+                                    }
+                                }
                             }
-                            List<N> children = current.children;
-                            if (children != null && !children.isEmpty()) {
-                                for (N child : children) {
-                                    stack.push(child);
+                        }
+
+                        if (sp.getTransmissionUp() != null && sp.getTransmissionUp()) {
+                            Stack<N> upStack = new Stack<>();
+                            upStack.push(node);
+                            while (!upStack.isEmpty()) {
+                                N current = upStack.pop();
+                                NodeSignParameter<Key> childSignParameter = signParametersMap.get(current.id);
+                                if (childSignParameter == null) {
+                                    signParametersMap.put(current.id, NodeSignParameter.<Key>builder()
+                                            .id(current.id)
+                                            .sign(0)
+                                            .input(Boolean.FALSE)
+                                            .build());
+                                }
+                                N parent = nodeMap.get(current.parentId);
+                                if (parent != null) {
+                                    upStack.push(parent);
                                 }
                             }
                         }
@@ -152,6 +170,20 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                 }
             }
         });
+
+        if (this.overwrite) {
+            if (this.nodes == null || this.nodes.isEmpty()) {
+                return;
+            }
+            for (N node : this.nodes) {
+                signParametersMap.putIfAbsent(node.getId(), NodeSignParameter
+                        .<Key>builder()
+                        .id(node.id)
+                        .sign(0)
+                        .input(Boolean.FALSE)
+                        .build());
+            }
+        }
     }
 
 
@@ -330,28 +362,27 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
         NodeSignParameter<Key> thisNodeSignParameter = signParametersMap.get(thisNode.id);
         Integer thisSign;
         if (thisNodeSignParameter == null) {
-            if (overwrite) {
-                thisSign = 0;
-            } else {
-                thisSign = thisNode.sign;
-                if (parentNode != null) {
-                    NodeSignParameter<Key> parentNodeSignParameter = signParametersMap.get(parentNode.id);
-                    if (parentNodeSignParameter != null) {
-                        Integer parentSign = parentNodeSignParameter.getSign();
-                        if (parentSign == 0) {
-                            thisSign = 0;
-                        }
+            thisSign = thisNode.sign;
+            if (parentNode != null) {
+                NodeSignParameter<Key> parentNodeSignParameter = signParametersMap.get(parentNode.id);
+                if (parentNodeSignParameter != null) {
+                    Integer parentSign = parentNodeSignParameter.getSign();
+                    if (parentSign == 0) {
+                        thisSign = 0;
                     }
                 }
             }
-
         } else {
             thisSign = thisNodeSignParameter.getSign();
         }
-        signChildConsumer.accept(parentNode, thisNode, NodeSignParameter.<Key>builder()
+        NodeSignParameter<Key> childSignParameter = thisNodeSignParameter != null ? thisNodeSignParameter : NodeSignParameter.<Key>builder()
                 .id(thisNode.id)
                 .sign(thisSign)
-                .transmission(thisNode.transmission)
-                .build());
+                .input(Boolean.FALSE)
+                .build();
+        if (thisNode.transmission != null) {
+            childSignParameter.setTransmissionDown(thisNode.transmission);
+        }
+        signChildConsumer.accept(parentNode, thisNode, childSignParameter);
     }
 }

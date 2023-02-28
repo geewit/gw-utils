@@ -10,7 +10,7 @@ import java.util.Objects;
  * 树节点标记参数
  * @author geewit
  */
-@Builder
+@Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldNameConstants
@@ -30,7 +30,40 @@ public class NodeSignParameter<Key extends Serializable> {
      * 是否向下传递标记
      */
     @Builder.Default
-    private Boolean transmission = Boolean.TRUE;
+    private Boolean transmissionDown = Boolean.TRUE;
+
+    /**
+     * 是否向上传递标记
+     */
+    @Builder.Default
+    private Boolean transmissionUp = Boolean.TRUE;
+
+    /**
+     * 是否外部传入参数
+     */
+    @Builder.Default
+    private Boolean input = Boolean.TRUE;
+
+    /**
+     * 在lombok生成的builder方法里增加 transmission() 方法
+     * @param <Key>
+     */
+    public static class NodeSignParameterBuilder<Key extends Serializable> {
+        private boolean transmissionDown$set;
+        private Boolean transmissionDown$value;
+        private boolean transmissionUp$set;
+        private Boolean transmissionUp$value;
+
+        public NodeSignParameterBuilder<Key> transmission(Boolean transmission) {
+            if (transmission != null) {
+                this.transmissionDown$value = transmission;
+                this.transmissionDown$set = true;
+                this.transmissionUp$value = transmission;
+                this.transmissionUp$set = true;
+            }
+            return this;
+        }
+    }
 
     @Override
     public boolean equals(Object o) {
