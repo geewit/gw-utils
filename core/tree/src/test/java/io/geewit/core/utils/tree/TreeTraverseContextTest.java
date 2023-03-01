@@ -1387,4 +1387,203 @@ public class TreeTraverseContextTest {
         assertEquals(1, nodes.stream().filter(n -> n.getId().equals(10L)).findFirst().get().getSign());
         assertEquals(1, nodes.stream().filter(n -> n.getId().equals(11L)).findFirst().get().getSign());
     }
+
+    /**
+     *  ORG_01                               ☑ 1     0
+     *     |-ORG_02                          ☑ 1     0
+     *        |-ORG_03                       ☑ 1     0
+     *           |-ORG_05                    ☑ 1     0
+     *        |-ORG_04                       ☑ 1     0
+     *           |-ORG_06                    ☑ 1     0
+     *              |-ORG_07                 ☑ 1     0
+     *                 |-ORG_08              ☑ 1     0
+     *                    |-ORG_09           ☑ 1     0
+     *                       |-ORG_09        ☑ 1     0
+     *                          |-ORG_10     ☑ 1     0
+     */
+    @Test
+    void testBuildTreeAndMarkNodes15() {
+        List<Org> nodes = new ArrayList<>();
+        Org org1 = new Org();
+        org1.setId(1L);
+        org1.setSign(2);
+        nodes.add(org1);
+        Org org2 = new Org();
+        org2.setId(2L);
+        org2.setParentId(1L);
+        org2.setSign(1);
+        nodes.add(org2);
+        Org org3 = new Org();
+        org3.setId(3L);
+        org3.setParentId(2L);
+        org3.setSign(1);
+        nodes.add(org3);
+        Org org4 = new Org();
+        org4.setId(4L);
+        org4.setParentId(2L);
+        org4.setSign(1);
+        nodes.add(org4);
+        Org org5 = new Org();
+        org5.setId(5L);
+        org5.setParentId(3L);
+        org5.setSign(1);
+        nodes.add(org5);
+        Org org6 = new Org();
+        org6.setId(6L);
+        org6.setParentId(4L);
+        org6.setSign(1);
+        nodes.add(org6);
+        Org org7 = new Org();
+        org7.setId(7L);
+        org7.setParentId(6L);
+        org7.setSign(1);
+        nodes.add(org7);
+        Org org8 = new Org();
+        org8.setId(8L);
+        org8.setParentId(7L);
+        org8.setSign(1);
+        nodes.add(org8);
+        Org org9 = new Org();
+        org9.setId(9L);
+        org9.setParentId(8L);
+        org9.setSign(1);
+        nodes.add(org9);
+        Org org10 = new Org();
+        org10.setId(10L);
+        org10.setParentId(9L);
+        org10.setSign(1);
+        nodes.add(org10);
+        Org org11 = new Org();
+        org11.setId(11L);
+        org11.setParentId(10L);
+        org11.setSign(1);
+        nodes.add(org11);
+
+        Set<NodeSignParameter<Long>> signParameters = new HashSet<>();
+
+        TreeTraverseContext<Org, Long> treeTraversalContext = TreeTraverseContext.<Org, Long>builder()
+                .nodes(nodes)
+                .signParameters(signParameters)
+                .overwrite(true)
+                .transmission(true)
+                .compress(false)
+                .signChildConsumer(signChildConsumer)
+                .signParentConsumer(signParentConsumer)
+                .compressChildConsumer(compressChildConsumer)
+                .transmissionChildConsumer(transmissionChildConsumer)
+                .build();
+        treeTraversalContext.cascadeSign();
+
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(1L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(2L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(3L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(4L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(5L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(6L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(7L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(8L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(9L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(10L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(11L)).findFirst().get().getSign());
+    }
+
+    /**
+     *  ORG_01                               ☑ 1     0
+     *     |-ORG_02                          ☑ 1     0
+     *        |-ORG_03                       ☑ 1     0
+     *           |-ORG_05                    ☑ 1     0
+     *        |-ORG_04                       ☑ 1     0
+     *           |-ORG_06                    ☑ 1     0
+     *              |-ORG_07                 ☑ 1     0
+     *                 |-ORG_08              ☑ 1     0
+     *                    |-ORG_09           ☑ 1     0
+     *                       |-ORG_09        ☑ 1     0
+     *                          |-ORG_10     ☑ 1     0
+     */
+    @Test
+    void testBuildTreeAndMarkNodes16() {
+        List<Org> nodes = new ArrayList<>();
+        Org org1 = new Org();
+        org1.setId(1L);
+        org1.setSign(2);
+        nodes.add(org1);
+        Org org2 = new Org();
+        org2.setId(2L);
+        org2.setParentId(1L);
+        org2.setSign(1);
+        nodes.add(org2);
+        Org org3 = new Org();
+        org3.setId(3L);
+        org3.setParentId(2L);
+        org3.setSign(1);
+        nodes.add(org3);
+        Org org4 = new Org();
+        org4.setId(4L);
+        org4.setParentId(2L);
+        org4.setSign(1);
+        nodes.add(org4);
+        Org org5 = new Org();
+        org5.setId(5L);
+        org5.setParentId(3L);
+        org5.setSign(1);
+        nodes.add(org5);
+        Org org6 = new Org();
+        org6.setId(6L);
+        org6.setParentId(4L);
+        org6.setSign(1);
+        nodes.add(org6);
+        Org org7 = new Org();
+        org7.setId(7L);
+        org7.setParentId(6L);
+        org7.setSign(1);
+        nodes.add(org7);
+        Org org8 = new Org();
+        org8.setId(8L);
+        org8.setParentId(7L);
+        org8.setSign(1);
+        nodes.add(org8);
+        Org org9 = new Org();
+        org9.setId(9L);
+        org9.setParentId(8L);
+        org9.setSign(1);
+        nodes.add(org9);
+        Org org10 = new Org();
+        org10.setId(10L);
+        org10.setParentId(9L);
+        org10.setSign(1);
+        nodes.add(org10);
+        Org org11 = new Org();
+        org11.setId(11L);
+        org11.setParentId(10L);
+        org11.setSign(1);
+        nodes.add(org11);
+
+        Set<NodeSignParameter<Long>> signParameters = new HashSet<>();
+        signParameters.add(NodeSignParameter.<Long>builder().id(3L).sign(0).transmission(true).build());
+
+        TreeTraverseContext<Org, Long> treeTraversalContext = TreeTraverseContext.<Org, Long>builder()
+                .nodes(nodes)
+                .signParameters(signParameters)
+                .overwrite(false)
+                .transmission(true)
+                .compress(false)
+                .signChildConsumer(signChildConsumer)
+                .signParentConsumer(signParentConsumer)
+                .compressChildConsumer(compressChildConsumer)
+                .transmissionChildConsumer(transmissionChildConsumer)
+                .build();
+        treeTraversalContext.cascadeSign();
+
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(1L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(2L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(3L)).findFirst().get().getSign());
+        assertEquals(1, nodes.stream().filter(n -> n.getId().equals(4L)).findFirst().get().getSign());
+        assertEquals(0, nodes.stream().filter(n -> n.getId().equals(5L)).findFirst().get().getSign());
+        assertEquals(1, nodes.stream().filter(n -> n.getId().equals(6L)).findFirst().get().getSign());
+        assertEquals(1, nodes.stream().filter(n -> n.getId().equals(7L)).findFirst().get().getSign());
+        assertEquals(1, nodes.stream().filter(n -> n.getId().equals(8L)).findFirst().get().getSign());
+        assertEquals(1, nodes.stream().filter(n -> n.getId().equals(9L)).findFirst().get().getSign());
+        assertEquals(1, nodes.stream().filter(n -> n.getId().equals(10L)).findFirst().get().getSign());
+        assertEquals(1, nodes.stream().filter(n -> n.getId().equals(11L)).findFirst().get().getSign());
+    }
 }

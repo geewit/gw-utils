@@ -136,6 +136,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                                             .id(current.id)
                                             .sign(0)
                                             .input(Boolean.FALSE)
+                                            .transmissionUp(Boolean.FALSE)
                                             .build());
                                 }
                                 List<N> children = current.children;
@@ -158,6 +159,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                                             .id(current.id)
                                             .sign(0)
                                             .input(Boolean.FALSE)
+                                            .transmissionDown(Boolean.FALSE)
                                             .build());
                                 }
                                 N parent = nodeMap.get(current.parentId);
@@ -195,6 +197,9 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
             return;
         }
         if (signParameters == null || signParameters.isEmpty()) {
+            if (overwrite) {
+                nodes.forEach(node -> node.sign = 0);
+            }
             return;
         }
         this.buildTree();
