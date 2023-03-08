@@ -39,12 +39,6 @@ public class NodeSignParameter<Key extends Serializable> {
     private Boolean transmissionUp = Boolean.TRUE;
 
     /**
-     * 是否外部传入参数
-     */
-    @Builder.Default
-    private Boolean input = Boolean.TRUE;
-
-    /**
      * 在lombok生成的builder方法里增加 transmission() 方法
      * @param <Key>
      */

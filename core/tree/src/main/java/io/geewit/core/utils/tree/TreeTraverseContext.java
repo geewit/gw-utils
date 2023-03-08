@@ -90,6 +90,9 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
             this.roots = Collections.emptyList();
             return;
         }
+        if (this.roots != null) {
+            return;
+        }
         this.roots = new ArrayList<>();
         nodeMap = nodes.stream().collect(Collectors.toMap(TreeNode::getId, node -> {
             if (node.sign == null) {
@@ -135,7 +138,6 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                                     signParametersMap.put(current.id, NodeSignParameter.<Key>builder()
                                             .id(current.id)
                                             .sign(0)
-                                            .input(Boolean.FALSE)
                                             .transmissionUp(Boolean.FALSE)
                                             .build());
                                 }
@@ -158,7 +160,6 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                                     signParametersMap.put(current.id, NodeSignParameter.<Key>builder()
                                             .id(current.id)
                                             .sign(0)
-                                            .input(Boolean.FALSE)
                                             .transmissionDown(Boolean.FALSE)
                                             .build());
                                 }
@@ -182,7 +183,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                         .<Key>builder()
                         .id(node.id)
                         .sign(0)
-                        .input(Boolean.FALSE)
+                        .transmission(Boolean.FALSE)
                         .build());
             }
         }
@@ -203,9 +204,6 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
             return;
         }
         this.buildTree();
-        if (roots == null || roots.isEmpty()) {
-            return;
-        }
         //region 向下传递sign, 修复已存在sign可能缺漏
         if (transmission) {
             this.transmissionAndCompressDownSign(Boolean.TRUE, Boolean.FALSE);
@@ -372,7 +370,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                 NodeSignParameter<Key> parentNodeSignParameter = signParametersMap.get(parentNode.id);
                 if (parentNodeSignParameter != null) {
                     Integer parentSign = parentNodeSignParameter.getSign();
-                    if (parentSign == 0) {
+                    if (parentSign == 0 && parentNodeSignParameter.getTransmissionDown() != null && parentNodeSignParameter.getTransmissionDown()) {
                         thisSign = 0;
                     }
                 }
@@ -383,7 +381,6 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
         NodeSignParameter<Key> childSignParameter = thisNodeSignParameter != null ? thisNodeSignParameter : NodeSignParameter.<Key>builder()
                 .id(thisNode.id)
                 .sign(thisSign)
-                .input(Boolean.FALSE)
                 .build();
         if (thisNode.transmission != null) {
             childSignParameter.setTransmissionDown(thisNode.transmission);
