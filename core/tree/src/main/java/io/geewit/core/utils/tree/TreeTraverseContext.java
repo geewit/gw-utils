@@ -7,6 +7,7 @@ import lombok.experimental.FieldNameConstants;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -85,6 +86,8 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
      */
     private CompressChildConsumer<N, Key> compressChildConsumer;
 
+    private Predicate<Key> rootPredicate;
+
     private void buildTree() {
         if (this.nodes == null || this.nodes.isEmpty()) {
             this.roots = Collections.emptyList();
@@ -94,14 +97,14 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
             return;
         }
         this.roots = new ArrayList<>();
-        nodeMap = nodes.stream().collect(Collectors.toMap(TreeNode::getId, node -> {
+        this.nodeMap = nodes.stream().collect(Collectors.toMap(TreeNode::getId, node -> {
             if (node.sign == null) {
                 node.setSign(0);
             }
             return node;
         }));
         nodes.forEach(node -> {
-            if (node.parentId == null) {
+            if (node.parentId == null || (rootPredicate != null && rootPredicate.test(node.parentId))) {
                 roots.add(node);
             } else {
                 N parent = nodeMap.get(node.parentId);

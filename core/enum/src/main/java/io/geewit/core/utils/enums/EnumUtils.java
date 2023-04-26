@@ -8,6 +8,10 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings({"unused"})
 public class EnumUtils {
+
+    private EnumUtils() {
+    }
+
     /**
      * 通过token 转成枚举
      * @param clazz 枚举类 class

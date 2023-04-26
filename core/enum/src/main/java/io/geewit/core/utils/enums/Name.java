@@ -7,6 +7,10 @@ package io.geewit.core.utils.enums;
  */
 @SuppressWarnings({"unused"})
 public interface Name {
+    /**
+     * 获取枚举名称
+     * @return 枚举名称
+     */
     default String getName() {
         return this.toString();
     }

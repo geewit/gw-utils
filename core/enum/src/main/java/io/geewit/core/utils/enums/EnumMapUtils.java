@@ -13,6 +13,9 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings({"unused"})
 public class EnumMapUtils {
+    private EnumMapUtils() {
+    }
+
     /**
      * 枚举开关Map转成二进制
      *

@@ -11,6 +11,9 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings({"unused"})
 public class BinaryUtils {
+    private BinaryUtils() {
+    }
+
     /**
      * 枚举转二进制
      *
