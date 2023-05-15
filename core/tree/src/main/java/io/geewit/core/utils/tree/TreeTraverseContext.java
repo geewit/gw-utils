@@ -86,7 +86,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
      */
     private CompressChildConsumer<N, Key> compressChildConsumer;
 
-    private Predicate<Key> rootPredicate;
+    private Predicate<N> rootPredicate;
 
     private void buildTree() {
         if (this.nodes == null || this.nodes.isEmpty()) {
@@ -104,7 +104,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
             return node;
         }));
         nodes.forEach(node -> {
-            if (node.parentId == null || (rootPredicate != null && rootPredicate.test(node.parentId))) {
+            if (node.parentId == null || (rootPredicate != null && rootPredicate.test(node))) {
                 roots.add(node);
             } else {
                 N parent = nodeMap.get(node.parentId);

@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TreeUtils {
 
-    public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTree(List<N> nodes, Predicate<Key> rootPredicate, Key rootId) {
+    public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTree(List<N> nodes, Predicate<N> rootPredicate, Key rootId) {
         if(nodes == null || nodes.isEmpty()) {
             return Collections.emptyList();
         }
@@ -22,7 +22,7 @@ public class TreeUtils {
         Map<Key, N> nodeMap = nodes.stream().collect(Collectors.toMap(TreeNode::getId, node -> node));
         nodes.forEach(node -> {
 
-            if ((rootId != null && Objects.equals(node.id, rootId)) || (rootId == null && (node.parentId == null || (rootPredicate != null && rootPredicate.test(node.parentId))))) {
+            if ((rootId != null && Objects.equals(node.id, rootId)) || (rootId == null && (node.parentId == null || (rootPredicate != null && rootPredicate.test(node))))) {
                 roots.add(node);
             } else {
                 N parent = nodeMap.get(node.parentId);
@@ -34,7 +34,7 @@ public class TreeUtils {
         return roots;
     }
 
-    public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTree(List<N> nodes, Predicate<Key> rootPredicate) {
+    public static <N extends TreeNode<N, Key>, Key extends Serializable> List<N> buildTree(List<N> nodes, Predicate<N> rootPredicate) {
         return buildTree(nodes, rootPredicate, null);
     }
 
