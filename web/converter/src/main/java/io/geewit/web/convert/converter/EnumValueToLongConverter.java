@@ -11,7 +11,7 @@ import org.springframework.core.convert.converter.Converter;
  * @param <S>
  * @author geewit
  */
-public class EnumValueToIntegerConverter<S extends Enum<S> & Value<Integer>> implements Converter<S, Integer>, ConditionalConverter {
+public class EnumValueToLongConverter<S extends Enum<S> & Value<Long>> implements Converter<S, Long>, ConditionalConverter {
 
     @Override
     public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
@@ -19,7 +19,7 @@ public class EnumValueToIntegerConverter<S extends Enum<S> & Value<Integer>> imp
     }
 
     @Override
-    public Integer convert(S source) {
+    public Long convert(S source) {
         return source.value();
     }
 }

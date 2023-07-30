@@ -5,9 +5,9 @@ package io.geewit.core.utils.enums;
  * @author geewit
  */
 @SuppressWarnings({"unused"})
-public interface Value {
+public interface Value<V extends Number> {
     /**
      * @return 数字
      */
-    int value();
+    V value();
 }
