@@ -102,7 +102,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                 node.setSign(0);
             }
             return node;
-        }));
+        }, (oldValue, newValue) -> oldValue));
         nodes.forEach(node -> {
             if (node.parentId == null || (rootPredicate != null && rootPredicate.test(node))) {
                 roots.add(node);
@@ -125,7 +125,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
         signParametersMap = signParameters.stream()
                 .filter(s -> s.getId() != null && s.getSign() != null)
                 .collect(Collectors.toMap(NodeSignParameter::getId,
-                        s -> s));
+                        s -> s, (oldValue, newValue) -> oldValue));
         signParameters.forEach(sp -> {
             if ((sp.getTransmissionDown() != null && sp.getTransmissionDown()) || (sp.getTransmissionUp() != null && sp.getTransmissionUp())) {
                 if (sp.getSign() != null && sp.getSign() == 0) {

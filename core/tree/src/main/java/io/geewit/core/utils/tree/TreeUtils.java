@@ -19,7 +19,7 @@ public class TreeUtils {
             return Collections.emptyList();
         }
         List<N> roots = new ArrayList<>();
-        Map<Key, N> nodeMap = nodes.stream().collect(Collectors.toMap(TreeNode::getId, node -> node));
+        Map<Key, N> nodeMap = nodes.stream().collect(Collectors.toMap(TreeNode::getId, node -> node, (oldValue, newValue) -> oldValue));
         nodes.forEach(node -> {
 
             if ((rootId != null && Objects.equals(node.id, rootId)) || (rootId == null && (node.parentId == null || (rootPredicate != null && rootPredicate.test(node))))) {

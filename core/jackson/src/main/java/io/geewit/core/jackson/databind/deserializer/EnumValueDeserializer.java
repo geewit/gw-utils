@@ -18,7 +18,7 @@ public abstract class EnumValueDeserializer<E extends Enum<E> & Value<N>, N exte
     @SuppressWarnings({"unchecked"})
     public EnumValueDeserializer() {
         clazz = (Class <E>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-        valueType = (Class <N>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[2];
+        valueType = (Class <N>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[1];
     }
 
     private final Class<E> clazz;

@@ -14,12 +14,13 @@ import java.io.IOException;
  */
 @SuppressWarnings({"unused"})
 @JsonComponent
-public class EnumValueSerializer extends JsonSerializer<Value<Number>> {
-    public static final EnumValueSerializer instance = new EnumValueSerializer();
+public class EnumValueSerializer<V extends Number> extends JsonSerializer<Value<V>> {
+    public static final EnumValueSerializer<Integer> instanceOfInteger = new EnumValueSerializer<>();
+    public static final EnumValueSerializer<Long> instanceOfLong = new EnumValueSerializer<>();
 
     @Override
     public void serialize(Value value, JsonGenerator generator, SerializerProvider provider) throws IOException {
         // put your desired money style here
-        generator.writeString(String.valueOf(value.value()));
+        generator.writeString(String.valueOf(value.value().longValue()));
     }
 }

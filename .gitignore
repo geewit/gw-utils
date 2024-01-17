@@ -30,6 +30,11 @@
 /core/enum/target
 /core/enum/out
 /core/enum/.gradle
+/core/jackson/*.iml
+/core/jackson/logs
+/core/jackson/target
+/core/jackson/out
+/core/jackson/.gradle
 /core/lang/*.iml
 /core/lang/logs
 /core/lang/target
