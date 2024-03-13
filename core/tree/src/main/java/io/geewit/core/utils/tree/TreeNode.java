@@ -51,6 +51,14 @@ public abstract class TreeNode<N extends TreeNode<N, Key>, Key extends Serializa
         }
     }
 
+    public void clear() {
+        this.id = null;
+        this.parentId = null;
+        this.parentIds = null;
+        this.parent = null;
+        this.children = null;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

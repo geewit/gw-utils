@@ -88,6 +88,20 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
 
     private Predicate<N> rootPredicate;
 
+    public void clear() {
+        this.nodes = null;
+        this.rootId = null;
+        this.nodeMap = null;
+        this.roots = null;
+        this.signParameters = null;
+        this.signParametersMap = null;
+        this.signChildConsumer = null;
+        this.signParentConsumer = null;
+        this.transmissionChildConsumer = null;
+        this.compressChildConsumer = null;
+        this.rootPredicate = null;
+    }
+
     private void buildTree() {
         if (this.nodes == null || this.nodes.isEmpty()) {
             this.roots = Collections.emptyList();

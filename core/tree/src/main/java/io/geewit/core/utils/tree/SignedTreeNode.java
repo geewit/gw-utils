@@ -27,6 +27,13 @@ public abstract class SignedTreeNode<N extends SignedTreeNode<N, Key>, Key exten
     protected Boolean transmission;
 
     @Override
+    public void clear() {
+        super.clear();
+        this.sign = null;
+        this.transmission = null;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
