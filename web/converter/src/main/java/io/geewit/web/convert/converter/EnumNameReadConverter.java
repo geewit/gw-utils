@@ -12,16 +12,16 @@ import org.springframework.core.convert.converter.Converter;
  * @param <T>
  * @author geewit
  */
-public class EnumNameConverter<T extends Enum<T> & Name> implements Converter<String, T>, ConditionalConverter {
+public class EnumNameReadConverter<T extends Enum<T> & Name> implements Converter<String, T>, ConditionalConverter {
 
     private TypeDescriptor targetType;
 
     @Override
     public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
-        if(!sourceType.isAssignableTo(TypeDescriptor.valueOf(String.class))) {
+        if (!sourceType.isAssignableTo(TypeDescriptor.valueOf(String.class))) {
             return false;
         }
-        if(targetType.isAssignableTo(TypeDescriptor.valueOf(Enum.class)) && targetType.isAssignableTo(TypeDescriptor.valueOf(Name.class))) {
+        if (targetType.isAssignableTo(TypeDescriptor.valueOf(Enum.class)) && targetType.isAssignableTo(TypeDescriptor.valueOf(Name.class))) {
             this.targetType = targetType;
             return true;
         } else {

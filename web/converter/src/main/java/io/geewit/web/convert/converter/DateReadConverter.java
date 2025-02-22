@@ -10,8 +10,8 @@ import java.util.Date;
 /**
  * @author geewit
  */
-public class DateConverter implements Converter<String, Date> {
-    private final static Logger logger = LoggerFactory.getLogger(DateConverter.class);
+public class DateReadConverter implements Converter<String, Date> {
+    private final static Logger logger = LoggerFactory.getLogger(DateReadConverter.class);
 
     private static final String[] PATTERNS = {"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd", "HH:mm:ss"};
 

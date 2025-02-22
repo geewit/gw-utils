@@ -89,12 +89,27 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
     private Predicate<N> rootPredicate;
 
     public void clear() {
-        this.nodes = null;
+        if (this.nodes != null) {
+            this.nodes.clear();
+            this.nodes = null;
+        }
         this.rootId = null;
-        this.nodeMap = null;
-        this.roots = null;
-        this.signParameters = null;
-        this.signParametersMap = null;
+        if (this.nodeMap != null) {
+            this.nodeMap.clear();
+            this.nodeMap = null;
+        }
+        if (this.roots != null) {
+            this.roots.clear();
+            this.roots = null;
+        }
+        if (this.signParameters != null) {
+            this.signParameters.clear();
+            this.signParameters = null;
+        }
+        if (this.signParametersMap != null) {
+            this.signParametersMap.clear();
+            this.signParametersMap = null;
+        }
         this.signChildConsumer = null;
         this.signParentConsumer = null;
         this.transmissionChildConsumer = null;
