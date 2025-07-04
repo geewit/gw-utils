@@ -55,6 +55,12 @@
 /core/uuid/target
 /core/uuid/out
 /core/uuid/.gradle
+/data/.gradle
+/data/spring/*.iml
+/data/spring/logs
+/data/spring/target
+/data/spring/out
+/data/spring/.gradle
 /web/*.iml
 /web/logs
 /web/target
