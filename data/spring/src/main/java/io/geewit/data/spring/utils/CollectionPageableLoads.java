@@ -214,6 +214,26 @@ public class CollectionPageableLoads {
         } while (page != null && page.hasNext());
     }
 
+    public static <T> void pageLoadAndListConsumer(int pageSize,
+                                                   PageLoadFunction<T> loadFunction,
+                                                   Consumer<List<T>> consumer) {
+        Pageable pageable = Pageable.ofSize(pageSize);
+        Page<T> page;
+        do {
+            page = loadFunction.page(pageable);
+            if (page != null) {
+                if (page.hasContent()) {
+                    long start = System.currentTimeMillis();
+                    consumer.accept(page.getContent());
+                    log.info("pageLoadAndConsumer page: {}, cost:{}", page.getNumber(), (System.currentTimeMillis() - start));
+                }
+                if (page.hasNext()) {
+                    pageable = page.nextPageable();
+                }
+            }
+        } while (page != null && page.hasNext());
+    }
+
     @FunctionalInterface
     public interface PageLoadFunction<T> {
         Page<T> page(Pageable pageable);
