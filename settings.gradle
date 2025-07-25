@@ -1,3 +1,5 @@
+import groovy.io.FileVisitResult
+
 pluginManagement {
     repositories {
         mavenLocal()
@@ -10,5 +12,53 @@ pluginManagement {
 
 rootProject.name = 'gw-utils'
 
-apply from: "sub_settings.gradle"
+static def buildFullProjectName(File rootDir, File dir) {
+    if(dir == null || !dir.exists() || !dir.isDirectory()) {
+        return ""
+    }
+    if(!new File("${dir}/build.gradle").exists() && !new File("${dir}/settings.gradle").exists() && !new File("${dir}/package.json").exists()) {
+        return ""
+    }
+    if(rootDir.absolutePath == dir.absolutePath) {
+        return ""
+    }
+    def fullProjectName = dir.name
+    if(dir.parentFile != null && dir.parentFile.exists()) {
+        fullProjectName = buildFullProjectName(rootDir, dir.parentFile) + ":${fullProjectName}"
+    }
+//    println "fullProjectName = ${fullProjectName}"
+    return fullProjectName
+}
+
+rootDir.traverse(
+        type: groovy.io.FileType.DIRECTORIES,
+        preDir: {
+            if (!new File("${it}/build.gradle").exists() && !new File("${it}/settings.gradle").exists() && !new File("${it}/package.json").exists()) {
+                return FileVisitResult.SKIP_SUBTREE
+            }
+        }) { dir ->
+    if (dir) {
+        def fullProjectName = buildFullProjectName(rootDir, dir)
+        if(!fullProjectName.isEmpty()) {
+            println "include '${fullProjectName}'"
+            include fullProjectName //register the project path using : notation
+            println "project('${fullProjectName}').projectDir = ${dir}"
+            def project = project(fullProjectName)
+            println "project('${fullProjectName}').name = ${project.name}"
+            if(project.hasProperty("artifactId")) {
+                def projectName = project.property("artifactId")
+                project.name = projectName
+            }
+            project.projectDir = dir
+        }
+    }
+}
+
+buildCache {
+    local {
+        directory = new File(rootDir, 'build-cache')
+        removeUnusedEntriesAfterDays = 30
+    }
+}
+
 
