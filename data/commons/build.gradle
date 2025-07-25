@@ -1,0 +1,6 @@
+project(':data:commons') {
+    dependencies {
+        compileOnly("org.projectlombok:lombok:$lombok_version")
+        annotationProcessor("org.projectlombok:lombok:$lombok_version")
+    }
+}

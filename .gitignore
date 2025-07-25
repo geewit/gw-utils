@@ -56,6 +56,11 @@
 /core/uuid/out
 /core/uuid/.gradle
 /data/.gradle
+/data/commons/*.iml
+/data/commons/logs
+/data/commons/target
+/data/commons/out
+/data/commons/.gradle
 /data/spring/*.iml
 /data/spring/logs
 /data/spring/target
