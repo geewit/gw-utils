@@ -1,0 +1,604 @@
+import groovy.json.JsonSlurper
+import org.codehaus.groovy.runtime.MethodClosure
+
+import java.nio.charset.StandardCharsets
+import org.apache.tools.ant.taskdefs.Checksum
+
+logger.info("rootProject: ${rootProject.name}")
+
+boolean isSkipProject(Project project) {
+    boolean isSkipProject = !project.buildscript.sourceFile.exists()
+    logger.info("isSkipProject: ${isSkipProject}")
+    return isSkipProject
+}
+
+
+gradle.startParameter.taskNames.forEach(taskName -> {
+    def isPublishTask = false
+    if (taskName.contains('publish')) {
+        logger.info("isPublishTask: true")
+        isPublishTask = true
+    }
+    rootProject.ext.set('isPublishTask', isPublishTask)
+})
+
+
+ext {
+    isSkipProject = this.&isSkipProject as MethodClosure
+}
+
+
+Properties props = new Properties()
+File versionFile = rootProject.file('version.properties')
+if(versionFile.exists()) {
+    props.load(versionFile.newReader() as Reader)
+    props.each { prop ->
+        logger.info("${prop.key}: ${prop.value}")
+        rootProject.ext.set(prop.key, prop.value)
+    }
+}
+def excludeArtifacts = []
+File excludeFile = rootProject.file('gradle-exclude.json')
+if(excludeFile.exists()) {
+    excludeArtifacts = new JsonSlurper().parseText(excludeFile.text)
+    excludeArtifacts?.each { item ->
+        logger.info("exclude ${item.group}: ${item.module}")
+    }
+}
+
+boolean publish_need_sign = Boolean.FALSE
+if (rootProject.hasProperty('io.geewit.gradle.publish_need_sign')) {
+    publish_need_sign = 'true'.equalsIgnoreCase(rootProject.getProperties().get('io.geewit.gradle.publish_need_sign').toString())
+}
+logger.info("publish_need_sign: ${publish_need_sign}")
+
+def java_version = JavaVersion.VERSION_1_8
+if (rootProject.hasProperty('io.geewit.gradle.java_version')) {
+    java_version = JavaVersion.toVersion(rootProject.getProperties().get('io.geewit.gradle.java_version'))
+}
+logger.info("java_version: ${java_version}")
+
+static String generateGroupId(Project thisProject, Project rootProject) {
+    println "thisProject.name = ${thisProject.name}"
+    Project parentProject = thisProject.parent
+    String groupId = null
+    Properties projectProps = new Properties()
+    File projectPropsFile = thisProject.file('gradle.properties')
+    if(projectPropsFile.exists()) {
+        projectProps.load(projectPropsFile.newReader() as Reader)
+        String thisGroup = projectProps.getProperty('group')
+        if (thisGroup != null) {
+            groupId = thisGroup
+        }
+    }
+    if(groupId == null) {
+        println 'project has not groupId'
+        groupId = rootProject.group.toString()
+        println "groupId = ${groupId}"
+        if(thisProject.parent != null) {
+            def deepth = 1
+            println "thisProject.name = ${thisProject.name}"
+            String group_suffix = ""
+            while (parentProject != null) {
+                println "deepth = ${deepth}"
+                if(parentProject.parent != null) {
+                    if(group_suffix.length() > 0) {
+                        group_suffix = parentProject.name + "." + group_suffix
+                    } else {
+                        group_suffix = parentProject.name
+                    }
+                }
+                println "group_suffix = ${group_suffix}"
+                parentProject = parentProject.parent
+                deepth++
+            }
+            if(group_suffix.length() > 0) {
+                groupId = groupId + "." + group_suffix
+            }
+        } else {
+            println 'thisProject.parent == null'
+            groupId = thisProject.group.toString()
+            println "groupId = ${groupId}"
+        }
+    }
+    println "--------- final groupId = ${groupId}"
+    thisProject.group(groupId)
+    return groupId
+}
+
+static String generateArtifactId(Project project) {
+    Project prj = project.parent
+
+    String artifactId
+    if(project.hasProperty('artifactId')) {
+        artifactId = project.property('artifactId').toString()
+        println "project.artifactId = ${artifactId}"
+    } else {
+        println 'project has not artifactId'
+        artifactId = project.name
+        println "artifactId = ${artifactId}"
+        while (prj != null) {
+            println "prj.name = ${prj.name}"
+            println "prj.depth = ${prj.depth}"
+            artifactId = "${prj.name}-${artifactId}"
+            println "artifactId = ${artifactId}"
+            prj = prj.parent
+        }
+    }
+    println "--------- final artifactId = ${artifactId}"
+    return artifactId
+}
+
+static boolean isNeedPublish(Project thisProject, Project rootProject) {
+    println "thisProject.name = ${thisProject.name}"
+    boolean need_publish = Boolean.FALSE
+    if (rootProject.hasProperty('io.geewit.gradle.need_publish')) {
+        need_publish = rootProject.property('io.geewit.gradle.need_publish').toString().equalsIgnoreCase('true')
+    }
+    File projectPropsFile = thisProject.file('gradle.properties')
+    if(projectPropsFile.exists()) {
+        println "gradle.properties File exists"
+        Properties projectProps = new Properties()
+        projectProps.load(projectPropsFile.newReader() as Reader)
+        def needPublish = projectProps.get('io.geewit.gradle.need_publish')
+        if (needPublish != null) {
+            println "projectProps.hasProperty 'io.geewit.gradle.need_publish' = " + needPublish.toString()
+            need_publish = 'true'.equalsIgnoreCase(needPublish.toString())
+        } else {
+            println "projectProps.has not Property 'io.geewit.gradle.need_publish'"
+        }
+    } else {
+        println "gradle.properties File not exists"
+    }
+    println "thisProject(${thisProject.name}).need_publish = ${need_publish}"
+    thisProject.ext.set('need_publish', need_publish)
+    return need_publish
+}
+
+static String getReleaseRepositoryUrl(Project rootProject) {
+    if(rootProject.hasProperty('REPOSITORY_RELEASE_URL')) {
+        println "rootProject.property('REPOSITORY_RELEASE_URL'): " + rootProject.property('REPOSITORY_RELEASE_URL').toString()
+        return rootProject.property('REPOSITORY_RELEASE_URL').toString()
+    }
+    String property_default_key = 'REPOSITORY_RELEASE_URL'
+    String property_key = 'REPOSITORY_RELEASE_URL_KEY'
+    String RELEASE_REPOSITORY_URL_KEY = rootProject.hasProperty(property_key) ? rootProject.property(property_key).toString() : property_default_key
+    String releaseRepositoryUrl = rootProject.hasProperty(RELEASE_REPOSITORY_URL_KEY) ? rootProject.property(RELEASE_REPOSITORY_URL_KEY).toString()
+            : 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+    println "releaseRepositoryUrl: ${releaseRepositoryUrl}"
+    rootProject.ext.set('REPOSITORY_RELEASE_URL', releaseRepositoryUrl)
+    return releaseRepositoryUrl
+}
+
+static String getSnapshotRepositoryUrl(Project rootProject) {
+    if(rootProject.hasProperty('REPOSITORY_SNAPSHOT_URL')) {
+        println "rootProject.property('REPOSITORY_SNAPSHOT_URL'): " + rootProject.property('REPOSITORY_SNAPSHOT_URL').toString()
+        return rootProject.property('REPOSITORY_SNAPSHOT_URL').toString()
+    }
+    String property_default_key = 'REPOSITORY_SNAPSHOT_URL'
+    String property_key = 'REPOSITORY_SNAPSHOT_URL_KEY'
+    String SNAPSHOT_REPOSITORY_URL_KEY = rootProject.hasProperty(property_key) ? rootProject.property(property_key).toString() : property_default_key
+    String snapshotRepositoryUrl =  rootProject.hasProperty(SNAPSHOT_REPOSITORY_URL_KEY) ? rootProject.property(SNAPSHOT_REPOSITORY_URL_KEY).toString()
+            : 'https://oss.sonatype.org/content/repositories/snapshots/'
+    println "snapshotRepositoryUrl: ${snapshotRepositoryUrl}"
+    rootProject.ext.set('REPOSITORY_SNAPSHOT_URL', snapshotRepositoryUrl)
+    return snapshotRepositoryUrl
+}
+
+static String getRepositoryUsername(Project rootProject) {
+    if(rootProject.hasProperty('REPOSITORY_USERNAME')) {
+        println "rootProject.property('REPOSITORY_USERNAME'): " + rootProject.property('REPOSITORY_USERNAME').toString()
+        return rootProject.property('REPOSITORY_USERNAME').toString()
+    }
+    String property_default_key = 'REPOSITORY_USERNAME'
+    String property_key = 'REPOSITORY_USERNAME_KEY'
+    String SONATYPE_USERNAME_KEY = rootProject.hasProperty(property_key) ? rootProject.property(property_key).toString() : property_default_key
+    String username = rootProject.hasProperty(SONATYPE_USERNAME_KEY) ? rootProject.property(SONATYPE_USERNAME_KEY).toString() : ""
+    println "username: $username"
+    rootProject.ext.set('REPOSITORY_USERNAME', username)
+    return username
+}
+
+static String getRepositoryPassword(Project rootProject) {
+    if(rootProject.hasProperty('REPOSITORY_PASSWORD')) {
+        println "rootProject.property('REPOSITORY_PASSWORD'): " + rootProject.property('REPOSITORY_PASSWORD').toString()
+        return rootProject.property('REPOSITORY_PASSWORD').toString()
+    }
+    String property_default_key = 'REPOSITORY_PASSWORD'
+    String property_key = 'REPOSITORY_PASSWORD_KEY'
+    String SONATYPE_PASSWORD_KEY = rootProject.hasProperty(property_key) ? rootProject.property(property_key).toString() : property_default_key
+    String password = rootProject.hasProperty(SONATYPE_PASSWORD_KEY) ? rootProject.property(SONATYPE_PASSWORD_KEY).toString() : ""
+    println "password: $password"
+    rootProject.ext.set('REPOSITORY_PASSWORD', password)
+    return password
+}
+
+static String getRepositoryUrl(Project rootProject) {
+    return isSnapshotBuild(rootProject) ? getSnapshotRepositoryUrl(rootProject) : getReleaseRepositoryUrl(rootProject)
+}
+
+static boolean isSnapshotBuild(Project rootProject) {
+    return rootProject.version.endsWith('SNAPSHOT')
+}
+
+allprojects {
+    buildDir = 'target'
+    apply plugin: 'idea'
+    idea {
+        module {
+            excludeDirs += file('.gradle')
+            excludeDirs += file('.idea')
+            excludeDirs += buildDir
+            downloadJavadoc = Boolean.FALSE
+            downloadSources = Boolean.TRUE
+            inheritOutputDirs = Boolean.TRUE
+            name = project.name
+        }
+    }
+
+    project.ext.set('excludeArtifacts', excludeArtifacts)
+
+    project.tasks.each { action ->
+        println "project(${project.name}).task(${action.name})"
+        if (action.name.toLowerCase().contains('kotlin')) {
+            action.setEnabled(Boolean.FALSE)
+        }
+    }
+}
+
+subprojects {
+    println "subproject.name = ${it.name}"
+
+    ext {
+        profile = System.getProperty('profile') ?: 'development'
+        println "profile = ${profile}"
+        isTencent = rootProject.hasProperty('io.geewit.gradle.is_tencent') ? 'true'.equalsIgnoreCase(rootProject.getProperties().get('io.geewit.gradle.is_tencent').toString()) : Boolean.FALSE
+        println "isTencent = ${isTencent}"
+    }
+
+    buildscript {
+        repositories {
+            mavenLocal()
+            maven {
+                name 'tencent'
+                url 'http://mirrors.cloud.tencent.com/nexus/repository/maven-public'
+                allowInsecureProtocol Boolean.TRUE
+            }
+            maven { name 'apache'; url 'https://repo.maven.apache.org/maven2' }
+            //maven { name 'aliyun-central'; url 'https://maven.aliyun.com/repository/central' }
+            //maven { name 'aliyun-gradle'; url 'https://maven.aliyun.com/repository/gradle-plugin' }
+        }
+    }
+
+
+    if(!isSkipProject(it as Project)) {
+        apply plugin: 'java-library'
+        boolean need_publish = isNeedPublish(it as Project, rootProject as Project)
+        logger.info("project({}).need_publish = {}", it.name, need_publish)
+        if (need_publish) {
+            apply plugin: 'maven-publish'
+            apply plugin: 'signing'
+        }
+        apply from: resources.text.fromInsecureUri('https://gitee.com/geewit/gradle_publish_sonatype/raw/master/dependency-strategy.gradle')
+
+        String[] artifactExcludeFiles = []
+        File artifactExcludeFile = it.file('publish-artifact-exclude.json')
+        if(artifactExcludeFile.exists()) {
+            artifactExcludeFiles = new JsonSlurper().parseText(artifactExcludeFile.text as String)
+            logger.info("artifactExcludeFiles: ${artifactExcludeFile.text}")
+        }
+
+        boolean publishSources = Boolean.TRUE
+        if(rootProject.hasProperty('PUBLISH_SOURCE')) {
+            logger.debug("rootProject.property('PUBLISH_SOURCE'): {}", rootProject.property('PUBLISH_SOURCE'))
+            publishSources = 'true'.equalsIgnoreCase(rootProject.property('PUBLISH_SOURCE').toString())
+        }
+        logger.info("publishSources: ${publishSources}")
+
+        repositories {
+            mavenLocal()
+            maven {
+                name 'releaseRepository'
+                url getReleaseRepositoryUrl(rootProject)
+                allowInsecureProtocol Boolean.FALSE
+                credentials(PasswordCredentials) {
+                    username = getRepositoryUsername(rootProject)
+                    password = getRepositoryPassword(rootProject)
+                }
+            }
+            maven {
+                name 'snapshotRepository'
+                url getSnapshotRepositoryUrl(rootProject)
+                allowInsecureProtocol Boolean.FALSE
+                credentials(PasswordCredentials) {
+                    username = getRepositoryUsername(rootProject)
+                    password = getRepositoryPassword(rootProject)
+                }
+            }
+            maven {
+                name 'tencent'
+                url 'http://mirrors.cloud.tencent.com/nexus/repository/maven-public'
+                allowInsecureProtocol Boolean.TRUE
+            }
+            maven {
+                name 'central'
+                url 'https://repo.maven.apache.org/maven2'
+            }
+        }
+
+        project.repositories.withType(ArtifactRepository).configureEach {
+            println "${it.name} ${it.url}"
+            if (it.name == 'tencent' && !isTencent) {
+                println "${project.name}.${it.name} isTencent = false, remove tencent repository"
+                try {
+                    project.repositories.remove(it)
+                } catch (Exception e) {
+                    logger.info("remove ${it.name} repository error", e)
+                }
+            } else if ((it.name == 'releaseRepository' || it.name == 'snapshotRepository')
+                    && it instanceof MavenArtifactRepository
+                    && (it.credentials == null || it.credentials.username == null || it.credentials.username.trim() == '' || it.credentials.password == null || it.credentials.password.trim() == '')) {
+                println "${project.name}.${it.name} it.credentials == null, remove ${it.name} repository"
+                try {
+                    project.repositories.remove(it)
+                } catch (Exception e) {
+                    logger.info("remove ${it.name} repository error", e)
+                }
+            }
+        }
+
+        configurations {
+            configureEach { config ->
+                config.exclude group: 'org.apache.geronimo.specs'
+                config.exclude group: 'org.jboss.spec.javax.annotation'
+                config.exclude group: 'org.jboss.spec.javax.servlet'
+                config.exclude group: 'org.jboss.spec.javax.transaction'
+                config.exclude group: 'org.jboss.spec.javax.websocket'
+                config.exclude group: 'org.hibernate.javax.persistence'
+                config.exclude group: 'org.apache.tomcat', module:'tomcat-jdbc'
+                config.exclude group: 'org.apache.tomcat.embed'
+                config.exclude group: 'org.glassfish.hk2', module:'osgi-resource-locator'
+                config.exclude group: 'org.glassfish.hk2.external', module:'javax.inject'
+                config.exclude group: 'com.vaadin.external.google'
+                config.exclude group: 'org.codehaus.jackson'
+                config.exclude group: 'org.codehaus.jettison'
+                config.exclude group: 'org.slf4j', module:'slf4j-log4j12'
+                if (profile != 'development') {
+                    config.exclude group: 'org.springframework.boot', module:'spring-boot-devtools'
+                }
+                excludeArtifacts?.each { item ->
+                    config.exclude group: item.group, module: item.module
+                }
+                resolutionStrategy.eachDependency { details ->
+                    artifactResolutionStrategy(details as DependencyResolveDetails)
+                }
+            }
+        }
+
+        sourceSets {
+            main {
+                java {
+                    srcDirs = ['src/main/java']
+                }
+                resources {
+                    srcDirs = ['src/main/resources']
+                }
+            }
+            test {
+                java {
+                    srcDirs = ['src/test/java']
+                }
+                resources {
+                    srcDirs = ['src/test/resources']
+                }
+            }
+        }
+
+        tasks.register('sources', Jar) {
+            enabled = need_publish
+            archiveClassifier.set('sources')
+            from sourceSets.main.allSource
+        }
+
+        tasks.register('javadocs', Jar) {
+            dependsOn javadoc
+            enabled = need_publish
+            archiveClassifier.set('javadoc')
+            from javadoc.destinationDir
+        }
+
+        tasks.withType(JavaCompile).tap {
+            configureEach {
+                sourceCompatibility = java_version
+                targetCompatibility = java_version
+
+                options*.compilerArgs << '-Xlint:unchecked' << '-Xlint:options'
+                options*.encoding = StandardCharsets.UTF_8.name()
+            }
+        }
+
+        tasks.withType(Jar).tap {
+            configureEach {
+                if(rootProject.ext.has("isPublishTask") && rootProject.ext.get('isPublishTask') && artifactExcludeFiles) {
+                    exclude artifactExcludeFiles
+                }
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            }
+        }
+
+        tasks.withType(Javadoc).tap {
+            configureEach {
+                enabled = need_publish
+                failOnError = Boolean.FALSE
+                options.windowTitle("${project.name} Javadoc ${project.version}")
+                options*.encoding = StandardCharsets.UTF_8.name()
+                options.addStringOption('Xdoclint:none', '-quiet')
+            }
+        }
+
+        tasks.withType(Copy).tap {
+            configureEach {
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            }
+        }
+
+        tasks.withType(Test).tap {
+            configureEach {
+                useJUnitPlatform()
+            }
+        }
+
+        // https://docs.gradle.org/current/dsl/org.gradle.api.publish.maven.MavenPublication.html
+        if (need_publish) {
+            publishing {
+                publications {
+                    maven(MavenPublication) {
+                        afterEvaluate {
+                            groupId this.&generateGroupId(project, rootProject)
+                            artifactId this.&generateArtifactId(project)
+                            version version
+                            from components.java
+                            artifact javadocs
+                            logger.debug('publishing.publishSources: {}', publishSources)
+                            if(publishSources) {
+                                logger.debug('publishing.artifact sources')
+                                artifact sources
+                            }
+                        }
+
+                        pom {
+                            name = POM_ARTIFACT_ID
+                            if (rootProject.hasProperty('POM_DESCRIPTION')) {
+                                description = POM_DESCRIPTION
+                            }
+                            if (rootProject.hasProperty('POM_SCM_URL')) {
+                                url = POM_SCM_URL
+                            }
+                            licenses {
+                                license {
+                                    if (rootProject.hasProperty('POM_LICENCE_NAME')) {
+                                        name = POM_LICENCE_NAME
+                                    }
+                                    if (rootProject.hasProperty('POM_LICENCE_URL')) {
+                                        url = POM_LICENCE_URL
+                                    }
+                                }
+                            }
+                            developers {
+                                developer {
+                                    if (rootProject.hasProperty('POM_LICENCE_URL')) {
+                                        id = POM_DEVELOPER_ID
+                                    }
+                                    if (rootProject.hasProperty('POM_DEVELOPER_NAME')) {
+                                        name = POM_DEVELOPER_NAME
+                                    }
+                                    if (rootProject.hasProperty('POM_DEVELOPER_EMAIL')) {
+                                        email = POM_DEVELOPER_EMAIL
+                                    }
+                                }
+                            }
+                            scm {
+                                if (rootProject.hasProperty('POM_SCM_URL')) {
+                                    url = POM_SCM_URL
+                                }
+                                if (rootProject.hasProperty('POM_SCM_CONNECTION')) {
+                                    connection = POM_SCM_CONNECTION
+                                }
+                                if (rootProject.hasProperty('POM_SCM_DEV_CONNECTION')) {
+                                    developerConnection = POM_SCM_DEV_CONNECTION
+                                }
+                            }
+                        }
+                    }
+                }
+                repositories {
+                    maven {
+                        name = 'releaseRepository'
+                        url = getRepositoryUrl(rootProject)
+                        allowInsecureProtocol Boolean.FALSE
+                        credentials(PasswordCredentials) {
+                            username = getRepositoryUsername(rootProject)
+                            password = getRepositoryPassword(rootProject)
+                        }
+                    }
+                }
+            }
+
+            signing {
+                required { !isSnapshotBuild(project) }
+                sign publishing.publications.maven
+            }
+        }
+        tasks.register("generateLocalChecksums") {
+            group = "publishing"
+            description = "Generate MD5/SHA1 checksum files for everything under ~/.m2/repository/<groupId>"
+
+            doLast {
+                def userHome = System.getProperty("user.home")
+                def groupPath = project.group.toString().replace('.', '/')
+                def repoDir = file("${userHome}/.m2/repository/${groupPath}")
+                if (!repoDir.exists()) {
+                    logger.lifecycle("No local repo at $repoDir, skipping checksums.")
+                    return
+                }
+
+                ant.taskdef(name: 'checksum', classname: 'org.apache.tools.ant.taskdefs.Checksum')
+
+                // 2. 递归遍历所有子文件夹
+                repoDir.eachFileRecurse { File f ->
+                    if (f.name ==~ /(?i).*\.(jar|pom|asc|module)$/) {
+                        ant.checksum(file: f, algorithm: "MD5",   todir: f.parentFile, fileext: ".md5")
+                        ant.checksum(file: f, algorithm: "SHA-1", todir: f.parentFile, fileext: ".sha1")
+                        logger.lifecycle("Generated checksums for ${f.path}")
+                    }
+                }
+            }
+        }
+        // 2. 把它挂到 publishToMavenLocal 之后执行
+        tasks.matching { it.name == "publishToMavenLocal" }.configureEach {
+            finalizedBy("generateLocalChecksums")
+        }
+    }
+}
+
+subprojects.each { it ->
+    def need_publish = null
+    if (it.hasProperty('need_publish')) {
+        need_publish = it.property('need_publish')
+    }
+    if (need_publish == null) {
+        need_publish = isNeedPublish(it, rootProject)
+    }
+    if (need_publish) {
+        Task rootPublish = rootProject.tasks.findByName('publish')
+        if (rootPublish == null) {
+            rootPublish = rootProject.tasks.register('publish').get()
+        }
+        Task publish = it.tasks.findByName('publish')
+        if (publish == null) {
+            publish = it.tasks.register('publish').get()
+        }
+        rootPublish.finalizedBy(publish)
+
+        Task rootPublishToMavenLocal = rootProject.tasks.findByName('publishToMavenLocal')
+        if (rootPublishToMavenLocal == null) {
+            rootPublishToMavenLocal = rootProject.tasks.register('publishToMavenLocal').get()
+        }
+
+        Task publishToMavenLocal = it.tasks.findByName('publishToMavenLocal')
+        if (publishToMavenLocal == null) {
+            publishToMavenLocal = it.tasks.register('publishToMavenLocal').get()
+        }
+        rootPublishToMavenLocal.finalizedBy(publishToMavenLocal)
+    }
+
+    Task rootClean = rootProject.tasks.findByName('clean')
+    if (rootClean == null) {
+        rootClean = rootProject.tasks.register('clean').get()
+    }
+    Task clean = it.tasks.findByName('clean')
+    if (clean == null) {
+        clean = it.tasks.register('clean').get()
+    }
+    rootClean.finalizedBy(clean)
+}
