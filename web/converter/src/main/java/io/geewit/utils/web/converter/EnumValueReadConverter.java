@@ -33,25 +33,20 @@ public class EnumValueReadConverter<E extends Enum<E> & Value<N>, N extends Numb
 
     @Override
     public E convert(N source) {
-        switch (source) {
-            case Integer _ -> {
-                try {
-                    return EnumUtils.forValue((Class<E>) this.targetType.getObjectType(), source);
-                } catch (NumberFormatException e) {
-                    return null;
-                }
-            }
-            case Long _ -> {
-                try {
-                    return EnumUtils.forValue((Class<E>) this.targetType.getObjectType(), source);
-                } catch (NumberFormatException e) {
-                    return null;
-                }
-            }
-            default -> {
+        if (source instanceof Integer) {
+            try {
+                return EnumUtils.forValue((Class<E>) this.targetType.getObjectType(), source);
+            } catch (NumberFormatException e) {
                 return null;
             }
+        } else if (source instanceof Long) {
+            try {
+                return EnumUtils.forValue((Class<E>) this.targetType.getObjectType(), source);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        } else {
+            return null;
         }
-
     }
 }
