@@ -1175,31 +1175,6 @@ subprojects {
 
         def moduleName = "${project.group}.${project.name}".replace('-', '.')
 
-        tasks.register('generateModuleInfo') {
-            doLast {
-                def moduleInfoFile = file('src/main/java/module-info.java')
-                if (!moduleInfoFile.exists()) {
-                    moduleInfoFile.parentFile.mkdirs()
-                    def basePackage = null
-                    fileTree('src/main/java').matching { include '**/*.java' }.visit { details ->
-                        if (!details.directory && basePackage == null) {
-                            def matcher = details.file.text =~ /package\s+([a-zA-Z0-9_.]+);/
-                            if (matcher.find()) {
-                                def pkg = matcher.group(1)
-                                basePackage = pkg.substring(0, pkg.lastIndexOf('.'))
-                            }
-                        }
-                    }
-                    if (basePackage == null) {
-                        basePackage = moduleName
-                    }
-                    moduleInfoFile.text = "open module ${moduleName} {\n    exports ${basePackage};\n}\n"
-                }
-            }
-        }
-
-        compileJava.dependsOn('generateModuleInfo')
-
         tasks.withType(JavaCompile).tap {
             configureEach {
                 sourceCompatibility = java_version

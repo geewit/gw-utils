@@ -1,6 +1,8 @@
 rootProject.name = 'web'
 
 include 'converter'
+include 'core'
+include 'json'
 include 'servlet'
-include 'utils'
+include 'xml'
 

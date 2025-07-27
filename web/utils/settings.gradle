@@ -1,6 +1,0 @@
-rootProject.name = 'utils'
-
-include 'core'
-include 'servlet'
-include 'utils'
-
