@@ -1,6 +1,6 @@
 project(':core:jackson') {
     dependencies {
-        api(project(':core:enum'))
+        api(project(':core:enums'))
         api("com.fasterxml.jackson.core:jackson-core:$jackson_version")
         api("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
         api("org.springframework.boot:spring-boot:$spring_boot_version")
