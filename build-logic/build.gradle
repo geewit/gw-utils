@@ -1,0 +1,26 @@
+plugins {
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
+
+group = 'com.geewit.utils'
+version = '0.0.1'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    gradlePluginPortal()
+}
+
+gradlePlugin {
+    plugins {
+        gwUtilsBuild {
+            id = 'gw.utils.build'
+            implementationClass = 'gw.utils.GwBuildPlugin'
+        }
+        gwUtilsSettings {
+            id = 'gw.utils.settings'
+            implementationClass = 'gw.utils.GwSettingsPlugin'
+        }
+    }
+}
