@@ -91,14 +91,14 @@
 /data/commons/out
 /data/commons/.gradle
 /data/commons/bin
-/core/commons/build
+/data/commons/build
 /data/spring/*.iml
 /data/spring/logs
 /data/spring/target
 /data/spring/out
 /data/spring/.gradle
 /data/spring/bin
-/core/spring/build
+/data/spring/build
 /web/*.iml
 /web/logs
 /web/target

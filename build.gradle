@@ -124,7 +124,7 @@ subprojects { subproject ->
                         useCatalogVersion('slf4j')
                     } else if (requestedGroup == 'org.projectlombok') {
                         useCatalogVersion('lombok')
-                    } else if (requestedGroup == 'com.fasterxml.jackson.core' || requestedName == 'jackson-annoations') {
+                    } else if (requestedGroup == 'com.fasterxml.jackson.core' && requestedName == 'jackson-annoations') {
                         useCatalogVersion('jackson.annoations')
                     } else if (requestedGroup.startsWith('tools.jackson')) {
                         useCatalogVersion('jackson.core')
