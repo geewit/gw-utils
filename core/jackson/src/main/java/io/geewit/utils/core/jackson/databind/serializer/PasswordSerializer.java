@@ -3,7 +3,6 @@ package io.geewit.utils.core.jackson.databind.serializer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import org.springframework.boot.jackson.JsonComponent;
 
 import java.io.IOException;
 
@@ -13,7 +12,6 @@ import java.io.IOException;
  * @since  2016/12/20
  */
 @SuppressWarnings({"unused"})
-@JsonComponent
 public class PasswordSerializer extends JsonSerializer<String> {
     public static final PasswordSerializer instance = new PasswordSerializer();
 

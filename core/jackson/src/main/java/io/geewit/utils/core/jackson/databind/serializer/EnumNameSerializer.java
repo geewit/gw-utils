@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import io.geewit.utils.core.enums.Name;
-import org.springframework.boot.jackson.JsonComponent;
 
 import java.io.IOException;
 
@@ -13,7 +12,6 @@ import java.io.IOException;
  * @author geewit
  */
 @SuppressWarnings({"unused"})
-@JsonComponent
 public class EnumNameSerializer extends JsonSerializer<Name> {
     public static final EnumNameSerializer instance = new EnumNameSerializer();
 
