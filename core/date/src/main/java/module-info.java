@@ -1,0 +1,6 @@
+module io.geewit.utils.core.date {
+    requires transitive org.apache.commons.lang3;
+    requires transitive org.slf4j;
+
+    exports io.geewit.utils.core.date;
+}
