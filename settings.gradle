@@ -60,7 +60,6 @@ dependencyResolutionManagement {
             version('jakarta.validation-api', getProperty('jakarta.validation-api.version').toString())
             version('jakarta.xml.bind', getProperty('jakarta.xml.bind.version').toString())
             version('jackson2.annotations', getProperty('jackson2.annotations.version').toString())
-            version('jackson2.core', getProperty('jackson2.core.version').toString())
             version('jackson.core', getProperty('jackson.core.version').toString())
             version('javassist', getProperty('javassist.version').toString())
             version('jbibtex', getProperty('jbibtex.version').toString())
@@ -159,10 +158,12 @@ dependencyResolutionManagement {
             library('jakarta-activation-api', 'jakarta.activation', 'jakarta.activation-api').versionRef('jakarta.activation-api')
             library('jakarta-annotation-api', 'jakarta.annotation', 'jakarta.annotation-api').versionRef('jakarta.annotation-api')
             library('jakarta-xml-bind', 'jakarta.xml.bind', 'jakarta.xml.bind-api').versionRef('jakarta.xml.bind')
-            library('jackson-annotations', 'com.fasterxml.jackson', 'jackson-annotations').versionRef('jackson2.annotations')
-            library('jackson-core', 'com.fasterxml.jackson', 'jackson-core').versionRef('jackson2.core')
-            library('jackson-databind', 'com.fasterxml.jackson', 'jackson-databind').versionRef('jackson2.core')
-            library('jackson-dataformat-xml', 'com.fasterxml.jackson.dataformat', 'jackson-dataformat-xml').versionRef('jackson2.core')
+            library('jackson-annotations', 'com.fasterxml.jackson.core', 'jackson-annotations').versionRef('jackson2.annotations')
+            library('jackson-core', 'tools.jackson.core', 'jackson-core').versionRef('jackson.core')
+            library('jackson-databind', 'tools.jackson.core', 'jackson-databind').versionRef('jackson.core')
+            library('jackson-dataformat-xml', 'com.fasterxml.jackson.dataformat', 'jackson-dataformat-xml').versionRef('jackson.core')
+            library('jackson-datatype-jsr353', 'tools.jackson.datatype', 'jackson-datatype-jsr353').versionRef('jackson.core')
+            library('jackson-modules-base', 'tools.jackson.module', 'jackson-modules-base').versionRef('jackson.core')
             library('jetbrains-annotations', 'org.jetbrains', 'annotations').versionRef('jetbrains-annotations')
             library('jspecify', 'org.jspecify', 'jspecify').versionRef('jspecify')
             library('lombok', 'org.projectlombok', 'lombok').versionRef('lombok')
@@ -249,7 +250,9 @@ dependencyResolutionManagement {
                     'jackson-annotations',
                     'jackson-core',
                     'jackson-databind',
-                    'jackson-dataformat-xml'
+                    'jackson-dataformat-xml',
+                    'jackson-datatype-jsr353',
+                    'jackson-modules-base'
             ])
 
             bundle('javafx-bundle', [
