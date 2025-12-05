@@ -35,16 +35,6 @@ ext.determineJavaLanguageVersion = { Project project, int requestedVersion ->
 allprojects {
     group = providers.gradleProperty('group').orElse('com.geewit.utils').get()
     version = providers.gradleProperty('version').orElse('1.0.0').get()
-
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        maven {
-            name 'tencent'
-            url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public'
-        }
-        maven { url 'https://jitpack.io' }
-    }
 }
 
 subprojects { subproject ->
