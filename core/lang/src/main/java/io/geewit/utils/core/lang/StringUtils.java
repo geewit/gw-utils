@@ -12,10 +12,30 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings({"unused"})
 public class StringUtils {
+    private StringUtils() {
+    }
+
+    /**
+     * 默认的 true 值
+     */
     private static final Set<String> trueValues = Stream.of("true", "on", "yes").collect(Collectors.toCollection(HashSet::new));
+
+    /**
+     * 默认的 false 值
+     */
     private static final Set<String> falseValues = Stream.of("false", "off", "no").collect(Collectors.toCollection(HashSet::new));
 
+
+    /**
+     * 将字符串转换为Boolean类型
+     *
+     * @param source 待转换的字符串
+     * @return 如果字符串匹配trueValues中的值则返回Boolean.TRUE，
+     *         如果字符串匹配falseValues中的值则返回Boolean.FALSE，
+     *         其他情况返回null
+     */
     public static Boolean convert(String source) {
+        // 检查字符串是否不为空且经过处理后判断真假值
         if(org.apache.commons.lang3.StringUtils.isNotBlank(source)) {
             source = source.trim().toLowerCase();
             if(trueValues.contains(source)) {
@@ -56,7 +76,7 @@ public class StringUtils {
             return null;
         }
         final int noOfItems = array.length;
-        if (noOfItems <= 0) {
+        if (noOfItems == 0) {
             return "";
         }
         final StringBuilder buf = new StringBuilder(noOfItems * 16);

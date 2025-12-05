@@ -1,6 +1,0 @@
-dependencies {
-    api(libs.slf4j.api) {
-        exclude group: 'org.slf4j', module: 'logback'
-    }
-    api(libs.spring.web)
-}

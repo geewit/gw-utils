@@ -59,7 +59,7 @@ dependencyResolutionManagement {
             version('jakarta.annotation-api', getProperty('jakarta.annotation-api.version').toString())
             version('jakarta.validation-api', getProperty('jakarta.validation-api.version').toString())
             version('jakarta.xml.bind', getProperty('jakarta.xml.bind.version').toString())
-            version('jackson2.annotations', getProperty('jackson2.annotations.version').toString())
+            version('jackson.annotations', getProperty('jackson.annotations.version').toString())
             version('jackson.core', getProperty('jackson.core.version').toString())
             version('javassist', getProperty('javassist.version').toString())
             version('jbibtex', getProperty('jbibtex.version').toString())
@@ -158,7 +158,7 @@ dependencyResolutionManagement {
             library('jakarta-activation-api', 'jakarta.activation', 'jakarta.activation-api').versionRef('jakarta.activation-api')
             library('jakarta-annotation-api', 'jakarta.annotation', 'jakarta.annotation-api').versionRef('jakarta.annotation-api')
             library('jakarta-xml-bind', 'jakarta.xml.bind', 'jakarta.xml.bind-api').versionRef('jakarta.xml.bind')
-            library('jackson-annotations', 'com.fasterxml.jackson.core', 'jackson-annotations').versionRef('jackson2.annotations')
+            library('jackson-annotations', 'com.fasterxml.jackson.core', 'jackson-annotations').versionRef('jackson.annotations')
             library('jackson-core', 'tools.jackson.core', 'jackson-core').versionRef('jackson.core')
             library('jackson-databind', 'tools.jackson.core', 'jackson-databind').versionRef('jackson.core')
             library('jackson-dataformat-xml', 'com.fasterxml.jackson.dataformat', 'jackson-dataformat-xml').versionRef('jackson.core')
@@ -365,5 +365,5 @@ dependencyResolutionManagement {
 
 rootProject.name = 'gw-utils'
 include 'core:date', 'core:uuid', 'core:tree', 'core:enums', 'core:codec', 'core:lang', 'core:reflection', 'core:jackson'
-include 'web:core', 'web:json', 'web:servlet', 'web:xml', 'web:converter'
+include 'web:core', 'web:json', 'web:converter'
 include 'data:commons', 'data:spring'

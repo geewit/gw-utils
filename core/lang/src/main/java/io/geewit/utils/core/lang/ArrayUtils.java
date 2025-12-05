@@ -6,6 +6,9 @@ package io.geewit.utils.core.lang;
  */
 @SuppressWarnings({"unused"})
 public class ArrayUtils {
+
+    private ArrayUtils() {
+    }
     /**
      * <p>Checks if the value is in the given array.
      *
@@ -13,6 +16,7 @@ public class ArrayUtils {
      *
      * @param array  the array to search through
      * @param any  the value to find
+     * @param <T> the component type of the array
      * @return {@code true} if the array contains the object
      */
     @SafeVarargs

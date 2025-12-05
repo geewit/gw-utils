@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 
 /**
  * 树遍历工具类
+ * @param <N> 节点类型
+ * @param <Key> 节点id类型
  *
  * @author geewit
  */
@@ -131,7 +133,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
                 node.setSign(0);
             }
             return node;
-        }, (oldValue, newValue) -> oldValue));
+        }, (oldValue, _) -> oldValue));
         nodes.forEach(node -> {
             if (node.parentId == null || (rootPredicate != null && rootPredicate.test(node))) {
                 roots.add(node);
@@ -154,7 +156,7 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
         signParametersMap = signParameters.stream()
                 .filter(s -> s.getId() != null && s.getSign() != null)
                 .collect(Collectors.toMap(NodeSignParameter::getId,
-                        s -> s, (oldValue, newValue) -> oldValue));
+                        s -> s, (oldValue, _) -> oldValue));
         signParameters.forEach(sp -> {
             if ((sp.getTransmissionDown() != null && sp.getTransmissionDown()) || (sp.getTransmissionUp() != null && sp.getTransmissionUp())) {
                 if (sp.getSign() != null && sp.getSign() == 0) {
