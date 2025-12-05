@@ -1,7 +1,7 @@
 package io.geewit.utils.core.jackson.view;
 
 /**
- * @see com.fasterxml.jackson.annotation.JsonView
+ * @see tools.jackson.annotation.JsonView
  * @author geewit
  */
 @SuppressWarnings({"unused"})

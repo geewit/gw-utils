@@ -25,6 +25,10 @@ public class CryptUtils {
     private final static String ALGORITHM = "AES";
     private final static String KEY = "key";
 
+    private CryptUtils() {
+        // utility class
+    }
+
     /**
      * 加密
      * @param value  未加密的字符串

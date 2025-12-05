@@ -2,8 +2,9 @@ package io.geewit.utils.core.enums;
 
 /**
  * 枚举可以实现该接口
+ *
  * @author geewit
- * @param <V> Number 类型
+ * @param <V> 数字类型
  */
 @SuppressWarnings({"unused"})
 public interface Value<V extends Number> {

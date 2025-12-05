@@ -1,8 +1,8 @@
 package io.geewit.utils.core.jackson.databind.serializer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.JsonSerializer;
+import tools.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
 import java.math.BigDecimal;
