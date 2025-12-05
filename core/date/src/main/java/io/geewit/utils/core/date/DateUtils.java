@@ -24,6 +24,7 @@ public class DateUtils {
      * 字符串转换为日期
      * @param date 日期字符串
      * @return 日期
+     * @throws ParseException 日期解析异常
      */
     public static Date date(String date) throws ParseException {
         return org.apache.commons.lang3.time.DateUtils.parseDateStrictly(date, PATTERNS);
