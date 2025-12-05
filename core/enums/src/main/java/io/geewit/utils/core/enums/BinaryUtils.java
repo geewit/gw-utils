@@ -18,6 +18,7 @@ public class BinaryUtils {
      * 枚举转二进制
      *
      * @param enumType 枚举类型
+     * @param <E>      枚举
      * @return 二进制
      */
     public static <E extends Enum<E>> int toBinary(E enumType) {
@@ -28,6 +29,7 @@ public class BinaryUtils {
      * 转二进制掩码
      *
      * @param enumTypes 枚举类型
+     * @param <E>       枚举
      * @return 枚举
      */
     @SafeVarargs
@@ -57,6 +59,7 @@ public class BinaryUtils {
      *
      * @param binary 二进制掩码
      * @param clazz  枚举类型
+     * @param <E>    枚举
      * @return 枚举集合
      */
     public static <E extends Enum<E>> EnumSet<E> fromBinary(int binary, Class<E> clazz) {
@@ -68,6 +71,7 @@ public class BinaryUtils {
      *
      * @param binary 二进制掩码
      * @param clazz  枚举类型
+     * @param <E>    枚举
      * @return Integer集合
      */
     public static <E extends Enum<E>> List<Integer> fromBinaryToValues(int binary, Class<E> clazz) {
@@ -111,6 +115,14 @@ public class BinaryUtils {
         return EnumSet.allOf(clazz).stream().anyMatch(enu -> (1 << enu.ordinal() & value) > 0);
     }
 
+    /**
+     * 检查二进制参数的枚举开关集合是否有任意开启
+     *
+     * @param enumSet 枚举集合
+     * @param value   二进制参数
+     * @param <E>     枚举
+     * @return true:任意开
+     */
     public static <E extends Enum<E>> boolean hasAny(Collection<E> enumSet, int value) {
         if (null != enumSet) {
             return enumSet.stream().anyMatch(enu -> (1 << enu.ordinal() & value) > 0);
