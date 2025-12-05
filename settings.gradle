@@ -1,56 +1,364 @@
-import groovy.io.FileVisitResult
-
 pluginManagement {
     repositories {
         mavenLocal()
-        maven { url 'https://repo.spring.io/release' }
-        maven { url "https://maven.aliyun.com/repository/gradle-plugin" }
-        gradlePluginPortal()
         mavenCentral()
+        gradlePluginPortal()
+    }
+
+    plugins {
+        id 'com.gradleup.shadow' version getProperty('shadow.plugin.version').toString()
+        id 'org.springframework.boot' version getProperty('spring.boot.version').toString()
+        id 'org.graalvm.buildtools.native' version getProperty('native.gradle.plugin.version').toString()
     }
 }
 
-rootProject.name = 'gw-utils'
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven {
+            name 'tencent'
+            url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public'
+        }
+        maven { url 'https://jitpack.io' }
+    }
 
-static def buildFullProjectName(File rootDir, File dir) {
-    if(dir == null || !dir.exists() || !dir.isDirectory()) {
-        return ""
-    }
-    if(!new File("${dir}/build.gradle").exists() && !new File("${dir}/settings.gradle").exists() && !new File("${dir}/package.json").exists()) {
-        return ""
-    }
-    if(rootDir.absolutePath == dir.absolutePath) {
-        return ""
-    }
-    def fullProjectName = dir.name
-    if(dir.parentFile != null && dir.parentFile.exists()) {
-        fullProjectName = buildFullProjectName(rootDir, dir.parentFile) + ":${fullProjectName}"
-    }
-//    println "fullProjectName = ${fullProjectName}"
-    return fullProjectName
-}
+    versionCatalogs {
+        libs {
+            version('anserini', getProperty('anserini.version').toString())
+            version('antlr4', getProperty('antlr4.version').toString())
+            version('args4j', getProperty('args4j.version').toString())
+            version('asm', getProperty('asm.version').toString())
+            version('assertj', getProperty('assertj.version').toString())
+            version('awaitility', getProperty('awaitility.version').toString())
+            version('bytebuddy', getProperty('bytebuddy.version').toString())
+            version('cbor', getProperty('cbor.version').toString())
+            version('classmate', getProperty('classmate.version').toString())
+            version('commons-codec', getProperty('commons-codec.version').toString())
+            version('commons-collections4', getProperty('commons-collections4.version').toString())
+            version('commons-compress', getProperty('commons-compress.version').toString())
+            version('commons-csv', getProperty('commons-csv.version').toString())
+            version('commons-io', getProperty('commons-io.version').toString())
+            version('commons-lang3', getProperty('commons-lang3.version').toString())
+            version('commons-math3', getProperty('commons-math3.version').toString())
+            version('commons-text', getProperty('commons-text.version').toString())
+            version('djl', getProperty('djl.version').toString())
+            version('geewit.utils', getProperty('geewit.utils.version').toString())
+            version('google.errorprone', getProperty('google.errorprone.version').toString())
+            version('google.gson', getProperty('google.gson.version').toString())
+            version('google.guava', getProperty('google.guava.version').toString())
+            version('google.findbugs', getProperty('google.findbugs.version').toString())
+            version('graalvm', getProperty('native.gradle.plugin.version').toString())
+            version('hanlp', getProperty('hanlp.version').toString())
+            version('h2', getProperty('h2.version').toString())
+            version('hibernate.validator', getProperty('hibernate.validator.version').toString())
+            version('jakarta.activation-api', getProperty('jakarta.activation-api.version').toString())
+            version('jakarta.annotation-api', getProperty('jakarta.annotation-api.version').toString())
+            version('jakarta.validation-api', getProperty('jakarta.validation-api.version').toString())
+            version('jakarta.xml.bind', getProperty('jakarta.xml.bind.version').toString())
+            version('jackson2.annotations', getProperty('jackson2.annotations.version').toString())
+            version('jackson2.core', getProperty('jackson2.core.version').toString())
+            version('jackson.core', getProperty('jackson.core.version').toString())
+            version('javassist', getProperty('javassist.version').toString())
+            version('jbibtex', getProperty('jbibtex.version').toString())
+            version('jline', getProperty('jline.version').toString())
+            version('jna', getProperty('jna.version').toString())
+            version('openjfx', getProperty('openjfx.version').toString())
+            version('json-path', getProperty('json-path.version').toString())
+            version('json-smart', getProperty('json-smart.version').toString())
+            version('log4j', getProperty('log4j.version').toString())
+            version('logback', getProperty('logback.version').toString())
+            version('lombok', getProperty('lombok.version').toString())
+            version('micrometer', getProperty('micrometer.version').toString())
+            version('r2dbc-mysql', getProperty('r2dbc.mysql.version').toString())
+            version('r2dbc-pool', getProperty('r2dbc.pool.version').toString())
+            version('netty', getProperty('netty.version').toString())
+            version('nimbus.content-type', getProperty('nimbus.content-type.version').toString())
+            version('nimbus.jose-jwt', getProperty('nimbus.jose-jwt.version').toString())
+            version('nimbus.oauth2-oidc-sdk', getProperty('nimbus.oauth2-oidc-sdk').toString())
+            version('mockito', getProperty('mockito.version').toString())
+            version('mockito-inline', getProperty('mockito-inline.version').toString())
+            version('ognl', getProperty('ognl.version').toString())
+            version('onnxruntime', getProperty('onnxruntime.version').toString())
+            version('parquet', getProperty('parquet.version').toString())
+            version('parquet-floor', getProperty('parquet-floor.version').toString())
+            version('pdfbox', getProperty('pdfbox.version').toString())
+            version('poi', getProperty('poi.version').toString())
+            version('r2dbc-h2', getProperty('r2dbc.h2.version').toString())
+            version('reactor-core', getProperty('reactor.core.version').toString())
+            version('reactor-netty', getProperty('reactor.netty.version').toString())
+            version('reactor-pool', getProperty('reactor.pool.version').toString())
+            version('slf4j', getProperty('slf4j.version').toString())
+            version('spring', getProperty('spring.version').toString())
+            version('spring-ai', getProperty('spring.ai.version').toString())
+            version('spring-ai-alibaba', getProperty('spring.ai.alibaba.version').toString())
+            version('spring-ai-qianfan', getProperty('spring.ai.qianfan.version').toString())
+            version('spring-boot', getProperty('spring.boot.version').toString())
+            version('spring.data', getProperty('spring.data.version').toString())
+            version('spring-retry', getProperty('spring.retry.version').toString())
+            version('spring-security', getProperty('spring.security.version').toString())
+            version('springdoc', getProperty('springdoc.version').toString())
+            version('squareup-okhttp', getProperty('squareup.okhttp.version').toString())
+            version('squareup-okio', getProperty('squareup.okio.version').toString())
+            version('j2objc', getProperty('j2objc.version').toString())
+            version('junit-jupiter', getProperty('junit.jupiter.version').toString())
+            version('junit-platform', getProperty('junit.platform.version').toString())
+            version('atlantafx', getProperty('mkpaz.atlantafx.version').toString())
+            version('bootstrapfx', getProperty('bootstrapfx.version').toString())
+            version('devtoolsfx-gui', getProperty('mkpaz.devtoolsfx.gui.version').toString())
+            version('ikonli', getProperty('ikonli.version').toString())
+            version('jspecify', getProperty('jspecify.version').toString())
+            version('tinkerpop', getProperty('tinkerpop.version').toString())
+            version('tomcat', getProperty('tomcat.version').toString())
+            version('lucene', getProperty('lucene.version').toString())
+            version('thymeleaf', getProperty('thymeleaf.version').toString())
+            version('stringtemplate', getProperty('stringtemplate.version').toString())
+            version('openhtmltopdf', getProperty('openhtmltopdf.version').toString())
+            version('spotbugs', getProperty('spotbugs.version').toString())
+            version('woodstox', getProperty('woodstox.version').toString())
+            version('zstd-jni', getProperty('zstd-jni.version').toString())
+            version('zxing', getProperty('zxing.version').toString())
+            version('graphics2d', getProperty('graphics2d.version').toString())
+            version('fastutil', getProperty('fastutil.version').toString())
+            version('objenesis', getProperty('objenesis.version').toString())
+            version('jetbrains-annotations', getProperty('jetbrains.annotations.version').toString())
+            version('jetbrains-kotlin', getProperty('jetbrains.kotlin.version').toString())
+            version('jsoup', getProperty('jsoup.version').toString())
+            version('testcontainers', getProperty('testcontainers.version').toString())
+            version('mockwebserver', getProperty('mockwebserver.version').toString())
+            version('mysql-connector-j', getProperty('mysql.connector.version').toString())
+            version('swagger-core', getProperty('swagger.core.version').toString())
+            version('swagger-ui', getProperty('swagger.ui.version').toString())
 
-rootDir.traverse(
-        type: groovy.io.FileType.DIRECTORIES,
-        preDir: {
-            if (!new File("${it}/build.gradle").exists() && !new File("${it}/settings.gradle").exists() && !new File("${it}/package.json").exists()) {
-                return FileVisitResult.SKIP_SUBTREE
-            }
-        }) { dir ->
-    if (dir) {
-        def fullProjectName = buildFullProjectName(rootDir, dir)
-        if(!fullProjectName.isEmpty()) {
-            println "include '${fullProjectName}'"
-            include fullProjectName //register the project path using : notation
-            println "project('${fullProjectName}').projectDir = ${dir}"
-            def project = project(fullProjectName)
-            println "project('${fullProjectName}').name = ${project.name}"
-            if(project.hasProperty("artifactId")) {
-                def projectName = project.property("artifactId")
-                project.name = projectName
-            }
-            project.projectDir = dir
+            library('anserini', 'io.anserini', 'anserini').versionRef('anserini')
+            library('atlantafx-base', 'io.github.mkpaz', 'atlantafx-base').versionRef('atlantafx')
+            library('bootstrapfx-core', 'org.kordamp.bootstrapfx', 'bootstrapfx-core').versionRef('bootstrapfx')
+            library('devtoolsfx-gui', 'io.github.mkpaz', 'devtoolsfx-gui').versionRef('devtoolsfx-gui')
+            library('ikonli-javafx', 'org.kordamp.ikonli', 'ikonli-javafx').versionRef('ikonli')
+            library('ikonli-fontawesome5-pack', 'org.kordamp.ikonli', 'ikonli-fontawesome5-pack').versionRef('ikonli')
+            library('ikonli-feather-pack', 'org.kordamp.ikonli', 'ikonli-feather-pack').versionRef('ikonli')
+            library('ikonli-material2-pack', 'org.kordamp.ikonli', 'ikonli-material2-pack').versionRef('ikonli')
+
+            library('classmate', 'com.fasterxml', 'classmate').versionRef('classmate')
+            library('commons-lang3', 'org.apache.commons', 'commons-lang3').versionRef('commons-lang3')
+            library('commons-collections4', 'org.apache.commons', 'commons-collections4').versionRef('commons-collections4')
+            library('commons-codec', 'commons-codec', 'commons-codec').versionRef('commons-codec')
+            library('gw-core-enums', 'io.geewit.utils.core', 'enums').versionRef('geewit.utils')
+            library('gw-data-commons', 'io.geewit.utils.data', 'commons').versionRef('geewit.utils')
+            library('gw-web-converter', 'io.geewit.utils.web', 'converter').versionRef('geewit.utils')
+            library('gw-web-json', 'io.geewit.utils.web', 'json').versionRef('geewit.utils')
+            library('google-guava', 'com.google.guava', 'guava').versionRef('google.guava')
+            library('hanlp', 'com.hankcs', 'hanlp').versionRef('hanlp')
+            library('h2', 'com.h2database', 'h2').versionRef('h2')
+            library('r2dbc-h2', 'io.r2dbc', 'r2dbc-h2').versionRef('r2dbc-h2')
+            library('r2dbc-mysql', 'io.asyncer', 'r2dbc-mysql').versionRef('r2dbc-mysql')
+            library('r2dbc-pool', 'io.r2dbc', 'r2dbc-pool').versionRef('r2dbc-pool')
+            library('jakarta-activation-api', 'jakarta.activation', 'jakarta.activation-api').versionRef('jakarta.activation-api')
+            library('jakarta-annotation-api', 'jakarta.annotation', 'jakarta.annotation-api').versionRef('jakarta.annotation-api')
+            library('jakarta-xml-bind', 'jakarta.xml.bind', 'jakarta.xml.bind-api').versionRef('jakarta.xml.bind')
+            library('jackson-annotations', 'com.fasterxml.jackson.core', 'jackson-annotations').versionRef('jackson2.annotations')
+            library('jackson-core', 'com.fasterxml.jackson.core', 'jackson-core').versionRef('jackson2.core')
+            library('jackson-databind', 'com.fasterxml.jackson.core', 'jackson-databind').versionRef('jackson2.core')
+            library('jackson-dataformat-xml', 'com.fasterxml.jackson.dataformat', 'jackson-dataformat-xml').versionRef('jackson2.core')
+            library('jetbrains-annotations', 'org.jetbrains', 'annotations').versionRef('jetbrains-annotations')
+            library('jspecify', 'org.jspecify', 'jspecify').versionRef('jspecify')
+            library('lombok', 'org.projectlombok', 'lombok').versionRef('lombok')
+            library('log4j-api', 'org.apache.logging.log4j', 'log4j-api').versionRef('log4j')
+            library('log4j-core', 'org.apache.logging.log4j', 'log4j-core').versionRef('log4j')
+            library('log4j-slf4j2-impl', 'org.apache.logging.log4j', 'log4j-slf4j2-impl').versionRef('log4j')
+            library('logback-classic', 'ch.qos.logback', 'logback-classic').versionRef('logback')
+            library('logback-core', 'ch.qos.logback', 'logback-core').versionRef('logback')
+            library('jul-to-slf4j', 'org.slf4j', 'jul-to-slf4j').versionRef('slf4j')
+            library('slf4j-api', 'org.slf4j', 'slf4j-api').versionRef('slf4j')
+            library('ognl', 'ognl', 'ognl').versionRef('ognl')
+            library('poi-ooxml', 'org.apache.poi', 'poi-ooxml').versionRef('poi')
+            library('reactor-core', 'io.projectreactor', 'reactor-core').versionRef('reactor-core')
+            library('reactor-test', 'io.projectreactor', 'reactor-test').versionRef('reactor-core')
+            library('reactor-netty-core', 'io.projectreactor.netty', 'reactor-netty-core').versionRef('reactor-netty')
+            library('reactor-netty-http', 'io.projectreactor.netty', 'reactor-netty-http').versionRef('reactor-netty')
+            library('spring-ai-bom', 'org.springframework.ai', 'spring-ai-bom').versionRef('spring-ai')
+            library('spring-ai-openai-starter', 'org.springframework.ai', 'spring-ai-starter-model-openai').versionRef('spring-ai')
+            library('spring-ai-alibaba-starter', 'com.alibaba.cloud.ai', 'spring-ai-alibaba-starter-dashscope').versionRef('spring-ai-alibaba')
+            library('spring-ai-alibaba-autoconfigure-memory', 'com.alibaba.cloud.ai', 'spring-ai-alibaba-autoconfigure-memory').versionRef('spring-ai-alibaba')
+            library('spring-ai-qianfan-starter', 'org.springaicommunity', 'qianfan-spring-boot-starter').versionRef('spring-ai-qianfan')
+            library('spring-ai-vector-store', 'org.springframework.ai', 'spring-ai-vector-store').versionRef('spring-ai')
+            library('spring-ai-commons', 'org.springframework.ai', 'spring-ai-commons').versionRef('spring-ai')
+            library('spring-boot', 'org.springframework.boot', 'spring-boot').versionRef('spring-boot')
+            library('spring-boot-autoconfigure', 'org.springframework.boot', 'spring-boot-autoconfigure').versionRef('spring-boot')
+            library('spring-boot-starter', 'org.springframework.boot', 'spring-boot-starter').versionRef('spring-boot')
+            library('spring-boot-starter-actuator', 'org.springframework.boot', 'spring-boot-starter-actuator').versionRef('spring-boot')
+            library('spring-boot-starter-data-r2dbc', 'org.springframework.boot', 'spring-boot-starter-data-r2dbc').versionRef('spring-boot')
+            library('spring-boot-starter-log4j2', 'org.springframework.boot', 'spring-boot-starter-log4j2').versionRef('spring-boot')
+            library('spring-boot-starter-mail', 'org.springframework.boot', 'spring-boot-starter-mail').versionRef('spring-boot')
+            library('spring-boot-starter-security-oauth2-client', 'org.springframework.boot', 'spring-boot-starter-security-oauth2-client').versionRef('spring-boot')
+            library('spring-boot-starter-security-oauth2-resource-server', 'org.springframework.boot', 'spring-boot-starter-security-oauth2-resource-server').versionRef('spring-boot')
+            library('spring-boot-starter-security', 'org.springframework.boot', 'spring-boot-starter-security').versionRef('spring-boot')
+            library('spring-boot-starter-webflux', 'org.springframework.boot', 'spring-boot-starter-webflux').versionRef('spring-boot')
+            library('spring-boot-starter-validation', 'org.springframework.boot', 'spring-boot-starter-validation').versionRef('spring-boot')
+            library('spring-context', 'org.springframework', 'spring-context').versionRef('spring')
+            library('spring-web', 'org.springframework', 'spring-web').versionRef('spring')
+            library('spring-beans', 'org.springframework', 'spring-beans').versionRef('spring')
+            library('spring-data-commons', 'org.springframework.data', 'spring-data-commons').versionRef('spring.data')
+            library('spring-security-web', 'org.springframework.security', 'spring-security-web').versionRef('spring-security')
+            library('springdoc-openapi-starter-webflux-api', 'org.springdoc', 'springdoc-openapi-starter-webflux-api').versionRef('springdoc')
+            library('springdoc-openapi-starter-webflux-ui', 'org.springdoc', 'springdoc-openapi-starter-webflux-ui').versionRef('springdoc')
+            library('netty-resolver-dns-native-macos', 'io.netty', 'netty-resolver-dns-native-macos').versionRef('netty')
+            library('tinkergraph-gremlin', 'org.apache.tinkerpop', 'tinkergraph-gremlin').versionRef('tinkerpop')
+            library('lucene-core', 'org.apache.lucene', 'lucene-core').versionRef('lucene')
+            library('lucene-analysis-common', 'org.apache.lucene', 'lucene-analysis-common').versionRef('lucene')
+            library('lucene-analysis-smartcn', 'org.apache.lucene', 'lucene-analysis-smartcn').versionRef('lucene')
+            library('lucene-backward-codecs', 'org.apache.lucene', 'lucene-backward-codecs').versionRef('lucene')
+            library('thymeleaf', 'org.thymeleaf', 'thymeleaf').versionRef('thymeleaf')
+            library('stringtemplate', 'org.antlr', 'ST4').versionRef('stringtemplate')
+            library('openhtmltopdf-core', 'io.github.openhtmltopdf', 'openhtmltopdf-core').versionRef('openhtmltopdf')
+            library('openhtmltopdf-pdfbox', 'io.github.openhtmltopdf', 'openhtmltopdf-pdfbox').versionRef('openhtmltopdf')
+            library('openhtmltopdf-slf4j', 'io.github.openhtmltopdf', 'openhtmltopdf-slf4j').versionRef('openhtmltopdf')
+            library('zxing-core', 'com.google.zxing', 'core').versionRef('zxing')
+            library('mockito-inline', 'org.mockito', 'mockito-inline').versionRef('mockito-inline')
+            library('testcontainers-junit-jupiter', 'org.testcontainers', 'testcontainers-junit-jupiter').versionRef('testcontainers')
+            library('testcontainers-mysql', 'org.testcontainers', 'testcontainers-mysql').versionRef('testcontainers')
+            library('mockwebserver', 'com.squareup.okhttp3', 'mockwebserver').versionRef('mockwebserver')
+            library('mysql-connector-j', 'com.mysql', 'mysql-connector-j').versionRef('mysql-connector-j')
+            library('junit-jupiter', 'org.junit.jupiter', 'junit-jupiter').versionRef('junit-jupiter')
+            library('junit-jupiter-engine', 'org.junit.jupiter', 'junit-jupiter-engine').versionRef('junit-jupiter')
+            library('junit-platform-launcher', 'org.junit.platform', 'junit-platform-launcher').versionRef('junit-platform')
+            library('junit-platform-suite', 'org.junit.platform', 'junit-platform-suite').versionRef('junit-platform')
+
+            library('javafx', 'org.openjfx', 'javafx').versionRef('openjfx')
+            library('javafx-base', 'org.openjfx', 'javafx-base').versionRef('openjfx')
+            library('javafx-controls', 'org.openjfx', 'javafx-controls').versionRef('openjfx')
+            library('javafx-fxml', 'org.openjfx', 'javafx-fxml').versionRef('openjfx')
+            library('javafx-graphics', 'org.openjfx', 'javafx-graphics').versionRef('openjfx')
+            library('javafx-media', 'org.openjfx', 'javafx-media').versionRef('openjfx')
+
+            bundle('apache-commons-bundle', [
+                    'commons-lang3',
+                    'commons-collections4'
+            ])
+
+            bundle('geewit-utils-bundle', [
+                    'gw-core-enums',
+                    'gw-data-commons',
+                    'gw-web-converter'
+            ])
+
+            bundle('jackson-bundle', [
+                    'jackson-annotations',
+                    'jackson-core',
+                    'jackson-databind',
+                    'jackson-dataformat-xml'
+            ])
+
+            bundle('javafx-bundle', [
+                    'javafx-base',
+                    'javafx-controls',
+                    'javafx-fxml',
+                    'javafx-graphics'
+            ])
+
+            bundle('javafx-thirdparty-bundle', [
+                    'bootstrapfx-core',
+                    'ikonli-javafx',
+                    'ikonli-feather-pack',
+                    'ikonli-fontawesome5-pack',
+                    'ikonli-material2-pack'
+            ])
+
+            bundle('h2-bundle', [
+                    'h2',
+                    'r2dbc-h2'
+            ])
+
+            bundle('mysql-bundle', [
+                    'mysql-connector-j',
+                    'r2dbc-mysql'
+            ])
+
+            bundle('spring-boot-starter-app-bundle', [
+                    'spring-boot-starter',
+                    'spring-boot-starter-data-r2dbc',
+                    'spring-boot-starter-log4j2',
+                    'spring-boot-starter-security-oauth2-client',
+                    'spring-boot-starter-webflux',
+                    'spring-boot-starter-validation',
+                    'ognl'
+            ])
+
+            bundle('spring-boot-starter-server-bundle', [
+                    'spring-boot-starter',
+                    'spring-boot-starter-data-r2dbc',
+                    'spring-boot-starter-security-oauth2-client',
+                    'spring-boot-starter-security',
+                    'spring-boot-starter-webflux',
+                    'spring-boot-starter-validation',
+                    'spring-security-web',
+                    'ognl'
+            ])
+
+            bundle('spring-boot-starter-security-oauth2-resource-server', [
+                    'spring-boot-starter-security-oauth2-resource-server'
+            ])
+
+            bundle('spring-data-bundle', [
+                    'spring-data-commons'
+            ])
+
+            bundle('springdoc-bundle', [
+                    'springdoc-openapi-starter-webflux-ui'
+            ])
+
+            bundle('reactor-netty-bundle', [
+                    'reactor-netty-core',
+                    'reactor-netty-http'
+            ])
+
+            bundle('junit-bundle', [
+                    'junit-jupiter',
+                    'junit-platform-launcher',
+                    'junit-platform-suite',
+                    'reactor-test'
+            ])
+
+            bundle('log4j2-bundle', [
+                    'log4j-api',
+                    'log4j-core',
+                    'log4j-slf4j2-impl',
+                    'jul-to-slf4j'
+            ])
+
+            bundle('logback-bundle', [
+                    'logback-classic',
+                    'logback-core',
+                    'jul-to-slf4j'
+            ])
+
+            bundle('lucene-bundle', [
+                    'lucene-core',
+                    'lucene-analysis-common',
+                    'lucene-analysis-smartcn',
+                    'lucene-backward-codecs'
+            ])
+
+            bundle('poi-bundle', [
+                    'poi-ooxml'
+            ])
+
+            bundle('openhtmltopdf-bundle', [
+                    'openhtmltopdf-core',
+                    'openhtmltopdf-pdfbox',
+                    'openhtmltopdf-slf4j'
+            ])
+
+            bundle('testcontainers-bundle', [
+                    'testcontainers-junit-jupiter',
+                    'testcontainers-mysql'
+            ])
         }
     }
 }
 
+rootProject.name = 'gw-utils'
+include 'core:date', 'core:uuid', 'core:tree', 'core:enums', 'core:codec', 'core:lang', 'core:reflection', 'core:jackson'
+include 'web:core', 'web:json', 'web:servlet', 'web:xml', 'web:converter'
+include 'data:commons', 'data:spring'

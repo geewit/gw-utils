@@ -1,13 +1,10 @@
-project(':web:json') {
-    dependencies {
-        api(project(':web:core'))
-        api("org.slf4j:slf4j-api:$slf4j_version") {
-            exclude group: 'org.slf4j', module: 'logback'
-        }
-        api("com.fasterxml.jackson.core:jackson-annotations:$jackson_version")
-        api("com.fasterxml.jackson.core:jackson-core:$jackson_version")
-        api("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
-
-        api("org.springframework:spring-web:$spring_version")
+dependencies {
+    api(project(':web:core'))
+    api(libs.slf4j.api) {
+        exclude group: 'org.slf4j', module: 'logback'
     }
+    api(libs.jackson.annotations)
+    api(libs.jackson.core)
+    api(libs.jackson.databind)
+    api(libs.spring.web)
 }

@@ -1,7 +1,3 @@
-project(':data:spring') {
-    dependencies {
-        api("org.springframework.data:spring-data-commons:$spring_version")
-        compileOnly("org.projectlombok:lombok:$lombok_version")
-        annotationProcessor("org.projectlombok:lombok:$lombok_version")
-    }
+dependencies {
+    api(libs.spring.data.commons)
 }
