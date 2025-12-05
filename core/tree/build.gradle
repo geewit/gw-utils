@@ -1,18 +1,18 @@
-project(':core:tree') {
-    dependencies {
-        api("org.slf4j:slf4j-api:$slf4j_version") {
-            exclude group: 'org.slf4j', module: 'logback'
-        }
-        api("org.apache.commons:commons-lang3:$commons_lang3_version")
-        compileOnly("org.projectlombok:lombok:$lombok_version")
-        annotationProcessor("org.projectlombok:lombok:$lombok_version")
-        testAnnotationProcessor("org.projectlombok:lombok:$lombok_version")
-        testImplementation(project(":core:uuid"))
-        testImplementation("com.fasterxml.jackson.core:jackson-core:$jackson_version")
-        testImplementation("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
-        testImplementation("org.apache.logging.log4j:log4j-slf4j-impl:$log4j2_version")
-        testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit_version")
-        testImplementation("org.junit.platform:junit-platform-launcher:$junit_platform_version")
-        testCompileOnly("org.projectlombok:lombok:$lombok_version")
+dependencies {
+    api(libs.slf4j.api) {
+        exclude group: 'org.slf4j', module: 'logback'
     }
+    api(libs.commons.lang3)
+
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
+    testCompileOnly(libs.lombok)
+
+    testImplementation(project(":core:uuid"))
+    testImplementation(libs.jackson.core)
+    testImplementation(libs.jackson.databind)
+    testImplementation(libs.log4j.slf4j2.impl)
+    testImplementation(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.platform.launcher)
 }

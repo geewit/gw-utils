@@ -1,1363 +1,213 @@
-import groovy.json.JsonSlurper
-import org.codehaus.groovy.runtime.MethodClosure
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.jvm.toolchain.JvmImplementation
+import org.gradle.api.artifacts.VersionCatalogsExtension
 
-import java.nio.charset.StandardCharsets
+ext.determineJavaLanguageVersion = { Project project, int requestedVersion ->
+    JavaToolchainService toolchainService = project.extensions.getByType(JavaToolchainService)
+    JavaLanguageVersion requested = JavaLanguageVersion.of(requestedVersion)
+    int runtimeVersion = Runtime.version().feature()
+    JavaLanguageVersion fallback = JavaLanguageVersion.of(runtimeVersion)
 
-logger.info("rootProject: ${rootProject.name}")
-
-boolean isSkipProject(Project project) {
-    boolean isSkipProject = !project.buildscript.sourceFile.exists()
-    logger.info("isSkipProject: ${isSkipProject}")
-    return isSkipProject
-}
-
-ext {
-    isSkipProject = this.&isSkipProject as MethodClosure
-}
-
-
-Properties props = new Properties()
-File versionFile = rootProject.file('version.properties')
-if(versionFile.exists()) {
-    props.load(versionFile.newReader() as Reader)
-    props.each { prop ->
-        logger.info("${prop.key}: ${prop.value}")
-        rootProject.ext.set(prop.key, prop.value)
+    if (requested.asInt() == fallback.asInt()) {
+        return requested
     }
-}
-def excludeArtifacts = []
-File excludeFile = rootProject.file('gradle-exclude.json')
-if(excludeFile.exists()) {
-    excludeArtifacts = new JsonSlurper().parseText(excludeFile.text)
-    excludeArtifacts?.each { item ->
-        logger.info("exclude ${item.group}: ${item.module}")
-    }
-}
 
-boolean need_sign = Boolean.FALSE
-if (rootProject.hasProperty('io.geewit.gradle.need_sign')) {
-    need_sign = 'true'.equalsIgnoreCase(rootProject.getProperties().get('io.geewit.gradle.need_sign').toString())
-}
-logger.info("need_sign: ${need_sign}")
-
-def java_version = JavaVersion.VERSION_1_8
-if (rootProject.hasProperty('io.geewit.gradle.java_version')) {
-    java_version = JavaVersion.toVersion(rootProject.getProperties().get('io.geewit.gradle.java_version'))
-}
-logger.info("java_version: ${java_version}")
-
-static String generateGroupId(Project thisProject, Project rootProject) {
-    println "thisProject.name = ${thisProject.name}"
-    Project parentProject = thisProject.parent
-    String groupId = null
-    Properties projectProps = new Properties()
-    File projectPropsFile = thisProject.file('gradle.properties')
-    if(projectPropsFile.exists()) {
-        projectProps.load(projectPropsFile.newReader() as Reader)
-        String thisGroup = projectProps.getProperty('group')
-        if (thisGroup != null) {
-            groupId = thisGroup
-        }
-    }
-    if(groupId == null) {
-        println 'project has not groupId'
-        groupId = rootProject.group.toString()
-        println "groupId = ${groupId}"
-        if(thisProject.parent != null) {
-            def deepth = 1
-            println "thisProject.name = ${thisProject.name}"
-            String group_suffix = ""
-            while (parentProject != null) {
-                println "deepth = ${deepth}"
-                if(parentProject.parent != null) {
-                    if(group_suffix.length() > 0) {
-                        group_suffix = parentProject.name + "." + group_suffix
-                    } else {
-                        group_suffix = parentProject.name
-                    }
-                }
-                println "group_suffix = ${group_suffix}"
-                parentProject = parentProject.parent
-                deepth++
-            }
-            if(group_suffix.length() > 0) {
-                groupId = groupId + "." + group_suffix
-            }
-        } else {
-            println 'thisProject.parent == null'
-            groupId = thisProject.group.toString()
-            println "groupId = ${groupId}"
-        }
-    }
-    println "--------- final groupId = ${groupId}"
-    thisProject.group(groupId)
-    return groupId
-}
-
-static String generateArtifactId(Project project) {
-    Project prj = project.parent
-
-    String artifactId
-    if(project.hasProperty('artifactId')) {
-        artifactId = project.property('artifactId').toString()
-        println "project.artifactId = ${artifactId}"
-    } else {
-        println 'project has not artifactId'
-        artifactId = project.name
-        println "artifactId = ${artifactId}"
-        while (prj != null) {
-            println "prj.name = ${prj.name}"
-            println "prj.depth = ${prj.depth}"
-            artifactId = "${prj.name}-${artifactId}"
-            println "artifactId = ${artifactId}"
-            prj = prj.parent
-        }
-    }
-    println "--------- final artifactId = ${artifactId}"
-    return artifactId
-}
-
-static boolean isNeedPublish(Project thisProject, Project rootProject) {
-    println "thisProject.name = ${thisProject.name}"
-    boolean need_publish = Boolean.FALSE
-    if (rootProject.hasProperty('io.geewit.gradle.need_publish')) {
-        need_publish = rootProject.property('io.geewit.gradle.need_publish').toString().equalsIgnoreCase('true')
-    }
-    File projectPropsFile = thisProject.file('gradle.properties')
-    if(projectPropsFile.exists()) {
-        println "gradle.properties File exists"
-        Properties projectProps = new Properties()
-        projectProps.load(projectPropsFile.newReader() as Reader)
-        def needPublish = projectProps.get('io.geewit.gradle.need_publish')
-        if (needPublish != null) {
-            println "projectProps.hasProperty 'io.geewit.gradle.need_publish' = " + needPublish.toString()
-            need_publish = 'true'.equalsIgnoreCase(needPublish.toString())
-        } else {
-            println "projectProps.has not Property 'io.geewit.gradle.need_publish'"
-        }
-    } else {
-        println "gradle.properties File not exists"
-    }
-    println "thisProject(${thisProject.name}).need_publish = ${need_publish}"
-    thisProject.ext.set('need_publish', need_publish)
-    return need_publish
-}
-
-static boolean isSnapshotBuild(Project rootProject) {
-    return rootProject.version.endsWith('SNAPSHOT')
-}
-
-
-def artifactResolutionStrategy(DependencyResolveDetails details) {
-    if (details.requested.group == 'jakarta.annotation') {
-        if (rootProject.hasProperty('jakarta_annotation_api_version')) {
-            details.useVersion jakarta_annotation_api_version
-        }
-    } else if (details.requested.group == 'javax.activation' || details.requested.group == 'com.sun.activation') {
-        if (rootProject.hasProperty('jakarta_activation_api_version')) {
-            details.useTarget(group: 'jakarta.activation', name: 'jakarta.activation-api', version: jakarta_activation_api_version)
-        } else if (rootProject.hasProperty('javax_activation_api_version')) {
-            if (details.requested.name == 'activation') {
-                details.useTarget(group: details.requested.group, name: 'javax.activation-api', version: javax_activation_api_version)
-            } else {
-                details.useVersion javax_activation_api_version
-            }
-        }
-    } else if (details.requested.group == 'javax.annotation') {
-        if (rootProject.hasProperty('jakarta_annotation_api_version')) {
-            details.useTarget(group: 'jakarta.annotation', name: 'jakarta.persistence-api', version: jakarta_annotation_api_version)
-        } else if (rootProject.hasProperty('javax_annotation_api_version')) {
-            details.useVersion javax_annotation_api_version
-        }
-    } else if (details.requested.group == 'jakarta.el') {
-        if (rootProject.hasProperty('jakarta_el_api_version')) {
-            details.useVersion jakarta_el_api_version
-        }
-    } else if (details.requested.group == 'javax.el') {
-        if (rootProject.hasProperty('jakarta_el_api_version')) {
-            details.useTarget(group: 'jakarta.el', name: 'jakarta.el-api', version: jakarta_el_api_version)
-        } else if (rootProject.hasProperty('javax_el_api_version')) {
-            details.useVersion javax_el_api_version
-        }
-    } else if (details.requested.group == 'jakarta.cache') {
-        if (rootProject.hasProperty('jakarta_cache_api_version')) {
-            details.useVersion jakarta_cache_api_version
-        }
-    } else if (details.requested.group == 'javax.cache') {
-        if (rootProject.hasProperty('jakarta_cache_api_version')) {
-            details.useTarget(group: 'jakarta.cache', name: 'jakarta.cache-api', version: jakarta_cache_api_version)
-        } else if (rootProject.hasProperty('javax_cache_api_version')) {
-            details.useVersion javax_cache_api_version
-        }
-    } else if (details.requested.group == 'jakarta.persistence') {
-        if (rootProject.hasProperty('jakarta_persistence_api_version')) {
-            details.useVersion jakarta_persistence_api_version
-        }
-    } else if (details.requested.group == 'javax.persistence') {
-        if (rootProject.hasProperty('jakarta_persistence_api_version')) {
-            details.useTarget(group: 'jakarta.persistence', name: 'jakarta.persistence-api', version: jakarta_persistence_api_version)
-        } else if (rootProject.hasProperty('javax_persistence_api_version')) {
-            details.useVersion javax_persistence_api_version
-        }
-    } else if (details.requested.group == 'jakarta.servlet') {
-        if (rootProject.hasProperty('jakarta_servlet_api_version')) {
-            details.useVersion jakarta_servlet_api_version
-        }
-    } else if (details.requested.group == 'javax.servlet') {
-        if (rootProject.hasProperty('jakarta_servlet_api_version')) {
-            details.useTarget(group: 'jakarta.servlet', name: 'jakarta.servlet-api', version: jakarta_servlet_api_version)
-        } else if (rootProject.hasProperty('javax_servlet_api_version')) {
-            details.useVersion javax_servlet_api_version
-        }
-    } else if (details.requested.group == 'jakarta.transaction') {
-        if (rootProject.hasProperty('jakarta_transaction_api_version')) {
-            details.useVersion jakarta_transaction_api_version
-        }
-    } else if (details.requested.group == 'javax.transaction') {
-        if (rootProject.hasProperty('jakarta_transaction_api_version')) {
-            details.useTarget(group: 'jakarta.transaction', name: 'jakarta.transaction-api', version: jakarta_transaction_api_version)
-        } else if (details.requested.name == 'jta') {
-            if (rootProject.hasProperty('jakarta_transaction_api_version')) {
-                details.useTarget(group: 'jakarta.transaction', name: 'jakarta.transaction-api', version: jakarta_transaction_api_version)
-            } else if (rootProject.hasProperty('javax_transaction_api_version')) {
-                details.useTarget(group: details.requested.grou, name: 'javax.transaction-api', version: javax_transaction_api_version)
-            }
-        }
-    } else if (details.requested.group == 'jakarta.validation') {
-        if (rootProject.hasProperty('jakarta_validation_api_version')) {
-            details.useVersion jakarta_validation_api_version
-        }
-    } else if (details.requested.group == 'javax.validation') {
-        if (rootProject.hasProperty('jakarta_validation_api_version')) {
-            details.useTarget(group: 'jakarta.validation', name: 'jakarta.validation-api', version: jakarta_validation_api_version)
-        } else if (rootProject.hasProperty('javax_validation_api_version')) {
-            details.useTarget(group: details.requested.group, name: 'validation-api', version: javax_validation_api_version)
-        }
-    } else if (details.requested.group == 'jakarta.websocket') {
-        if (rootProject.hasProperty('jakarta_websocket_api_version')) {
-            details.useVersion jakarta_websocket_api_version
-        }
-    } else if (details.requested.group == 'javax.websocket') {
-        if (rootProject.hasProperty('jakarta_websocket_api_version')) {
-            details.useTarget(group: 'jakarta.websocket', name: 'jakarta.websocket-api', version: jakarta_websocket_api_version)
-        } else if (rootProject.hasProperty('javax_websocket_api_version')) {
-            details.useVersion javax_websocket_api_version
-        }
-    } else if (details.requested.group == 'jakarta.ws.rs') {
-        if (rootProject.hasProperty('jakarta_ws_rs_api_version')) {
-            details.useVersion jakarta_ws_rs_api_version
-        }
-    } else if (details.requested.group == 'javax.ws.rs') {
-        if (rootProject.hasProperty('jakarta_ws_rs_api_version')) {
-            details.useTarget(group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: jakarta_ws_rs_api_version)
-        } else if (rootProject.hasProperty('javax_ws_rs_api_version')) {
-            details.useTarget(group: details.requested.group, name: 'javax.ws.rs-api', version: javax_ws_rs_api_version)
-        }
-    } else if (details.requested.group == 'jakarta.xml.bind') {
-        if (rootProject.hasProperty('jakarta_xml_bind_api_version')) {
-            details.useVersion jakarta_xml_bind_api_version
-        }
-    } else if (details.requested.group == 'javax.xml.bind') {
-        if (rootProject.hasProperty('jakarta_xml_bind_api_version')) {
-            details.useTarget(group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: jakarta_xml_bind_api_version)
-        } else if (rootProject.hasProperty('javax_xml_bind_api_version')) {
-            details.useVersion javax_xml_bind_api_version
-        }
-    } else if (details.requested.group == 'jakarta.json') {
-        if (rootProject.hasProperty('jakarta_json_api_version')) {
-            details.useVersion jakarta_json_api_version
-        }
-    } else if (details.requested.group == 'javax.json' && details.requested.name == 'javax.json-api') {
-        if (rootProject.hasProperty('jakarta_json_api_version')) {
-            details.useTarget(group: 'jakarta.json', name: 'jakarta.json-api', version: jakarta_json_api_version)
-        } else if (rootProject.hasProperty('javax_json_api_version')) {
-            details.useVersion javax_json_api_version
-        }
-    } else if (details.requested.group == 'org.glassfish') {
-        if (details.requested.name == 'javax.json') {
-            if (rootProject.hasProperty('javax_json_api_version')) {
-                details.useVersion javax_json_api_version
-            } else if (rootProject.hasProperty('jakarta_json_api_version')) {
-                details.useTarget(group: 'jakarta.json', name: 'jakarta.json-api', version: jakarta_json_api_version)
-            }
-        } else if (details.requested.name == 'jakarta.el') {
-            if (rootProject.hasProperty('jakarta_el_version')) {
-                details.useTarget(group: 'jakarta.el', name: 'jakarta.el-api', version: jakarta_el_version)
-            }
-        }
-
-    } else if (details.requested.group == 'jakarta.mail') {
-        if (rootProject.hasProperty('jakarta_mail_version')) {
-            details.useVersion jakarta_mail_version
-        }
-    } else if (details.requested.group == 'javax.mail' || details.requested.group == 'com.sun.mail') {
-        if (rootProject.hasProperty('jakarta_mail_api_version')) {
-            details.useTarget(group: 'jakarta.mail', name: 'jakarta.mail-api', version: jakarta_mail_api_version)
-        } else if (rootProject.hasProperty('javax_mail_api_version')) {
-            details.useVersion javax_mail_api_version
-        }
-    } else if (details.requested.group == 'com.aliyun') {
-        if (details.requested.name == 'aliyun-java-sdk-core') {
-            if (rootProject.hasProperty('aliyun_java_sdk_core_version')) {
-                details.useVersion aliyun_java_sdk_core_version
-            }
-        }
-    } else if (details.requested.group == 'org.codehaus.mojo' && details.requested.name == 'animal-sniffer-annotations') {
-        if (rootProject.hasProperty('animal_sniffer_annotations_version')) {
-            details.useVersion animal_sniffer_annotations_version
-        }
-    } else if (details.requested.group == 'org.antlr') {
-        if (details.requested.name.startsWith('antlr4')) {
-            if (rootProject.hasProperty('antlr4_version')) {
-                details.useVersion antlr4_version
-            }
-        } else if (details.requested.name == 'ST4') {
-            if (rootProject.hasProperty('ST4_version')) {
-                details.useVersion ST4_version
-            }
-        }
-    } else if (details.requested.group == 'org.apiguardian') {
-        if (rootProject.hasProperty('apiguardian_version')) {
-            details.useVersion apiguardian_version
-        }
-    } else if (details.requested.group == 'org.ow2.asm') {
-        if (rootProject.hasProperty('asm_version')) {
-            details.useVersion asm_version
-        }
-    } else if (details.requested.group == 'org.aspectj') {
-        if (rootProject.hasProperty('aspectj_version')) {
-            details.useVersion aspectj_version
-        }
-    } else if (details.requested.group == 'org.assertj') {
-        if (details.requested.name == 'assertj-core') {
-            if (rootProject.hasProperty('assertj_core_version')) {
-                details.useVersion assertj_core_version
-            }
-        } else if (details.requested.name == 'assertj-db') {
-            if (rootProject.hasProperty('assertj_db_version')) {
-                details.useVersion assertj_db_version
-            }
-        }
-    } else if (details.requested.group == 'org.bouncycastle') {
-        if (rootProject.hasProperty('bouncycastle_version')) {
-            if (details.requested.name == 'bcpkix-jdk15on') {
-                details.useTarget(group: 'org.bouncycastle', name: 'bcpkix-jdk18on', version: bouncycastle_version)
-            } else if (details.requested.name == 'bcprov-jdk15on') {
-                details.useTarget(group: 'org.bouncycastle', name: 'bcprov-jdk18on', version: bouncycastle_version)
-            } else if (details.requested.name == 'bcprov-ext-jdk15on') {
-                details.useTarget(group: 'org.bouncycastle', name: 'bcprov-ext-jdk18on', version: bouncycastle_version)
-            } else if (details.requested.name == 'bcutil-jdk15on') {
-                details.useTarget(group: 'org.bouncycastle', name: 'bcutil-jdk18on', version: bouncycastle_version)
-            } else {
-                details.useVersion bouncycastle_version
-            }
-        }
-    } else if (details.requested.group == 'net.bytebuddy') {
-        if (rootProject.hasProperty('bytebuddy_version')) {
-            details.useVersion bytebuddy_version
-        }
-    } else if (details.requested.group == 'org.mybatis') {
-        if (details.requested.name == 'mybatis-spring') {
-            if (rootProject.hasProperty('mybatis_spring_version')) {
-                details.useVersion mybatis_spring_version
-            }
-        } else {
-            if (rootProject.hasProperty('mybatis_version')) {
-                details.useVersion mybatis_version
-            }
-        }
-    } else if (details.requested.group == 'com.github.docker-java') {
-        if (rootProject.hasProperty('docker_java_version')) {
-            details.useVersion docker_java_version
-        }
-    } else if (details.requested.group == 'net.java.dev.jna') {
-        if (rootProject.hasProperty('jna_version')) {
-            details.useVersion jna_version
-        }
-    } else if (details.requested.group == 'cglib') {
-        if (rootProject.hasProperty('cglib_version')) {
-            details.useVersion cglib_version
-        }
-    } else if (details.requested.group == 'org.checkerframework') {
-        if (rootProject.hasProperty('checker_version')) {
-            details.useVersion checker_version
-        }
-    } else if (details.requested.group == 'com.fasterxml' && details.requested.name == 'classmate') {
-        if (rootProject.hasProperty('classmate_version')) {
-            details.useVersion classmate_version
-        }
-    } else if (details.requested.group == 'io.github.classgraph' && details.requested.name == 'classgraph') {
-        if (rootProject.hasProperty('classgraph_version')) {
-            details.useVersion classgraph_version
-        }
-    } else if (details.requested.group == 'commons-beanutils' && details.requested.name == 'commons-beanutils') {
-        if (rootProject.hasProperty('commons_beanutils_version')) {
-            details.useVersion commons_beanutils_version
-        }
-    } else if (details.requested.group == 'commons-codec' && details.requested.name == 'commons-codec') {
-        if (rootProject.hasProperty('commons_codec_version')) {
-            details.useVersion commons_codec_version
-        }
-    } else if (details.requested.group == 'commons-collections' && details.requested.name == 'commons-collections') {
-        if (rootProject.hasProperty('commons_collections_version')) {
-            details.useVersion commons_collections_version
-        }
-    } else if (details.requested.group == 'commons-configuration' && details.requested.name == 'commons-configuration') {
-        if (rootProject.hasProperty('commons_configuration_version')) {
-            details.useVersion commons_configuration_version
-        }
-    } else if (details.requested.group == 'commons-io' && details.requested.name == 'commons-io') {
-        if (rootProject.hasProperty('commons_io_version')) {
-            details.useVersion commons_io_version
-        }
-    } else if (details.requested.group == 'commons-lang' && details.requested.name == 'commons-lang') {
-        if (rootProject.hasProperty('commons_lang_version')) {
-            details.useVersion commons_lang_version
-        }
-    } else if (details.requested.group == 'commons-logging' && details.requested.name == 'commons-logging') {
-        if (rootProject.hasProperty('commons_logging_version')) {
-            details.useVersion commons_logging_version
-        }
-    } else if (details.requested.group == 'org.apache.commons') {
-        if (details.requested.name == 'commons-collections4') {
-            if (rootProject.hasProperty('commons_collections4_version')) {
-                details.useVersion commons_collections4_version
-            }
-        } else if (details.requested.name == 'commons-compress') {
-            if (rootProject.hasProperty('commons_compress_version')) {
-                details.useVersion commons_compress_version
-            }
-        } else if (details.requested.name == 'commons-configuration2') {
-            if (rootProject.hasProperty('commons_configuration2_version')) {
-                details.useVersion commons_configuration2_version
-            }
-        } else if (details.requested.name == 'commons-csv') {
-            if (rootProject.hasProperty('commons_csv_version')) {
-                details.useVersion commons_csv_version
-            }
-        } else if (details.requested.name == 'commons-lang3') {
-            if (rootProject.hasProperty('commons_lang3_version')) {
-                details.useVersion commons_lang3_version
-            }
-        } else if (details.requested.name == 'commons-pool2') {
-            if (rootProject.hasProperty('commons_pool2_version')) {
-                details.useVersion commons_pool2_version
-            }
-        } else if (details.requested.name == 'commons-text') {
-            if (rootProject.hasProperty('commons_text_version')) {
-                details.useVersion commons_text_version
-            }
-        }
-    } else if (details.requested.group == 'com.github.virtuald' && details.requested.name == 'curvesapi') {
-        if (rootProject.hasProperty('curvesapi_version')) {
-            details.useVersion curvesapi_version
-        }
-    } else if (details.requested.group == 'com.alibaba') {
-        if (details.requested.name == 'fastjson') {
-            if (rootProject.hasProperty('fastjson_version')) {
-                details.useVersion fastjson_version
-            }
-        } else if (details.requested.name == 'druid') {
-            if (rootProject.hasProperty('druid_version')) {
-                details.useVersion druid_version
-            }
-        } else if (details.requested.name == 'druid-spring-boot-starter') {
-            if (rootProject.hasProperty('druid_version')) {
-                details.useVersion druid_version
-            }
-        } else if (details.requested.name == 'transmittable-thread-local') {
-            if (rootProject.hasProperty('transmittable_thread_local_version')) {
-                details.useVersion transmittable_thread_local_version
-            }
-        }
-    } else if (details.requested.group == 'org.dom4j') {
-        if (rootProject.hasProperty('dom4j_version')) {
-            details.useVersion dom4j_version
-        }
-    } else if (details.requested.group == 'org.ehcache') {
-        if (rootProject.hasProperty('ehcache_version')) {
-            details.useVersion ehcache_version
-        }
-    } else if (details.requested.group == 'com.google.auto.service' && details.requested.name == 'auto-service') {
-        if (rootProject.hasProperty('google_auto_service_version')) {
-            details.useVersion google_auto_service_version
-        }
-    } else if (details.requested.group == 'com.google.auto' && details.requested.name == 'auto-common') {
-        if (rootProject.hasProperty('google_auto_common_version')) {
-            details.useVersion google_auto_common_version
-        }
-    } else if (details.requested.group == 'com.google.errorprone') {
-        if (rootProject.hasProperty('errorprone_version')) {
-            details.useVersion errorprone_version
-        }
-    } else if (details.requested.group == 'de.ruedigermoeller') {
-        if (rootProject.hasProperty('fst_version')) {
-            details.useVersion fst_version
-        }
-    } else if (details.requested.group == 'com.google.code.findbugs') {
-        if (rootProject.hasProperty('findbugs_version')) {
-            details.useVersion findbugs_version
-        }
-    } else if (details.requested.group == 'com.google.code.gson') {
-        if (rootProject.hasProperty('gson_version')) {
-            details.useVersion gson_version
-        }
-    } else if (details.requested.group == 'com.google.guava' && details.requested.name == 'guava') {
-        if (rootProject.hasProperty('guava_version')) {
-            details.useVersion guava_version
-        }
-    } else if (details.requested.group == 'com.google.inject' && details.requested.name == 'guice') {
-        if (rootProject.hasProperty('guice_version')) {
-            details.useVersion guice_version
-        }
-    } else if (details.requested.group == 'org.hibernate') {
-        if (rootProject.hasProperty('hibernate_version')) {
-            details.useVersion hibernate_version
-        }
-    } else if (details.requested.group == 'org.hibernate.common') {
-        if (rootProject.hasProperty('hibernate_common_annotations_version')) {
-            details.useVersion hibernate_common_annotations_version
-        }
-    } else if (details.requested.group == 'org.hibernate.validator') {
-        if (rootProject.hasProperty('hibernate_validator_version')) {
-            details.useVersion hibernate_validator_version
-        }
-    } else if (details.requested.group.startsWith('org.glassfish.hk2')) {
-        if (rootProject.hasProperty('hk2_version')) {
-            details.useVersion hk2_version
-        }
-    } else if (details.requested.group == 'org.apache.httpcomponents') {
-        if (details.requested.name == 'httpclient' || details.requested.name == 'httpmime') {
-            if (rootProject.hasProperty('httpclient_version')) {
-                details.useVersion httpclient_version
-            }
-        } else if (details.requested.name == 'httpcore' || details.requested.name == 'httpcore-nio') {
-            if (rootProject.hasProperty('httpcore_version')) {
-                details.useVersion httpcore_version
-            }
-        } else if (details.requested.name == 'httpasyncclient') {
-            details.useVersion httpasyncclient_version
-        }
-    } else if (details.requested.group == 'com.ibm.icu') {
-        if (rootProject.hasProperty('icu_version')) {
-            details.useVersion icu_version
-        }
-    } else if (details.requested.group == 'cn.hutool') {
-        if (rootProject.hasProperty('hutool_version')) {
-            details.useVersion hutool_version
-        }
-    } else if (details.requested.group == 'org.jacoco') {
-        if (rootProject.hasProperty('jacoco_version')) {
-            details.useVersion jacoco_version
-        }
-    } else if (details.requested.group.startsWith('com.fasterxml.jackson')) {
-        if (rootProject.hasProperty('jackson_version')) {
-            details.useVersion jackson_version
-        }
-    } else if (details.requested.group.startsWith('com.fasterxml.woodstox')) {
-        if (rootProject.hasProperty('woodstox_version')) {
-            details.useVersion woodstox_version
-        }
-    } else if (details.requested.group == 'org.javassist') {
-        if (rootProject.hasProperty('javassist_version')) {
-            details.useVersion javassist_version
-        }
-    } else if (details.requested.group == 'com.auth0' && details.requested.name == 'java-jwt') {
-        if (rootProject.hasProperty('java_jwt_version')) {
-            details.useVersion java_jwt_version
-        }
-    } else if (details.requested.group == 'com.sun.xml.bind') {
-        if (details.requested.name == 'jaxb-core') {
-            if (rootProject.hasProperty('jaxb_core_version')) {
-                details.useVersion jaxb_core_version
-            }
-        } else if (details.requested.name == 'jaxb-impl') {
-            if (rootProject.hasProperty('jaxb_impl_version')) {
-                details.useVersion jaxb_impl_version
-            }
-        }
-    } else if (details.requested.group == 'org.glassfish.jaxb') {
-        if (rootProject.hasProperty('jaxb_runtime_version')) {
-            details.useVersion jaxb_runtime_version
-        }
-    } else if (details.requested.group == 'org.jboss' && details.requested.name == 'jandex') {
-        if (rootProject.hasProperty('jboss_jandex_version')) {
-            details.useVersion jboss_jandex_version
-        }
-    } else if (details.requested.group == 'org.jboss.logging') {
-        if (rootProject.hasProperty('jboss_logging_version')) {
-            details.useVersion jboss_logging_version
-        }
-    } else if (details.requested.group == 'org.jboss.threads') {
-        if (rootProject.hasProperty('jboss_threads_version')) {
-            details.useVersion jboss_threads_version
-        }
-    } else if (details.requested.group == 'org.jboss.xnio') {
-        if (rootProject.hasProperty('jboss_xnio_version')) {
-            details.useVersion jboss_xnio_version
-        }
-    } else if (details.requested.group == 'org.jdom') {
-        if (details.requested.name == 'jdom') {
-            if (rootProject.hasProperty('jdom_version')) {
-                details.useVersion jdom_version
-            }
-        } else if (details.requested.name == 'jdom2') {
-            if (rootProject.hasProperty('jdom2_version')) {
-                details.useVersion jdom2_version
-            }
-        }
-    } else if (details.requested.group.startsWith('org.glassfish.jersey')) {
-        if (rootProject.hasProperty('jersey_version')) {
-            if (details.requested.name == 'jersey-spring3') {
-                details.useTarget(group: details.requested.group, name: 'jersey-spring4', version: jersey_version)
-            } else {
-                details.useVersion jersey_version
-            }
-        }
-    } else if (details.requested.group == 'joda-time' && details.requested.name == 'joda-time') {
-        if (rootProject.hasProperty('joda_time_version')) {
-            details.useVersion joda_time_version
-        }
-    } else if (details.requested.group == 'org.apache.johnzon') {
-        if (rootProject.hasProperty('johnzon_version')) {
-            details.useVersion johnzon_version
-        }
-    } else if (details.requested.group == 'org.jooq') {
-        if (rootProject.hasProperty('jooq_version')) {
-            details.useVersion jooq_version
-        }
-    } else if (details.requested.group == 'net.minidev' && details.requested.name == 'json-smart') {
-        if (rootProject.hasProperty('json_smart_version')) {
-            details.useVersion json_smart_version
-        }
-    } else if (details.requested.group == 'org.jetbrains.kotlin') {
-        if (rootProject.hasProperty('jetbrains_kotlin_version')) {
-            details.useVersion jetbrains_kotlin_version
-        }
-    } else if (details.requested.group == 'org.jetbrains') {
-        if (details.requested.name == 'annotations') {
-            if (rootProject.hasProperty('jetbrains_annotations_version')) {
-                details.useVersion jetbrains_annotations_version
-            }
-        }
-    } else if (details.requested.group == 'junit') {
-        if (rootProject.hasProperty('junit4_version') && junit4_version.startsWith('4.')) {
-            details.useVersion junit4_version
-        }
-    } else if (details.requested.group == 'org.junit.jupiter') {
-        if (rootProject.hasProperty('junit_version') && junit_version.startsWith('5.')) {
-            details.useVersion junit_version
-        }
-    } else if (details.requested.group == 'org.junit.vintage') {
-        if (rootProject.hasProperty('junit_version') && junit_version.startsWith('5.')) {
-            details.useVersion junit_version
-        }
-    } else if (details.requested.group == 'org.junit.platform') {
-        if (rootProject.hasProperty('junit_platform_version')) {
-            details.useVersion junit_platform_version
-        }
-    } else if (details.requested.group == 'com.google.j2objc') {
-        if (rootProject.hasProperty('j2objc_version')) {
-            details.useVersion j2objc_version
-        }
-    } else if (details.requested.group == 'io.lettuce') {
-        if (rootProject.hasProperty('lettuce_version')) {
-            details.useVersion lettuce_version
-        }
-    } else if (details.requested.group == 'org.apache.logging.log4j') {
-        if (rootProject.hasProperty('log4j2_version')) {
-            details.useVersion log4j2_version
-        }
-    } else if (details.requested.group == 'org.projectlombok') {
-        if (details.requested.name == 'lombok') {
-            if (rootProject.hasProperty('lombok_version')) {
-                details.useVersion lombok_version
-            }
-        } else if (details.requested.name == 'lombok-mapstruct-binding') {
-            if (rootProject.hasProperty('lombok_mapstruct_binding_version')) {
-                details.useVersion lombok_mapstruct_binding_version
-            }
-        }
-    } else if (details.requested.group == 'org.mapstruct') {
-        if (rootProject.hasProperty('mapstruct_version')) {
-            details.useVersion mapstruct_version
-        }
-    } else if (details.requested.group == 'com.esotericsoftware') {
-        if (details.requested.name == 'kryo') {
-            if (rootProject.hasProperty('kryo_version')) {
-                details.useVersion kryo_version
-            }
-        } else if (details.requested.name == 'minlog') {
-            if (rootProject.hasProperty('minlog_version')) {
-                details.useVersion minlog_version
-            }
-        }
-    } else if (details.requested.group == 'mysql') {
-        if (details.requested.name == 'mysql-connector-java') {
-            if (rootProject.hasProperty('mysql_version')) {
-                details.useVersion mysql_version
-            }
-        }
-    } else if (details.requested.group == 'com.netflix.archaius') {
-        if (rootProject.hasProperty('netflix_archaius_version')) {
-            details.useVersion netflix_archaius_version
-        }
-    } else if (details.requested.group == 'org.objenesis') {
-        if (rootProject.hasProperty('objenesis_version')) {
-            details.useVersion objenesis_version
-        }
-    } else if (details.requested.group == 'ognl') {
-        if (rootProject.hasProperty('ognl_version')) {
-            details.useVersion ognl_version
-        }
-    } else if (details.requested.group == 'com.squareup.okhttp3') {
-        if (rootProject.hasProperty('okhttp_version')) {
-            details.useVersion okhttp_version
-        }
-    } else if (details.requested.group == 'com.squareup.okio') {
-        if (rootProject.hasProperty('okio_version')) {
-            details.useVersion okio_version
-        }
-    } else if (details.requested.group == 'io.micrometer') {
-        if (rootProject.hasProperty('micrometer_version')) {
-            details.useVersion micrometer_version
-        }
-    } else if (details.requested.group == 'org.mockito') {
-        if (rootProject.hasProperty('mockito_version')) {
-            details.useVersion mockito_version
-        }
-    } else if (details.requested.group == 'io.prometheus') {
-        if (details.requested.name.startsWith('simpleclient')) {
-            if (rootProject.hasProperty('prometheus_simpleclient_version')) {
-                details.useVersion prometheus_simpleclient_version
-            }
-        }
-    } else if (details.requested.group == 'io.projectreactor') {
-        if (details.requested.name == 'reactor-core') {
-            if (rootProject.hasProperty('reactor_version')) {
-                details.useVersion reactor_version
-            }
-        }
-    } else if (details.requested.group == 'io.projectreactor.addons') {
-        if (details.requested.name == 'reactor-extra') {
-            if (rootProject.hasProperty('reactor_extra_version')) {
-                details.useVersion reactor_extra_version
-            }
-        }
-    } else if (details.requested.group == 'io.projectreactor.netty') {
-        if (details.requested.name.startsWith('reactor-netty')) {
-            if (rootProject.hasProperty('reactor_netty_version')) {
-                details.useVersion reactor_netty_version
-            }
-        }
-    } else if (details.requested.group == 'org.reactivestreams') {
-        if (rootProject.hasProperty('reactive_streams_version')) {
-            details.useVersion reactive_streams_version
-        }
-    } else if (details.requested.group == 'io.reactivex' && details.requested.name == 'rxjava') {
-        if (rootProject.hasProperty('rxjava_version')) {
-            details.useVersion rxjava_version
-        }
-    } else if (details.requested.group == 'io.reactivex.rxjava2') {
-        if (rootProject.hasProperty('rxjava2_version')) {
-            details.useVersion rxjava2_version
-        }
-    } else if (details.requested.group == 'org.attoparser') {
-        if (rootProject.hasProperty('attoparser_version')) {
-            details.useVersion attoparser_version
-        }
-    } else if (details.requested.group == 'org.slf4j') {
-        if (rootProject.hasProperty('slf4j_version')) {
-            details.useVersion slf4j_version
-        }
-    } else if (details.requested.group == 'org.yaml' && details.requested.name == 'snakeyaml') {
-        if (rootProject.hasProperty('snakeyaml_version')) {
-            details.useVersion snakeyaml_version
-        }
-    } else if (details.requested.group == 'org.springframework') {
-        if (rootProject.hasProperty('spring_version')) {
-            details.useVersion spring_version
-        }
-    } else if (details.requested.group == 'org.springframework.boot') {
-        if (rootProject.hasProperty('spring_boot_version')) {
-            details.useVersion spring_boot_version
-        }
-    } else if (details.requested.group == 'org.springframework.cloud') {
-        if (details.requested.name.contains('gateway') && rootProject.hasProperty('spring_cloud_gateway_version')) {
-            details.useVersion spring_cloud_gateway_version
-        } else if (details.requested.name.contains('openfeign') && rootProject.hasProperty('spring_cloud_openfeign_version')) {
-            details.useVersion spring_cloud_openfeign_version
-        } else if (rootProject.hasProperty('spring_cloud_version')) {
-            details.useVersion spring_cloud_version
-        }
-    } else if (details.requested.group == 'org.springframework.data') {
-        if (details.requested.name == 'spring-data-jdbc') {
-            if (rootProject.hasProperty('spring_data_jdbc_version')) {
-                details.useVersion spring_data_jdbc_version
-            } else if (rootProject.hasProperty('spring_data_version')) {
-                details.useVersion spring_data_version
-            }
-        } else if (details.requested.name == 'spring-data-commons') {
-            if (rootProject.hasProperty('spring_data_commons_version')) {
-                details.useVersion spring_data_commons_version
-            } else if (rootProject.hasProperty('spring_data_version')) {
-                details.useVersion spring_data_version
-            }
-        } else if (details.requested.name == 'spring-data-jpa') {
-            if (rootProject.hasProperty('spring_data_jpa_version')) {
-                details.useVersion spring_data_jpa_version
-            } else if (rootProject.hasProperty('spring_data_version')) {
-                details.useVersion spring_data_version
-            }
-        } else if (details.requested.name == 'spring-data-relational') {
-            if (rootProject.hasProperty('spring_data_relational_version')) {
-                details.useVersion spring_data_relational_version
-            } else if (rootProject.hasProperty('spring_data_jdbc_version')) {
-                details.useVersion spring_data_jdbc_version
-            } else if (rootProject.hasProperty('spring_data_version')) {
-                details.useVersion spring_data_version
-            }
-        } else if (rootProject.hasProperty('spring_data_version')) {
-            details.useVersion spring_data_version
-        }
-    } else if (details.requested.group == 'org.springframework.security') {
-        if (details.requested.name == 'spring-security-jwt') {
-            if (rootProject.hasProperty('spring_security_jwt_version')) {
-                details.useVersion spring_security_jwt_version
-            }
-        } else if (details.requested.name == 'spring-security-oauth2') {
-            if (rootProject.hasProperty('spring_security_oauth2_version')) {
-                details.useVersion spring_security_oauth2_version
-            }
-        } else if (details.requested.name == 'spring-security-rsa') {
-            if (rootProject.hasProperty('spring_security_rsa_version')) {
-                details.useVersion spring_security_rsa_version
-            }
-        } else {
-            if (rootProject.hasProperty('spring_security_version')) {
-                details.useVersion spring_security_version
-            }
-        }
-    } else if (details.requested.group == 'org.springframework.session') {
-        if (rootProject.hasProperty('spring_session_version')) {
-            details.useVersion spring_session_version
-        }
-    } else if (details.requested.group == 'org.jvnet.staxex') {
-        if (rootProject.hasProperty('staxex_version')) {
-            details.useVersion staxex_version
-        }
-    } else if (details.requested.group == 'io.swagger') {
-        if (rootProject.hasProperty('swagger_v2_version')) {
-            if (swagger_v2_version.startsWith('1.')) {
-                details.useVersion swagger_v2_version
-            }
-        } else if (rootProject.hasProperty('swagger_version')) {
-            if (swagger_version.startsWith('1.')) {
-                details.useVersion swagger_version
-            }
-        }
-    } else if (details.requested.group.startsWith('io.swagger.') && details.requested.group.endsWith('.v3')) {
-        if (rootProject.hasProperty('swagger_v3_version')) {
-            if (swagger_v3_version.startsWith('2.')) {
-                details.useVersion swagger_v3_version
-            }
-        } else if (rootProject.hasProperty('swagger_version')) {
-            if (swagger_version.startsWith('2.')) {
-                details.useVersion swagger_version
-            }
-        }
-    } else if (details.requested.group == 'org.opensaml') {
-        if (details.requested.name == 'opensaml') {
-            if (rootProject.hasProperty('opensaml_version')) {
-                details.useVersion opensaml_version
-            }
-        }
-    } else if (details.requested.group == 'io.github.openfeign') {
-        if (rootProject.hasProperty('openfeign_version')) {
-            details.useVersion openfeign_version
-        }
-    } else if (details.requested.group == 'io.geewit.boot') {
-        if (details.requested.name == 'gw-boot-starter-jpa') {
-            if (rootProject.hasProperty('gw_boot_starter_jpa_version')) {
-                details.useVersion gw_boot_starter_jpa_version
-            }
-        }
-    } else if (details.requested.group == 'io.geewit.core') {
-        if (details.requested.name == 'gw-core-exception') {
-            if (rootProject.hasProperty('gw_core_exception_version')) {
-                details.useVersion gw_core_exception_version
-            }
-        } else if (details.requested.name == 'gw-core-feign') {
-            if (rootProject.hasProperty('gw_core_feign_version')) {
-                details.useVersion gw_core_feign_version
-            }
-        } else if (details.requested.name == 'gw-core-jackson') {
-            if (rootProject.hasProperty('gw_core_jackson_version')) {
-                details.useVersion gw_core_jackson_version
-            }
-        } else if (details.requested.name == 'gw-core-okhttp') {
-            if (rootProject.hasProperty('gw_core_okhttp_version')) {
-                details.useVersion gw_core_okhttp_version
-            }
-        } else if (details.requested.name == 'gw-core-utils') {
-            if (rootProject.hasProperty('gw_core_utils_version')) {
-                details.useVersion gw_core_utils_version
-            }
-        } else if (details.requested.name == 'gw-core-validator') {
-            if (rootProject.hasProperty('gw_core_validator_version')) {
-                details.useVersion gw_core_validator_version
-            }
-        } else if (details.requested.name == 'gw-snowflake') {
-            if (rootProject.hasProperty('gw_snowflake_version')) {
-                details.useVersion gw_snowflake_version
-            }
-        }
-    } else if (details.requested.group.startsWith('io.geewit.utils')) {
-        if (rootProject.hasProperty('gw_utils_version')) {
-            details.useVersion gw_utils_version
-        }
-    } else if (details.requested.group == 'io.geewit.data') {
-        if (details.requested.name.startsWith('gw-data-jpa-envers')) {
-            if (rootProject.hasProperty('gw_data_jpa_envers_version')) {
-                details.useVersion gw_data_jpa_envers_version
-            }
-        } else if (details.requested.name == 'gw-data-jpa-essential') {
-            if (rootProject.hasProperty('gw_data_jpa_essential_version')) {
-                details.useVersion gw_data_jpa_essential_version
-            }
-        }
-    } else if (details.requested.group == 'mysql' && details.requested.name == 'mysql-connector-java') {
-        if (rootProject.hasProperty('mysql_version')) {
-            details.useVersion mysql_version
-        }
-    } else if (details.requested.group == 'io.jsonwebtoken') {
-        if (rootProject.hasProperty('jjwt_version')) {
-            details.useVersion jjwt_version
-        }
-    } else if (details.requested.group == 'org.jodd') {
-        if (rootProject.hasProperty('jodd_version')) {
-            details.useVersion jodd_version
-        }
-    } else if (details.requested.group == 'org.json' && details.requested.name == 'json') {
-        if (rootProject.hasProperty('json_version')) {
-            details.useVersion json_version
-        }
-    } else if (details.requested.group == 'com.jayway.jsonpath' && details.requested.name == 'json-path') {
-        if (rootProject.hasProperty('jsonpath_version')) {
-            details.useVersion jsonpath_version
-        }
-    } else if (details.requested.group == 'io.netty') {
-        if (details.requested.name == 'netty-tcnative-boringssl-static') {
-            if (rootProject.hasProperty('netty_tcnative_boringssl_static_version')) {
-                details.useVersion netty_tcnative_boringssl_static_version
-            } else {
-                if (rootProject.hasProperty('netty_version')) {
-                    details.useVersion netty_version
-                }
-            }
-        } else {
-            if (rootProject.hasProperty('netty_version')) {
-                details.useVersion netty_version
-            }
-        }
-    } else if (details.requested.group == 'com.nimbusds') {
-        if (details.requested.name == 'nimbus-jose-jwt') {
-            if (rootProject.hasProperty('nimbus_jose_jwt_version')) {
-                details.useVersion nimbus_jose_jwt_version
-            }
-        } else if (details.requested.name == 'oauth2-oidc-sdk') {
-            if (rootProject.hasProperty('nimbus_oauth2_oidc_sdk_version')) {
-                details.useVersion nimbus_oauth2_oidc_sdk_version
-            }
-        }
-    } else if (details.requested.group == 'org.reflections') {
-        if (rootProject.hasProperty('reflections_version')) {
-            details.useVersion reflections_version
-        }
-    } else if (details.requested.group == 'io.springfox') {
-        if (rootProject.hasProperty('springfox_version')) {
-            details.useVersion springfox_version
-        }
-    } else if (details.requested.group == 'org.thymeleaf') {
-        if (rootProject.hasProperty('thymeleaf_version')) {
-            details.useVersion thymeleaf_version
-        }
-    } else if (details.requested.group == 'nz.net.ultraq.thymeleaf') {
-        if (details.requested.name == 'thymeleaf-layout-dialect') {
-            if (rootProject.hasProperty('thymeleaf_layout_dialect_version')) {
-                details.useVersion thymeleaf_layout_dialect_version
-            }
-        }
-    } else if (details.requested.group == 'io.undertow') {
-        if (rootProject.hasProperty('undertow_version')) {
-            details.useVersion undertow_version
-        }
-    } else if (
-            details.requested.group == 'org.unbescape' ) {
-        if (rootProject.hasProperty('unbescape_version')) {
-            details.useVersion unbescape_version
-        }
-    } else if (details.requested.group == 'org.wildfly.common') {
-        if (rootProject.hasProperty('wildfly_common_version')) {
-            details.useVersion wildfly_common_version
-        }
-    } else if (details.requested.group == 'org.wildfly.client') {
-        if (rootProject.hasProperty('wildfly_client_version')) {
-            details.useVersion wildfly_client_version
-        }
-    } else if (details.requested.group == 'com.sun.xml.fastinfoset') {
-        if (rootProject.hasProperty('fastinfoset_version')) {
-            details.useVersion fastinfoset_version
-        }
-    } else if (details.requested.group == 'com.sun.istack') {
-        if (rootProject.hasProperty('istack_version')) {
-            details.useVersion istack_version
-        }
-    } else if (details.requested.group == 'org.apache.xmlbeans') {
-        if (rootProject.hasProperty('xmlbeans_version')) {
-            details.useVersion xmlbeans_version
-        }
+    try {
+        toolchainService.launcherFor {
+            languageVersion.set(requested)
+            implementation.set(JvmImplementation.VENDOR_SPECIFIC)
+        }.get()
+        return requested
+    } catch (Exception ignored) {
+        project.logger.lifecycle(
+                "Java {} toolchain not found; falling back to runtime Java {} for project '{}'.",
+                requested.asInt(),
+                fallback.asInt(),
+                project.name
+        )
+        return fallback
     }
 }
 
 allprojects {
-    layout.setBuildDirectory(file('target'))
-    apply plugin: 'idea'
-    idea {
-        module {
-            excludeDirs += file('.gradle')
-            excludeDirs += file('.idea')
-            excludeDirs += layout.buildDirectory.get().asFile
-            downloadJavadoc = Boolean.FALSE
-            downloadSources = Boolean.TRUE
-            inheritOutputDirs = Boolean.TRUE
-            name = project.name
-        }
-    }
+    group = providers.gradleProperty('group').orElse('com.geewit.utils').get()
+    version = providers.gradleProperty('version').orElse('1.0.0').get()
 
-    project.ext.set('excludeArtifacts', excludeArtifacts)
-
-    project.tasks.each { action ->
-        println "project(${project.name}).task(${action.name})"
-        if (action.name.toLowerCase().contains('kotlin')) {
-            action.setEnabled(Boolean.FALSE)
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven {
+            name 'tencent'
+            url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public'
         }
+        maven { url 'https://jitpack.io' }
     }
 }
 
-subprojects {
-    println "subproject.name = ${it.name}"
+subprojects { subproject ->
+    def libs = extensions.getByType(VersionCatalogsExtension).named('libs')
+    def configuredJavaVersion = providers.gradleProperty('io.geewit.java.version')
+            .map(Integer.&parseInt)
+            .orElse(Runtime.version().feature())
+            .get()
+    def javaLanguageVersion = determineJavaLanguageVersion(subproject, configuredJavaVersion) as JavaLanguageVersion
+    def publishEnabled = providers.gradleProperty('io.geewit.publish.enabled').map { it.toBoolean() }.orElse(false).get()
 
-    ext {
-        profile = System.getProperty('profile') ?: 'development'
-        println "profile = ${profile}"
-        isTencent = rootProject.hasProperty('io.geewit.gradle.is_tencent') ? 'true'.equalsIgnoreCase(rootProject.getProperties().get('io.geewit.gradle.is_tencent').toString()) : Boolean.FALSE
-        println "isTencent = ${isTencent}"
+    apply plugin: 'java-library'
+    if (publishEnabled) {
+        apply plugin: 'maven-publish'
+        apply plugin: 'signing'
     }
 
-    buildscript {
-        repositories {
-            mavenLocal()
-            maven {
-                name 'tencent'
-                url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public'
-                allowInsecureProtocol Boolean.TRUE
-            }
-            maven { name 'apache'; url 'https://repo.maven.apache.org/maven2' }
-            //maven { name 'aliyun-central'; url 'https://maven.aliyun.com/repository/central' }
-            //maven { name 'aliyun-gradle'; url 'https://maven.aliyun.com/repository/gradle-plugin' }
+    java {
+        toolchain {
+            languageVersion.set(javaLanguageVersion)
+            implementation.set(JvmImplementation.VENDOR_SPECIFIC)
         }
+        withSourcesJar()
+        withJavadocJar()
     }
 
+    configurations {
+        configureEach { config ->
+            config.exclude([group: 'com.google.protobuf'])
+            config.exclude([group: 'org.springframework.boot', module: 'spring-boot-dependencies'])
+            config.exclude([group: 'org.springframework.boot', module: 'spring-boot-starter-web'])
+            config.exclude([group: 'org.springframework', module: 'spring-webmvc'])
+            config.exclude([group: 'org.slf4j', module: 'slf4j-log4j12'])
+            config.exclude([group: 'org.slf4j', module: 'slf4j-simple'])
+            config.exclude([group: 'org.yaml'])
+            config.exclude([group: 'org.mockito', module: 'mockito-all'])
+            config.exclude([group: 'org.apache.ant'])
+            config.exclude([group: 'io.netty', module: 'netty-tcnative-classes'])
+            config.exclude([group: 'ua.net.nlp', module: 'morfologik-ukrainian-search'])
 
-    ext {
-        artifactResolutionStrategy = this.&artifactResolutionStrategy
-    }
-
-
-    if(!isSkipProject(it as Project)) {
-        apply plugin: 'java-library'
-        boolean need_publish = isNeedPublish(it as Project, rootProject as Project)
-        logger.info("project({}).need_publish = {}", it.name, need_publish)
-        if (need_publish) {
-            apply plugin: 'maven-publish'
-            apply plugin: 'signing'
-        }
-
-        String[] artifactExcludeFiles = []
-        File artifactExcludeFile = it.file('publish-artifact-exclude.json')
-        if(artifactExcludeFile.exists()) {
-            artifactExcludeFiles = new JsonSlurper().parseText(artifactExcludeFile.text as String)
-            logger.info("artifactExcludeFiles: ${artifactExcludeFile.text}")
-        }
-
-        boolean publishSources = Boolean.TRUE
-        if(rootProject.hasProperty('PUBLISH_SOURCE')) {
-            logger.debug("rootProject.property('PUBLISH_SOURCE'): {}", rootProject.property('PUBLISH_SOURCE'))
-            publishSources = 'true'.equalsIgnoreCase(rootProject.property('PUBLISH_SOURCE').toString())
-        }
-        logger.info("publishSources: ${publishSources}")
-
-        repositories {
-            mavenLocal()
-            maven {
-                name 'tencent'
-                url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public'
-                allowInsecureProtocol Boolean.TRUE
-            }
-            maven {
-                name 'central'
-                url 'https://repo.maven.apache.org/maven2'
-            }
-        }
-
-        project.repositories.withType(ArtifactRepository).configureEach {
-            println "${it.name} ${it.url}"
-            if (it.name == 'tencent' && !isTencent) {
-                println "${project.name}.${it.name} isTencent = false, remove tencent repository"
-                try {
-                    project.repositories.remove(it)
-                } catch (Exception e) {
-                    logger.info("remove ${it.name} repository error", e)
-                }
-            } else if ((it.name == 'releaseRepository' || it.name == 'snapshotRepository')
-                    && it instanceof MavenArtifactRepository
-                    && (it.credentials == null || it.credentials.username == null || it.credentials.username.trim() == '' || it.credentials.password == null || it.credentials.password.trim() == '')) {
-                println "${project.name}.${it.name} it.credentials == null, remove ${it.name} repository"
-                try {
-                    project.repositories.remove(it)
-                } catch (Exception e) {
-                    logger.info("remove ${it.name} repository error", e)
-                }
-            }
-        }
-
-        configurations {
-            configureEach { config ->
-                config.exclude group: 'org.apache.geronimo.specs'
-                config.exclude group: 'org.jboss.spec.javax.annotation'
-                config.exclude group: 'org.jboss.spec.javax.servlet'
-                config.exclude group: 'org.jboss.spec.javax.transaction'
-                config.exclude group: 'org.jboss.spec.javax.websocket'
-                config.exclude group: 'org.hibernate.javax.persistence'
-                config.exclude group: 'org.apache.tomcat', module:'tomcat-jdbc'
-                config.exclude group: 'org.apache.tomcat.embed'
-                config.exclude group: 'org.glassfish.hk2', module:'osgi-resource-locator'
-                config.exclude group: 'org.glassfish.hk2.external', module:'javax.inject'
-                config.exclude group: 'com.vaadin.external.google'
-                config.exclude group: 'org.codehaus.jackson'
-                config.exclude group: 'org.codehaus.jettison'
-                config.exclude group: 'org.slf4j', module:'slf4j-log4j12'
-                if (profile as String != 'development') {
-                    config.exclude group: 'org.springframework.boot', module:'spring-boot-devtools'
-                }
-                excludeArtifacts?.each { item ->
-                    config.exclude([group: item.group as String, module: item.module as String])
-                }
-                resolutionStrategy.eachDependency { details ->
-                    artifactResolutionStrategy(details as DependencyResolveDetails)
-                }
-            }
-        }
-
-        tasks.register('sources', Jar) {
-            enabled = need_publish
-            archiveClassifier.set('sources')
-            from sourceSets.main.allSource
-        }
-
-        tasks.register('javadocs', Jar) {
-            dependsOn javadoc
-            enabled = need_publish
-            archiveClassifier.set('javadoc')
-            from javadoc.destinationDir
-        }
-
-        def moduleName = "${project.group}.${project.name}".replace('-', '.')
-
-        tasks.withType(JavaCompile).tap {
-            configureEach {
-                sourceCompatibility = java_version
-                targetCompatibility = java_version
-
-                options*.compilerArgs << '-Xlint:unchecked' << '-Xlint:options'
-                options*.encoding = StandardCharsets.UTF_8.name()
-            }
-        }
-
-        tasks.withType(Jar).tap {
-            configureEach {
-                if(rootProject.ext.has("isPublishTask") && rootProject.ext.get('isPublishTask') && artifactExcludeFiles) {
-                    exclude artifactExcludeFiles
-                }
-                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-                manifest {
-                    attributes([
-                        'Automatic-Module-Name': moduleName,
-                        'Bundle-Name': project.name,
-                        'Bundle-SymbolicName': moduleName,
-                        'Bundle-Version': project.version,
-                        'Export-Package': '*',
-                        'Implementation-Title': project.name,
-                        'Implementation-Version': project.version,
-                        'Import-Package': '*'
-                    ])
-                }
-            }
-        }
-
-        tasks.withType(Javadoc).tap {
-            configureEach {
-                enabled = need_publish
-                failOnError = Boolean.FALSE
-                options.windowTitle("${project.name} Javadoc ${project.version}")
-                options*.encoding = StandardCharsets.UTF_8.name()
-                options.addStringOption('Xdoclint:none', '-quiet')
-            }
-        }
-
-        tasks.withType(Copy).tap {
-            configureEach {
-                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-            }
-        }
-
-        tasks.withType(Test).tap {
-            configureEach {
-                useJUnitPlatform()
-            }
-        }
-
-        // https://docs.gradle.org/current/dsl/org.gradle.api.publish.maven.MavenPublication.html
-        if (need_publish) {
-            publishing {
-                publications {
-                    maven(MavenPublication) {
-                        afterEvaluate {
-                            groupId this.&generateGroupId(project, rootProject)
-                            artifactId this.&generateArtifactId(project)
-                            version version
-                            from components.java
-                            artifact javadocs
-                            logger.debug('publishing.publishSources: {}', publishSources)
-                            if(publishSources) {
-                                logger.debug('publishing.artifact sources')
-                                artifact sources
+            resolutionStrategy {
+                eachDependency { details ->
+                    if (libs.versions != null) {
+                        if (details.requested.group as String == 'commons-codec' && details.requested.name as String == 'commons-codec') {
+                            if (libs.versions.find('commons-codec').present) {
+                                details.useVersion libs.versions.find('commons-codec').get().requiredVersion
                             }
-                        }
-
-                        pom {
-                            name = POM_ARTIFACT_ID
-                            if (rootProject.hasProperty('POM_DESCRIPTION')) {
-                                description = POM_DESCRIPTION
+                        } else if (details.requested.group as String == 'commons-io' && details.requested.name as String == 'commons-io') {
+                            if (libs.versions.find('commons-io').present) {
+                                details.useVersion libs.versions.find('commons-io').get().requiredVersion
                             }
-                            if (rootProject.hasProperty('POM_SCM_URL')) {
-                                url = POM_SCM_URL
+                        } else if (details.requested.group as String == 'org.apache.commons' && details.requested.name as String == 'commons-lang3') {
+                            if (libs.versions.find('commons-lang3').present) {
+                                details.useVersion libs.versions.find('commons-lang3').get().requiredVersion
                             }
-                            licenses {
-                                license {
-                                    if (rootProject.hasProperty('POM_LICENCE_NAME')) {
-                                        name = POM_LICENCE_NAME
-                                    }
-                                    if (rootProject.hasProperty('POM_LICENCE_URL')) {
-                                        url = POM_LICENCE_URL
-                                    }
-                                }
+                        } else if (details.requested.group as String == 'org.slf4j' && details.requested.name as String == 'slf4j-api') {
+                            if (libs.versions.find('slf4j').present) {
+                                details.useVersion libs.versions.find('slf4j').get().requiredVersion
                             }
-                            developers {
-                                developer {
-                                    if (rootProject.hasProperty('POM_LICENCE_URL')) {
-                                        id = POM_DEVELOPER_ID
-                                    }
-                                    if (rootProject.hasProperty('POM_DEVELOPER_NAME')) {
-                                        name = POM_DEVELOPER_NAME
-                                    }
-                                    if (rootProject.hasProperty('POM_DEVELOPER_EMAIL')) {
-                                        email = POM_DEVELOPER_EMAIL
-                                    }
-                                }
+                        } else if (details.requested.group as String == 'org.projectlombok') {
+                            if (libs.versions.find('lombok').present) {
+                                details.useVersion libs.versions.find('lombok').get().requiredVersion
                             }
-                            scm {
-                                if (rootProject.hasProperty('POM_SCM_URL')) {
-                                    url = POM_SCM_URL
-                                }
-                                if (rootProject.hasProperty('POM_SCM_CONNECTION')) {
-                                    connection = POM_SCM_CONNECTION
-                                }
-                                if (rootProject.hasProperty('POM_SCM_DEV_CONNECTION')) {
-                                    developerConnection = POM_SCM_DEV_CONNECTION
-                                }
+                        } else if ((details.requested.group as String).startsWith('com.fasterxml.jackson')) {
+                            if (libs.versions.find('jackson2.core').present) {
+                                details.useVersion libs.versions.find('jackson2.core').get().requiredVersion
+                            }
+                        } else if ((details.requested.group as String).startsWith('org.springframework.boot')) {
+                            if (libs.versions.find('spring-boot').present) {
+                                details.useVersion libs.versions.find('spring-boot').get().requiredVersion
+                            }
+                        } else if (details.requested.group as String == 'org.springframework.data') {
+                            if (libs.versions.find('spring.data').present) {
+                                details.useVersion libs.versions.find('spring.data').get().requiredVersion
+                            }
+                        } else if ((details.requested.group as String).startsWith('org.springframework')) {
+                            if (libs.versions.find('spring').present) {
+                                details.useVersion libs.versions.find('spring').get().requiredVersion
+                            }
+                        } else if (details.requested.group as String == 'org.junit.jupiter') {
+                            if (libs.versions.find('junit-jupiter').present) {
+                                details.useVersion libs.versions.find('junit-jupiter').get().requiredVersion
+                            }
+                        } else if (details.requested.group as String == 'org.junit.platform') {
+                            if (libs.versions.find('junit-platform').present) {
+                                details.useVersion libs.versions.find('junit-platform').get().requiredVersion
+                            }
+                        } else if (details.requested.group as String == 'org.apache.logging.log4j') {
+                            if (libs.versions.find('log4j').present) {
+                                details.useVersion libs.versions.find('log4j').get().requiredVersion
                             }
                         }
                     }
                 }
             }
-
-            signing {
-                required { !isSnapshotBuild(project) }
-                sign publishing.publications.maven
-            }
         }
-        tasks.register("generateLocalChecksums") {
-            group = "publishing"
-            description = "Generate MD5/SHA1 checksum files for everything under ~/.m2/repository/<groupId>"
+    }
 
-            doLast {
-                def userHome = System.getProperty("user.home")
-                def groupPath = project.group.toString().replace('.', '/')
-                def repoDir = file("${userHome}/.m2/repository/${groupPath}")
-                if (!repoDir.exists()) {
-                    logger.lifecycle("No local repo at $repoDir, skipping checksums.")
-                    return
-                }
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
 
-                ant.taskdef(name: 'checksum', classname: 'org.apache.tools.ant.taskdefs.Checksum')
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+        testLogging {
+            events TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.PASSED
+            exceptionFormat = TestExceptionFormat.FULL
+        }
+    }
 
-                // 2. 递归遍历所有子文件夹
-                repoDir.eachFileRecurse { File f ->
-                    if (f.name ==~ /(?i).*\.(jar|pom|asc|module)$/) {
-                        ant.checksum(file: f, algorithm: "MD5",   todir: f.parentFile, fileext: ".md5")
-                        ant.checksum(file: f, algorithm: "SHA-1", todir: f.parentFile, fileext: ".sha1")
-                        logger.lifecycle("Generated checksums for ${f.path}")
+    if (publishEnabled) {
+        publishing {
+        publications {
+            create('mavenJava', MavenPublication) {
+                from components.java
+                pom {
+                    name = providers.gradleProperty('POM_NAME').orElse(project.name).get()
+                    description = providers.gradleProperty('POM_DESCRIPTION').orElse(project.name).get()
+                    url = providers.gradleProperty('POM_URL').orElse('').get()
+                    licenses {
+                        license {
+                            name = providers.gradleProperty('POM_LICENCE_NAME').orElse('MIT License').get()
+                            url = providers.gradleProperty('POM_LICENCE_URL').orElse('https://mit-license.org/').get()
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = providers.gradleProperty('POM_DEVELOPER_ID').orElse('').get()
+                            name = providers.gradleProperty('POM_DEVELOPER_NAME').orElse('').get()
+                            email = providers.gradleProperty('POM_DEVELOPER_EMAIL').orElse('').get()
+                        }
+                    }
+                    scm {
+                        url = providers.gradleProperty('POM_SCM_URL').orElse('').get()
+                        connection = providers.gradleProperty('POM_SCM_CONNECTION').orElse('').get()
+                        developerConnection = providers.gradleProperty('POM_SCM_DEV_CONNECTION').orElse('').get()
                     }
                 }
             }
         }
-        // 2. 把它挂到 publishToMavenLocal 之后执行
-        tasks.matching { it.name == "publishToMavenLocal" }.configureEach {
-            finalizedBy("generateLocalChecksums")
+        repositories {
+            mavenLocal()
+            maven {
+                name = 'nexus'
+                def releaseUrl = providers.gradleProperty('nexus.releaseUrl').orElse('').get()
+                def snapshotUrl = providers.gradleProperty('nexus.snapshotUrl').orElse('').get()
+                def target = project.version.toString().endsWith('-SNAPSHOT') && snapshotUrl ? snapshotUrl : releaseUrl
+                if (!target) {
+                    logger.lifecycle('No nexus repository url configured; skipping remote publication for {}', project.name)
+                }
+                def fallbackRepo = layout.buildDirectory.dir("publications/${project.name}").get().asFile.toURI()
+                url = target ? uri(target) : fallbackRepo
+                credentials {
+                    username = providers.gradleProperty('nexus.username').orElse(System.getenv('NEXUS_USERNAME') ?: '').get()
+                    password = providers.gradleProperty('nexus.password').orElse(System.getenv('NEXUS_PASSWORD') ?: '').get()
+                }
+            }
+        }
+        }
+
+        signing {
+            required { providers.gradleProperty('io.geewit.signing.enabled').map { it.toBoolean() }.orElse(false).get() && !project.version.toString().endsWith('SNAPSHOT') }
+            sign publishing.publications.mavenJava
         }
     }
-}
-
-subprojects.each { it ->
-    def need_publish = null
-    if (it.hasProperty('need_publish')) {
-        need_publish = it.property('need_publish')
-    }
-    if (need_publish == null) {
-        need_publish = isNeedPublish(it, rootProject)
-    }
-    if (need_publish) {
-        Task rootPublishToMavenLocal = rootProject.tasks.findByName('publishToMavenLocal')
-        if (rootPublishToMavenLocal == null) {
-            rootPublishToMavenLocal = rootProject.tasks.register('publishToMavenLocal').get()
-        }
-
-        Task publishToMavenLocal = it.tasks.findByName('publishToMavenLocal')
-        if (publishToMavenLocal == null) {
-            publishToMavenLocal = it.tasks.register('publishToMavenLocal').get()
-        }
-        rootPublishToMavenLocal.finalizedBy(publishToMavenLocal)
-    }
-
-    Task rootClean = rootProject.tasks.findByName('clean')
-    if (rootClean == null) {
-        rootClean = rootProject.tasks.register('clean').get()
-    }
-    Task clean = it.tasks.findByName('clean')
-    if (clean == null) {
-        clean = it.tasks.register('clean').get()
-    }
-    rootClean.finalizedBy(clean)
 }

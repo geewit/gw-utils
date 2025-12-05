@@ -1,15 +1,13 @@
-project(':core:jackson') {
-    dependencies {
-        api(project(':core:enums'))
-        api("com.fasterxml.jackson.core:jackson-core:$jackson_version")
-        api("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
-        api("org.springframework.boot:spring-boot:$spring_boot_version")
-        api("org.springframework.boot:spring-boot-autoconfigure:$spring_boot_version")
-        compileOnly("org.springframework.data:spring-data-commons:$spring_data_commons_version")
-        api("org.slf4j:slf4j-api:$slf4j_version") {
-            exclude group: 'org.slf4j', module: 'logback'
-        }
-        testImplementation("org.junit.jupiter:junit-jupiter-engine:$junit_version")
-        testImplementation("org.junit.platform:junit-platform-launcher:$junit_platform_version")
+dependencies {
+    api(project(':core:enums'))
+    api(libs.jackson.core)
+    api(libs.jackson.databind)
+    api(libs.spring.boot)
+    api(libs.spring.boot.autoconfigure)
+    api(libs.slf4j.api) {
+        exclude group: 'org.slf4j', module: 'logback'
     }
+
+    testImplementation(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.platform.launcher)
 }
