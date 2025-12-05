@@ -1,11 +1,9 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.gradle.jvm.toolchain.JavaLanguageVersion
-import org.gradle.jvm.toolchain.JavaToolchainService
-import org.gradle.jvm.toolchain.JvmImplementation
-import org.gradle.api.artifacts.VersionCatalogsExtension
 
+// 动态选择 Java 语言版本：优先使用 io.geewit.java.version，找不到对应 toolchain 就回退到当前运行时版本
 ext.determineJavaLanguageVersion = { Project project, int requestedVersion ->
+    // 这里要求项目已经应用了 java / java-library 之类的插件
     JavaToolchainService toolchainService = project.extensions.getByType(JavaToolchainService)
     JavaLanguageVersion requested = JavaLanguageVersion.of(requestedVersion)
     int runtimeVersion = Runtime.version().feature()
@@ -38,19 +36,39 @@ allprojects {
 }
 
 subprojects { subproject ->
-    def libs = extensions.getByType(VersionCatalogsExtension).named('libs')
+    // ------------------------------------------------
+    // 1. 先应用插件，让 JavaToolchainService 等扩展可用
+    // ------------------------------------------------
+    apply plugin: 'java-library'
+
+    def publishEnabled = providers.gradleProperty('io.geewit.publish.enabled')
+            .map { it.toBoolean() }
+            .orElse(false)
+            .get()
+    if (publishEnabled) {
+        apply plugin: 'maven-publish'
+        apply plugin: 'signing'
+    }
+
+    // ------------------------------------------------
+    // 2. 尝试从 version catalog 中获取 libs（可能为 null）
+    // ------------------------------------------------
+    VersionCatalog libs = null
+    try {
+        // version catalog `libs` 会以 extension 形式挂在 dependencies.extensions 下
+        libs = subproject.dependencies.extensions.findByName('libs') as VersionCatalog
+    } catch (Exception ignored) {
+        // 没拿到就算了，后面 resolutionStrategy 会自动跳过
+    }
+
+    // ------------------------------------------------
+    // 3. 初始化 Java toolchain（此时已应用 java-library 插件）
+    // ------------------------------------------------
     def configuredJavaVersion = providers.gradleProperty('io.geewit.java.version')
             .map(Integer.&parseInt)
             .orElse(Runtime.version().feature())
             .get()
     def javaLanguageVersion = determineJavaLanguageVersion(subproject, configuredJavaVersion) as JavaLanguageVersion
-    def publishEnabled = providers.gradleProperty('io.geewit.publish.enabled').map { it.toBoolean() }.orElse(false).get()
-
-    apply plugin: 'java-library'
-    if (publishEnabled) {
-        apply plugin: 'maven-publish'
-        apply plugin: 'signing'
-    }
 
     java {
         toolchain {
@@ -61,6 +79,9 @@ subprojects { subproject ->
         withJavadocJar()
     }
 
+    // ------------------------------------------------
+    // 4. 统一依赖排除 + 版本对齐
+    // ------------------------------------------------
     configurations {
         configureEach { config ->
             config.exclude([group: 'com.google.protobuf'])
@@ -77,62 +98,55 @@ subprojects { subproject ->
 
             resolutionStrategy {
                 eachDependency { details ->
-                    if (libs.versions != null) {
-                        if (details.requested.group as String == 'commons-codec' && details.requested.name as String == 'commons-codec') {
-                            if (libs.versions.find('commons-codec').present) {
-                                details.useVersion libs.versions.find('commons-codec').get().requiredVersion
-                            }
-                        } else if (details.requested.group as String == 'commons-io' && details.requested.name as String == 'commons-io') {
-                            if (libs.versions.find('commons-io').present) {
-                                details.useVersion libs.versions.find('commons-io').get().requiredVersion
-                            }
-                        } else if (details.requested.group as String == 'org.apache.commons' && details.requested.name as String == 'commons-lang3') {
-                            if (libs.versions.find('commons-lang3').present) {
-                                details.useVersion libs.versions.find('commons-lang3').get().requiredVersion
-                            }
-                        } else if (details.requested.group as String == 'org.slf4j' && details.requested.name as String == 'slf4j-api') {
-                            if (libs.versions.find('slf4j').present) {
-                                details.useVersion libs.versions.find('slf4j').get().requiredVersion
-                            }
-                        } else if (details.requested.group as String == 'org.projectlombok') {
-                            if (libs.versions.find('lombok').present) {
-                                details.useVersion libs.versions.find('lombok').get().requiredVersion
-                            }
-                        } else if ((details.requested.group as String).startsWith('com.fasterxml.jackson')) {
-                            if (libs.versions.find('jackson2.core').present) {
-                                details.useVersion libs.versions.find('jackson2.core').get().requiredVersion
-                            }
-                        } else if ((details.requested.group as String).startsWith('org.springframework.boot')) {
-                            if (libs.versions.find('spring-boot').present) {
-                                details.useVersion libs.versions.find('spring-boot').get().requiredVersion
-                            }
-                        } else if (details.requested.group as String == 'org.springframework.data') {
-                            if (libs.versions.find('spring.data').present) {
-                                details.useVersion libs.versions.find('spring.data').get().requiredVersion
-                            }
-                        } else if ((details.requested.group as String).startsWith('org.springframework')) {
-                            if (libs.versions.find('spring').present) {
-                                details.useVersion libs.versions.find('spring').get().requiredVersion
-                            }
-                        } else if (details.requested.group as String == 'org.junit.jupiter') {
-                            if (libs.versions.find('junit-jupiter').present) {
-                                details.useVersion libs.versions.find('junit-jupiter').get().requiredVersion
-                            }
-                        } else if (details.requested.group as String == 'org.junit.platform') {
-                            if (libs.versions.find('junit-platform').present) {
-                                details.useVersion libs.versions.find('junit-platform').get().requiredVersion
-                            }
-                        } else if (details.requested.group as String == 'org.apache.logging.log4j') {
-                            if (libs.versions.find('log4j').present) {
-                                details.useVersion libs.versions.find('log4j').get().requiredVersion
-                            }
+                    if (libs == null) {
+                        // 没有 version catalog 就直接跳过
+                        return
+                    }
+
+                    def requestedGroup = details.requested.group as String
+                    def requestedName = details.requested.name as String
+
+                    // 小工具：按 alias 从 libs 里取版本并应用
+                    def useCatalogVersion = { String alias ->
+                        def v = libs.findVersion(alias)
+                        if (v.present) {
+                            details.useVersion v.get().requiredVersion
                         }
+                    }
+
+                    if (requestedGroup == 'commons-codec' && requestedName == 'commons-codec') {
+                        useCatalogVersion('commons-codec')
+                    } else if (requestedGroup == 'commons-io' && requestedName == 'commons-io') {
+                        useCatalogVersion('commons-io')
+                    } else if (requestedGroup == 'org.apache.commons' && requestedName == 'commons-lang3') {
+                        useCatalogVersion('commons-lang3')
+                    } else if (requestedGroup == 'org.slf4j' && requestedName == 'slf4j-api') {
+                        useCatalogVersion('slf4j')
+                    } else if (requestedGroup == 'org.projectlombok') {
+                        useCatalogVersion('lombok')
+                    } else if (requestedGroup.startsWith('com.fasterxml.jackson')) {
+                        useCatalogVersion('jackson2.core')
+                    } else if (requestedGroup.startsWith('org.springframework.boot')) {
+                        useCatalogVersion('spring-boot')
+                    } else if (requestedGroup == 'org.springframework.data') {
+                        useCatalogVersion('spring.data')
+                    } else if (requestedGroup.startsWith('org.springframework')) {
+                        useCatalogVersion('spring')
+                    } else if (requestedGroup == 'org.junit.jupiter') {
+                        useCatalogVersion('junit-jupiter')
+                    } else if (requestedGroup == 'org.junit.platform') {
+                        useCatalogVersion('junit-platform')
+                    } else if (requestedGroup == 'org.apache.logging.log4j') {
+                        useCatalogVersion('log4j')
                     }
                 }
             }
         }
     }
 
+    // ------------------------------------------------
+    // 5. 编译 & 测试配置
+    // ------------------------------------------------
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
     }
@@ -145,58 +159,67 @@ subprojects { subproject ->
         }
     }
 
+    // ------------------------------------------------
+    // 6. 发布配置（只在 io.geewit.publish.enabled = true 时启用）
+    // ------------------------------------------------
     if (publishEnabled) {
         publishing {
-        publications {
-            create('mavenJava', MavenPublication) {
-                from components.java
-                pom {
-                    name = providers.gradleProperty('POM_NAME').orElse(project.name).get()
-                    description = providers.gradleProperty('POM_DESCRIPTION').orElse(project.name).get()
-                    url = providers.gradleProperty('POM_URL').orElse('').get()
-                    licenses {
-                        license {
-                            name = providers.gradleProperty('POM_LICENCE_NAME').orElse('MIT License').get()
-                            url = providers.gradleProperty('POM_LICENCE_URL').orElse('https://mit-license.org/').get()
+            publications {
+                mavenJava(MavenPublication) {   // ✅ 推荐写法，不再用 create(...)
+                    from components.java
+                    pom {
+                        name = providers.gradleProperty('POM_NAME').orElse(project.name).get()
+                        description = providers.gradleProperty('POM_DESCRIPTION').orElse(project.name).get()
+                        url = providers.gradleProperty('POM_URL').orElse('').get()
+                        licenses {
+                            license {
+                                name = providers.gradleProperty('POM_LICENCE_NAME').orElse('MIT License').get()
+                                url = providers.gradleProperty('POM_LICENCE_URL').orElse('https://mit-license.org/').get()
+                            }
                         }
-                    }
-                    developers {
-                        developer {
-                            id = providers.gradleProperty('POM_DEVELOPER_ID').orElse('').get()
-                            name = providers.gradleProperty('POM_DEVELOPER_NAME').orElse('').get()
-                            email = providers.gradleProperty('POM_DEVELOPER_EMAIL').orElse('').get()
+                        developers {
+                            developer {
+                                id = providers.gradleProperty('POM_DEVELOPER_ID').orElse('').get()
+                                name = providers.gradleProperty('POM_DEVELOPER_NAME').orElse('').get()
+                                email = providers.gradleProperty('POM_DEVELOPER_EMAIL').orElse('').get()
+                            }
                         }
-                    }
-                    scm {
-                        url = providers.gradleProperty('POM_SCM_URL').orElse('').get()
-                        connection = providers.gradleProperty('POM_SCM_CONNECTION').orElse('').get()
-                        developerConnection = providers.gradleProperty('POM_SCM_DEV_CONNECTION').orElse('').get()
+                        scm {
+                            url = providers.gradleProperty('POM_SCM_URL').orElse('').get()
+                            connection = providers.gradleProperty('POM_SCM_CONNECTION').orElse('').get()
+                            developerConnection = providers.gradleProperty('POM_SCM_DEV_CONNECTION').orElse('').get()
+                        }
                     }
                 }
             }
-        }
-        repositories {
-            mavenLocal()
-            maven {
-                name = 'nexus'
-                def releaseUrl = providers.gradleProperty('nexus.releaseUrl').orElse('').get()
-                def snapshotUrl = providers.gradleProperty('nexus.snapshotUrl').orElse('').get()
-                def target = project.version.toString().endsWith('-SNAPSHOT') && snapshotUrl ? snapshotUrl : releaseUrl
-                if (!target) {
-                    logger.lifecycle('No nexus repository url configured; skipping remote publication for {}', project.name)
-                }
-                def fallbackRepo = layout.buildDirectory.dir("publications/${project.name}").get().asFile.toURI()
-                url = target ? uri(target) : fallbackRepo
-                credentials {
-                    username = providers.gradleProperty('nexus.username').orElse(System.getenv('NEXUS_USERNAME') ?: '').get()
-                    password = providers.gradleProperty('nexus.password').orElse(System.getenv('NEXUS_PASSWORD') ?: '').get()
+            repositories {
+                mavenLocal()
+                maven {
+                    name = 'nexus'
+                    def releaseUrl = providers.gradleProperty('nexus.releaseUrl').orElse('').get()
+                    def snapshotUrl = providers.gradleProperty('nexus.snapshotUrl').orElse('').get()
+                    def target = project.version.toString().endsWith('-SNAPSHOT') && snapshotUrl ? snapshotUrl : releaseUrl
+                    if (!target) {
+                        logger.lifecycle('No nexus repository url configured; skipping remote publication for {}', project.name)
+                    }
+                    def fallbackRepo = layout.buildDirectory.dir("publications/${project.name}").get().asFile.toURI()
+                    url = target ? uri(target) : fallbackRepo
+                    credentials {
+                        username = providers.gradleProperty('nexus.username').orElse(System.getenv('NEXUS_USERNAME') ?: '').get()
+                        password = providers.gradleProperty('nexus.password').orElse(System.getenv('NEXUS_PASSWORD') ?: '').get()
+                    }
                 }
             }
-        }
         }
 
         signing {
-            required { providers.gradleProperty('io.geewit.signing.enabled').map { it.toBoolean() }.orElse(false).get() && !project.version.toString().endsWith('SNAPSHOT') }
+            required {
+                providers.gradleProperty('io.geewit.signing.enabled')
+                        .map { it.toBoolean() }
+                        .orElse(false)
+                        .get() && !project.version.toString().endsWith('SNAPSHOT')
+            }
+            // 这里名字还是 mavenJava，对应上面的 publication 名
             sign publishing.publications.mavenJava
         }
     }
