@@ -4,6 +4,7 @@ dependencies {
     api(libs.jackson.databind)
     api(libs.spring.boot)
     api(libs.spring.boot.autoconfigure)
+    api(libs.spring.data.commons)
     api(libs.slf4j.api) {
         exclude group: 'org.slf4j', module: 'logback'
     }

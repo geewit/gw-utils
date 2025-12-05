@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.jackson.JsonComponent;
 
 import java.io.IOException;
 
@@ -14,7 +13,6 @@ import java.io.IOException;
  *  @author geewit
  */
 @SuppressWarnings({"unused"})
-@JsonComponent
 public class LongSerializer extends StdSerializer<Long> {
     private final static Logger logger = LoggerFactory.getLogger(LongSerializer.class);
 
