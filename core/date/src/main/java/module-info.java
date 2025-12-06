@@ -1,3 +1,6 @@
+/**
+ * 日期工具类
+ */
 module io.geewit.utils.core.date {
     requires transitive org.apache.commons.lang3;
     requires transitive org.slf4j;

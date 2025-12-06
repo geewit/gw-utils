@@ -9,6 +9,8 @@ import java.util.Objects;
 
 /**
  * 带sign的树节点
+ * @param <N> 树节点类型
+ * @param <Key> 主键类型
  * @author geewit
  */
 @FieldNameConstants

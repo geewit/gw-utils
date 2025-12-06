@@ -90,28 +90,46 @@ public class TreeTraverseContext<N extends SignedTreeNode<N, Key>, Key extends S
 
     private Predicate<N> rootPredicate;
 
+    /**
+     * 清除所有数据结构和引用
+     * 此方法将释放所有持有的集合对象和引用，将其设置为null以帮助垃圾回收。
+     * 包括节点列表、根节点ID、节点映射表、根节点列表、签名参数等相关数据结构。
+     */
     public void clear() {
+        // 清理节点列表
         if (this.nodes != null) {
             this.nodes.clear();
             this.nodes = null;
         }
+
+        // 清理根节点ID
         this.rootId = null;
+
+        // 清理节点映射表
         if (this.nodeMap != null) {
             this.nodeMap.clear();
             this.nodeMap = null;
         }
+
+        // 清理根节点列表
         if (this.roots != null) {
             this.roots.clear();
             this.roots = null;
         }
+
+        // 清理签名参数列表
         if (this.signParameters != null) {
             this.signParameters.clear();
             this.signParameters = null;
         }
+
+        // 清理签名参数映射表
         if (this.signParametersMap != null) {
             this.signParametersMap.clear();
             this.signParametersMap = null;
         }
+
+        // 清理各种消费者和谓词引用
         this.signChildConsumer = null;
         this.signParentConsumer = null;
         this.transmissionChildConsumer = null;

@@ -1,15 +1,18 @@
+/**
+ * jackson序列化模块
+ */
 module io.geewit.utils.core.jackson {
     requires transitive io.geewit.utils.core.enums;
     requires transitive com.fasterxml.jackson.annotation;
-    requires transitive com.fasterxml.jackson.core;
-    requires transitive com.fasterxml.jackson.databind;
+    requires transitive tools.jackson.core;
+    requires transitive tools.jackson.databind;
     requires transitive org.slf4j;
-    requires transitive spring.boot;
-    requires transitive spring.boot.autoconfigure;
-    requires transitive spring.context;
-    requires transitive spring.core;
-    requires transitive spring.beans;
-    requires transitive spring.data.commons;
+    requires spring.boot;
+    requires spring.boot.autoconfigure;
+    requires spring.context;
+    requires spring.core;
+    requires spring.beans;
+    requires spring.data.commons;
 
     exports io.geewit.utils.core.jackson.config;
     exports io.geewit.utils.core.jackson.databind.deserializer;

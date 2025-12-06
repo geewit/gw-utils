@@ -1,3 +1,6 @@
+/**
+ * 枚举工具类
+ */
 module io.geewit.utils.core.enums {
     requires transitive org.slf4j;
 
