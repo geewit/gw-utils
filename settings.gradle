@@ -364,6 +364,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = 'gw-utils'
-include 'core:date', 'core:uuid', 'core:tree', 'core:enums', 'core:codec', 'core:lang', 'core:reflection', 'core:jackson'
-include 'web:core', 'web:json', 'web:converter'
+include 'core:date', 'core:uuid', 'core:tree', 'core:enums', 'core:exceptions', 'core:codec', 'core:lang', 'core:reflection', 'core:jackson'
 include 'data:commons', 'data:spring'
+include 'i18n'
+include 'web:core', 'web:json', 'web:converter'

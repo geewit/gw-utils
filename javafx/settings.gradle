@@ -1,0 +1,6 @@
+rootProject.name = 'javafx'
+
+include 'base'
+include 'control'
+include 'json'
+
