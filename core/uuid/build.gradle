@@ -3,7 +3,7 @@ dependencies {
         exclude group: 'org.slf4j', module: 'logback'
     }
     api(libs.commons.codec)
-
-    testImplementation(libs.junit.jupiter.engine)
-    testImplementation(libs.junit.platform.launcher)
+    compileOnly(libs.jspecify)
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
 }

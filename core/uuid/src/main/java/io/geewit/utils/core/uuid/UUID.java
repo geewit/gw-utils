@@ -5,64 +5,66 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 /**
- * 来自 JDK {@link java.util.UUID} 去掉 ‘-’
+ * 一个不可变的 128 位 UUID 类，采用 36 进制编码（使用 0–9 与 a–z）
+ * 来表示字符串形式，从而相比传统的 16 进制编码缩短了字符串长度（固定 25 个字符）。
  *
- * @author geewit
- * @since 2015-05-18
+ * <p>
+ * 所有与字符串交互的方法均不包含分隔符，
+ * {@code toString()} 返回固定 25 个字符的 36 进制表示，
+ * {@code fromString(String)} 解析 36 进制表示的 UUID（允许输入长度不足 25 字符，前导零补齐）。
+ * </p>
+ *
+ * <p>
+ * UUID 的生成、解析等内部逻辑与原有实现一致，同时在字符串转换中充分考虑了高性能要求。
+ * </p>
+ *
+ * @since 1.5
  */
-@SuppressWarnings({"unused"})
-public class UUID implements java.io.Serializable, Comparable<UUID> {
+public final class UUID implements java.io.Serializable, Comparable<UUID> {
+
+    @java.io.Serial
     private static final long serialVersionUID = 1L;
 
-    /*
-     * The most significant 64 bits of this UUID.
-     *
-     * @serial
-     */
     private final long mostSigBits;
-
-    /*
-     * The least significant 64 bits of this UUID.
-     *
-     * @serial
-     */
     private final long leastSigBits;
 
-    /*
-     * The random number generator used by this class to create random
-     * based UUIDs. In a holder class to defer initialization until needed.
-     */
+    // 用于 36 进制编码的字符表
+    private static final char[] BASE36_DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+
+    // 内部安全随机数生成器，延迟初始化
     private static class Holder {
         static final SecureRandom numberGenerator = new SecureRandom();
     }
 
-    // Constructors and Factories
-
-    /*
-     * Private constructor which uses a byte array to construct the new UUID.
-     */
+    // 通过 16 字节数组构造 UUID（内部使用）
     private UUID(byte[] data) {
-        long msb = 0;
-        long lsb = 0;
         assert data.length == 16 : "data must be 16 bytes in length";
-        for (int i = 0; i < 8; i++) {
-            msb = (msb << 8) | (data[i] & 0xff);
-        }
-        for (int i = 8; i < 16; i++) {
-            lsb = (lsb << 8) | (data[i] & 0xff);
-        }
+        long msb = data[0] & 0xff;
+        msb = (msb << 8) | (data[1] & 0xff);
+        msb = (msb << 8) | (data[2] & 0xff);
+        msb = (msb << 8) | (data[3] & 0xff);
+        msb = (msb << 8) | (data[4] & 0xff);
+        msb = (msb << 8) | (data[5] & 0xff);
+        msb = (msb << 8) | (data[6] & 0xff);
+        msb = (msb << 8) | (data[7] & 0xff);
+        long lsb = data[8] & 0xff;
+        lsb = (lsb << 8) | (data[9] & 0xff);
+        lsb = (lsb << 8) | (data[10] & 0xff);
+        lsb = (lsb << 8) | (data[11] & 0xff);
+        lsb = (lsb << 8) | (data[12] & 0xff);
+        lsb = (lsb << 8) | (data[13] & 0xff);
+        lsb = (lsb << 8) | (data[14] & 0xff);
+        lsb = (lsb << 8) | (data[15] & 0xff);
         this.mostSigBits = msb;
         this.leastSigBits = lsb;
     }
 
     /**
-     * Constructs a new {@code UUID} using the specified data.  {@code
-     * mostSigBits} is used for the most significant 64 bits of the {@code
-     * UUID} and {@code leastSigBits} becomes the least significant 64 bits of
-     * the {@code UUID}.
+     * 使用指定的两个 long 值构造 UUID，其中 {@code mostSigBits} 为高 64 位，
+     * {@code leastSigBits} 为低 64 位。
      *
-     * @param mostSigBits  The most significant bits of the {@code UUID}
-     * @param leastSigBits The least significant bits of the {@code UUID}
+     * @param mostSigBits  UUID 的高 64 位
+     * @param leastSigBits UUID 的低 64 位
      */
     public UUID(long mostSigBits, long leastSigBits) {
         this.mostSigBits = mostSigBits;
@@ -70,31 +72,28 @@ public class UUID implements java.io.Serializable, Comparable<UUID> {
     }
 
     /**
-     * Static factory to retrieve a type 4 (pseudo randomly generated) UUID.
-     * <p>
-     * The {@code UUID} is generated using a cryptographically strong pseudo
-     * random number generator.
+     * 生成一个类型 4（随机生成）的 UUID，使用加密安全的随机数生成器。
      *
-     * @return A randomly generated {@code UUID}
+     * @return 随机生成的 UUID
      */
     public static UUID randomUUID() {
-        SecureRandom ng = Holder.numberGenerator;
-
+        var ng = Holder.numberGenerator;
         byte[] randomBytes = new byte[16];
         ng.nextBytes(randomBytes);
-        randomBytes[6] &= 0x0f;  /* clear version        */
-        randomBytes[6] |= 0x40;  /* set to version 4     */
-        randomBytes[8] &= 0x3f;  /* clear variant        */
-        randomBytes[8] |= 0x80;  /* set to IETF variant  */
+        // 设置版本号为 4（随机 UUID）
+        randomBytes[6] &= 0x0f;
+        randomBytes[6] |= 0x40;
+        // 设置 variant 为 IETF
+        randomBytes[8] &= 0x3f;
+        randomBytes[8] |= (byte) 0x80;
         return new UUID(randomBytes);
     }
 
     /**
-     * Static factory to retrieve a type 3 (name based) {@code UUID} based on
-     * the specified byte array.
+     * 根据指定的字节数组生成一个基于名称（MD5）的 UUID（类型 3）。
      *
-     * @param name A byte array to be used to construct a {@code UUID}
-     * @return A {@code UUID} generated from the specified array
+     * @param name 用于构造 UUID 的字节数组
+     * @return 基于指定数组生成的 UUID
      */
     public static UUID nameUUIDFromBytes(byte[] name) {
         MessageDigest md;
@@ -104,286 +103,230 @@ public class UUID implements java.io.Serializable, Comparable<UUID> {
             throw new InternalError("MD5 not supported", nsae);
         }
         byte[] md5Bytes = md.digest(name);
-        md5Bytes[6] &= 0x0f;  /* clear version        */
-        md5Bytes[6] |= 0x30;  /* set to version 3     */
-        md5Bytes[8] &= 0x3f;  /* clear variant        */
-        md5Bytes[8] |= 0x80;  /* set to IETF variant  */
+        // 设置版本号为 3（基于名称 UUID）
+        md5Bytes[6] &= 0x0f;
+        md5Bytes[6] |= 0x30;
+        // 设置 variant 为 IETF
+        md5Bytes[8] &= 0x3f;
+        md5Bytes[8] |= (byte) 0x80;
         return new UUID(md5Bytes);
     }
 
     /**
-     * Creates a {@code UUID} from the string standard representation as
-     * described in the {@link #toString} method.
+     * 根据 36 进制字符串生成 UUID。
+     * 输入字符串应只包含数字和字母（0–9、a–z 或 A–Z），长度不能超过 25 个字符，
+     * 若不足 25 个字符，则视为前导零。
      *
-     * @param name A string that specifies a {@code UUID}
-     * @return A {@code UUID} with the specified value
-     * @throws IllegalArgumentException If name does not conform to the string representation as
-     *                                  described in {@link #toString}
+     * @param s 36 进制字符串表示的 UUID
+     * @return 对应的 UUID
+     * @throws IllegalArgumentException 如果字符串包含非法字符或长度超过 25
      */
-    public static UUID fromString(String name) {
-        if(name.length() != 32) {
-            throw new IllegalArgumentException("Invalid UUID string: " + name);
+    public static UUID fromString(String s) {
+        if (s.length() > 25) {
+            throw new IllegalArgumentException("Invalid UUID string: " + s);
         }
-        String[] components = new String[5];
-        for (int i = 0; i < 5; i++) {
-            switch (i) {
-                case 0: {
-                    components[i] = "0x" + name.substring(0, 8);
-                    break;
-                }
-                case 1: {
-                    components[i] = "0x" + name.substring(8, 12);
-                    break;
-                }
-                case 2: {
-                    components[i] = "0x" + name.substring(12, 16);
-                    break;
-                }
-                case 3: {
-                    components[i] = "0x" + name.substring(16, 20);
-                    break;
-                }
-                case 4: {
-                    components[i] = "0x" + name.substring(20, 32);
-                    break;
-                }
+        long hi = 0L;
+        long lo = 0L;
+        for (int i = 0; i < s.length(); i++) {
+            int digit = charToDigit(s.charAt(i));
+            // 将当前 128 位数乘 36 并加上当前数字
+            long prodLow = lo * 36;
+            long carry = Math.multiplyHigh(lo, 36);
+            long prodHigh = hi * 36 + carry;
+            long newLow = prodLow + digit;
+            if (Long.compareUnsigned(newLow, prodLow) < 0) {
+                prodHigh++;
             }
-
+            hi = prodHigh;
+            lo = newLow;
         }
-
-        long mostSigBits = Long.decode(components[0]);
-        mostSigBits <<= 16;
-        mostSigBits |= Long.decode(components[1]);
-        mostSigBits <<= 16;
-        mostSigBits |= Long.decode(components[2]);
-
-        long leastSigBits = Long.decode(components[3]);
-        leastSigBits <<= 48;
-        leastSigBits |= Long.decode(components[4]);
-
-        return new UUID(mostSigBits, leastSigBits);
+        return new UUID(hi, lo);
     }
 
-    // Field Accessor Methods
+    // 将单个字符转换为对应的数字（支持 0–9、a–z、A–Z）
+    private static int charToDigit(char c) {
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        }
+        if (c >= 'a' && c <= 'z') {
+            return c - 'a' + 10;
+        }
+        if (c >= 'A' && c <= 'Z') {
+            return c - 'A' + 10;
+        }
+        throw new IllegalArgumentException("Invalid base36 character: " + c);
+    }
 
     /**
-     * Returns the least significant 64 bits of this UUID's 128 bit value.
+     * 返回 UUID 的低 64 位。
      *
-     * @return The least significant 64 bits of this UUID's 128 bit value
+     * @return UUID 的低 64 位
      */
     public long getLeastSignificantBits() {
         return leastSigBits;
     }
 
     /**
-     * Returns the most significant 64 bits of this UUID's 128 bit value.
+     * 返回 UUID 的高 64 位。
      *
-     * @return The most significant 64 bits of this UUID's 128 bit value
+     * @return UUID 的高 64 位
      */
     public long getMostSignificantBits() {
         return mostSigBits;
     }
 
     /**
-     * The version number associated with this {@code UUID}.  The version
-     * number describes how this {@code UUID} was generated.
-     * <p>
-     * The version number has the following meaning:
-     * <ul>
-     * <li>1    Time-based UUID
-     * <li>2    DCE security UUID
-     * <li>3    Name-based UUID
-     * <li>4    Randomly generated UUID
-     * </ul>
+     * 返回此 UUID 的版本号（1~4）。
      *
-     * @return The version number of this {@code UUID}
+     * @return UUID 的版本号
      */
     public int version() {
-        // Version is bits masked by 0x000000000000F000 in MS long
         return (int) ((mostSigBits >> 12) & 0x0f);
     }
 
     /**
-     * The variant number associated with this {@code UUID}.  The variant
-     * number describes the layout of the {@code UUID}.
-     * <p>
-     * The variant number has the following meaning:
-     * <ul>
-     * <li>0    Reserved for NCS backward compatibility
-     * <li>2    <a href="http://www.ietf.org/rfc/rfc4122.txt">IETF&nbsp;RFC&nbsp;4122</a>
-     * (Leach-Salz), used by this class
-     * <li>6    Reserved, Microsoft Corporation backward compatibility
-     * <li>7    Reserved for future definition
-     * </ul>
+     * 返回此 UUID 的变体值。
      *
-     * @return The variant number of this {@code UUID}
+     * @return UUID 的变体
      */
     public int variant() {
-        // This field is composed of a varying number of bits.
-        // 0    -    -    Reserved for NCS backward compatibility
-        // 1    0    -    The IETF aka Leach-Salz variant (used by this class)
-        // 1    1    0    Reserved, Microsoft backward compatibility
-        // 1    1    1    Reserved for future definition.
-        return (int) ((leastSigBits >>> (64 - (leastSigBits >>> 62)))
-                & (leastSigBits >> 63));
+        if ((leastSigBits & 0x8000000000000000L) == 0) {
+            return 0;
+        } else if ((leastSigBits & 0xC000000000000000L) == 0x8000000000000000L) {
+            return 2;
+        } else if ((leastSigBits & 0xE000000000000000L) == 0xC000000000000000L) {
+            return 6;
+        } else {
+            return 7;
+        }
     }
 
     /**
-     * The timestamp value associated with this UUID.
+     * 返回 UUID 的时间戳（仅对版本 1 有意义）。
      *
-     * <p> The 60 bit timestamp value is constructed from the time_low,
-     * time_mid, and time_hi fields of this {@code UUID}.  The resulting
-     * timestamp is measured in 100-nanosecond units since midnight,
-     * October 15, 1582 UTC.
-     *
-     * <p> The timestamp value is only meaningful in a time-based UUID, which
-     * has version type 1.  If this {@code UUID} is not a time-based UUID then
-     * this method throws UnsupportedOperationException.
-     *
-     * @return The timestamp of this {@code UUID}.
-     * @throws UnsupportedOperationException If this UUID is not a version 1 UUID
+     * @return UUID 的时间戳
+     * @throws UnsupportedOperationException 如果此 UUID 不是基于时间的 UUID（版本 1）
      */
     public long timestamp() {
-        if (version() != 1) {
+        if (this.version() != 1) {
             throw new UnsupportedOperationException("Not a time-based UUID");
         }
-
-        return (mostSigBits & 0x0FFFL) << 48
-                | ((mostSigBits >> 16) & 0x0FFFFL) << 32
-                | mostSigBits >>> 32;
+        return ((mostSigBits & 0x0FFFL) << 48)
+                | (((mostSigBits >> 16) & 0x0FFFFL) << 32)
+                | (mostSigBits >>> 32);
     }
 
     /**
-     * The clock sequence value associated with this UUID.
+     * 返回 UUID 的时钟序列（仅对版本 1 有意义）。
      *
-     * <p> The 14 bit clock sequence value is constructed from the clock
-     * sequence field of this UUID.  The clock sequence field is used to
-     * guarantee temporal uniqueness in a time-based UUID.
-     *
-     * <p> The {@code clockSequence} value is only meaningful in a time-based
-     * UUID, which has version type 1.  If this UUID is not a time-based UUID
-     * then this method throws UnsupportedOperationException.
-     *
-     * @return The clock sequence of this {@code UUID}
-     * @throws UnsupportedOperationException If this UUID is not a version 1 UUID
+     * @return UUID 的时钟序列
+     * @throws UnsupportedOperationException 如果此 UUID 不是基于时间的 UUID（版本 1）
      */
     public int clockSequence() {
-        if (version() != 1) {
+        if (this.version() != 1) {
             throw new UnsupportedOperationException("Not a time-based UUID");
         }
-
         return (int) ((leastSigBits & 0x3FFF000000000000L) >>> 48);
     }
 
     /**
-     * The node value associated with this UUID.
+     * 返回 UUID 的节点值（仅对版本 1 有意义）。
      *
-     * <p> The 48 bit node value is constructed from the node field of this
-     * UUID.  This field is intended to hold the IEEE 802 address of the machine
-     * that generated this UUID to guarantee spatial uniqueness.
-     *
-     * <p> The node value is only meaningful in a time-based UUID, which has
-     * version type 1.  If this UUID is not a time-based UUID then this method
-     * throws UnsupportedOperationException.
-     *
-     * @return The node value of this {@code UUID}
-     * @throws UnsupportedOperationException If this UUID is not a version 1 UUID
+     * @return UUID 的节点值
+     * @throws UnsupportedOperationException 如果此 UUID 不是基于时间的 UUID（版本 1）
      */
     public long node() {
-        if (version() != 1) {
+        if (this.version() != 1) {
             throw new UnsupportedOperationException("Not a time-based UUID");
         }
-
         return leastSigBits & 0x0000FFFFFFFFFFFFL;
     }
 
-    // Object Inherited Methods
-
     /**
-     * Returns a {@code String} object representing this {@code UUID}.
+     * 返回此 UUID 的 36 进制字符串表示，不包含任何分隔符，固定 25 个字符（不足时左侧补零）。
      *
-     * <p> The UUID string representation is as described by this BNF:
-     * <blockquote><pre>
-     * {@code
-     * UUID                   = <time_low> "-" <time_mid> "-"
-     *                          <time_high_and_version> "-"
-     *                          <variant_and_sequence> "-"
-     *                          <node>
-     * time_low               = 4*<hexOctet>
-     * time_mid               = 2*<hexOctet>
-     * time_high_and_version  = 2*<hexOctet>
-     * variant_and_sequence   = 2*<hexOctet>
-     * node                   = 6*<hexOctet>
-     * hexOctet               = <hexDigit><hexDigit>
-     * hexDigit               =
-     *       "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-     *       | "a" | "b" | "c" | "d" | "e" | "f"
-     *       | "A" | "B" | "C" | "D" | "E" | "F"
-     * }</pre></blockquote>
+     * <p>实现原理：将 128 位数分解为 4 个 32 位无符号整数，
+     * 然后通过 25 次“除以 36—取余”迭代得到各位数字（余数对应 BASE36_DIGITS 表中的字符）。</p>
      *
-     * @return A string representation of this {@code UUID}
+     * @return 36 进制字符串表示的 UUID
      */
+    @Override
     public String toString() {
-        return (digits(mostSigBits >> 32, 8) +
-                digits(mostSigBits >> 16, 4) +
-                digits(mostSigBits, 4) +
-                digits(leastSigBits >> 48, 4) +
-                digits(leastSigBits, 12));
+        // 将 128 位数表示为 4 个 32 位的无符号整数
+        int[] parts = new int[4];
+        parts[0] = (int) (mostSigBits >>> 32);
+        parts[1] = (int) mostSigBits;
+        parts[2] = (int) (leastSigBits >>> 32);
+        parts[3] = (int) leastSigBits;
+        char[] buf = new char[25];
+        // 固定进行 25 次除法，每次获得一个 36 进制数字（从低位开始）
+        for (int pos = 24; pos >= 0; pos--) {
+            int remainder;
+            {
+                long dividend = parts[0] & 0xFFFFFFFFL;
+                int quotient = (int) (dividend / 36);
+                remainder = (int) (dividend % 36);
+                parts[0] = quotient;
+            }
+            {
+                long dividend = ((long) remainder << 32) | (parts[1] & 0xFFFFFFFFL);
+                int quotient = (int) (dividend / 36);
+                remainder = (int) (dividend % 36);
+                parts[1] = quotient;
+            }
+            {
+                long dividend = ((long) remainder << 32) | (parts[2] & 0xFFFFFFFFL);
+                int quotient = (int) (dividend / 36);
+                remainder = (int) (dividend % 36);
+                parts[2] = quotient;
+            }
+            {
+                long dividend = ((long) remainder << 32) | (parts[3] & 0xFFFFFFFFL);
+                int quotient = (int) (dividend / 36);
+                remainder = (int) (dividend % 36);
+                parts[3] = quotient;
+            }
+            buf[pos] = BASE36_DIGITS[remainder];
+        }
+        return new String(buf);
     }
 
     /**
-     * Returns val represented by the specified number of hex digits.
-     */
-    private static String digits(long val, int digits) {
-        long hi = 1L << (digits * 4);
-        return Long.toHexString(hi | (val & (hi - 1))).substring(1);
-    }
-
-    /**
-     * Returns a hash code for this {@code UUID}.
+     * 返回 UUID 的哈希值。
      *
-     * @return A hash code value for this {@code UUID}
+     * @return UUID 的哈希码
      */
+    @Override
     public int hashCode() {
-        long hilo = mostSigBits ^ leastSigBits;
-        return ((int) (hilo >> 32)) ^ (int) hilo;
+        return Long.hashCode(mostSigBits ^ leastSigBits);
     }
 
     /**
-     * Compares this object to the specified object.  The result is {@code
-     * true} if and only if the argument is not {@code null}, is a {@code UUID}
-     * object, has the same variant, and contains the same value, bit for bit,
-     * as this {@code UUID}.
+     * 比较此 UUID 与指定对象是否相等。
      *
-     * @param obj The object to be compared
-     * @return {@code true} if the objects are the same; {@code false}
-     * otherwise
+     * @param obj 要比较的对象
+     * @return 如果两个 UUID 相等则返回 {@code true}，否则返回 {@code false}
      */
+    @Override
     public boolean equals(Object obj) {
-        if ((null == obj) || (obj.getClass() != UUID.class)) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof UUID other)) {
             return false;
         }
-        UUID id = (UUID) obj;
-        return mostSigBits == id.mostSigBits &&
-                leastSigBits == id.leastSigBits;
+        return mostSigBits == other.mostSigBits && leastSigBits == other.leastSigBits;
     }
 
-    // Comparison Operations
-
     /**
-     * Compares this UUID with the specified UUID.
+     * 按数值顺序比较两个 UUID。
      *
-     * <p> The first of two UUIDs is greater than the second if the most
-     * significant field in which the UUIDs differ is greater for the first
-     * UUID.
-     *
-     * @param val {@code UUID} to which this {@code UUID} is to be compared
-     * @return -1, 0 or 1 as this {@code UUID} is less than, equal to, or
-     * greater than {@code val}
+     * @param val 要比较的 UUID
+     * @return -1、0 或 1，分别表示此 UUID 小于、等于或大于指定 UUID
      */
+    @Override
     public int compareTo(UUID val) {
-        // The ordering is intentionally set up so that the UUIDs
-        // can simply be numerically compared as two numbers
-        return Long.compare(this.leastSigBits, val.leastSigBits);
+        int cmp = Long.compare(this.mostSigBits, val.mostSigBits);
+        return cmp != 0 ? cmp : Long.compare(this.leastSigBits, val.leastSigBits);
     }
 }

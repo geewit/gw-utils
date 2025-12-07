@@ -3,4 +3,6 @@ dependencies {
         exclude group: 'org.slf4j', module: 'logback'
     }
     api(libs.spring.context)
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
 }

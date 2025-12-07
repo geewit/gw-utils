@@ -1,6 +1,5 @@
 package io.geewit.utils.core.uuid;
 
-import io.geewit.utils.core.uuid.UUID;
 import org.junit.jupiter.api.Test;
 
 public class UUIDTest {
