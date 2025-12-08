@@ -234,6 +234,7 @@ dependencyResolutionManagement {
             library('javafx-fxml', 'org.openjfx', 'javafx-fxml').versionRef('openjfx')
             library('javafx-graphics', 'org.openjfx', 'javafx-graphics').versionRef('openjfx')
             library('javafx-media', 'org.openjfx', 'javafx-media').versionRef('openjfx')
+            library('javafx-web', 'org.openjfx', 'javafx-web').versionRef('openjfx')
 
             bundle('apache-commons-bundle', [
                     'commons-lang3',
@@ -364,7 +365,8 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = 'gw-utils'
-include 'core:date', 'core:uuid', 'core:tree', 'core:enums', 'core:exceptions', 'core:codec', 'core:lang', 'core:reflection', 'core:jackson'
+include 'core:codec', 'core:date', 'core:enums', 'core:exceptions', 'core:jackson', 'core:lang', 'core:reflection', 'core:tree', 'core:uuid'
 include 'data:commons', 'data:spring'
 include 'i18n'
-include 'web:core', 'web:json', 'web:converter'
+include 'javafx:base', 'javafx:controls', 'javafx:spring'
+include 'web:converter', 'web:core', 'web:json'

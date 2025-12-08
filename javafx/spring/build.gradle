@@ -1,0 +1,13 @@
+def os = org.gradle.internal.os.OperatingSystem.current()
+def arch = System.getProperty('os.arch')
+def javafxPlatform = os.isWindows() ? 'win' : os.isMacOsX() ? (arch == 'aarch64' ? 'mac-aarch64' : 'mac') : 'linux'
+
+dependencies {
+    implementation "org.openjfx:javafx-base:${libs.versions.openjfx.get() as String}:${javafxPlatform}"
+    implementation "org.openjfx:javafx-controls:${libs.versions.openjfx.get() as String}:${javafxPlatform}"
+    api(libs.slf4j.api) {
+        exclude group: 'org.slf4j', module: 'logback'
+    }
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+}
