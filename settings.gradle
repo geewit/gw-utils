@@ -200,6 +200,7 @@ dependencyResolutionManagement {
             library('spring-boot-starter-webflux', 'org.springframework.boot', 'spring-boot-starter-webflux').versionRef('spring-boot')
             library('spring-boot-starter-validation', 'org.springframework.boot', 'spring-boot-starter-validation').versionRef('spring-boot')
             library('spring-context', 'org.springframework', 'spring-context').versionRef('spring')
+            library('spring-core', 'org.springframework', 'spring-core').versionRef('spring')
             library('spring-web', 'org.springframework', 'spring-web').versionRef('spring')
             library('spring-beans', 'org.springframework', 'spring-beans').versionRef('spring')
             library('spring-data-commons', 'org.springframework.data', 'spring-data-commons').versionRef('spring.data')
