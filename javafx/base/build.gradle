@@ -13,6 +13,7 @@ dependencies {
     implementation "org.openjfx:javafx-media:${libs.versions.openjfx.get() as String}:${javafxPlatform}"
     implementation "org.openjfx:javafx-web:${libs.versions.openjfx.get() as String}:${javafxPlatform}"
     api(libs.reactor.core)
+    implementation(libs.bootstrapfx.core)
     compileOnly(libs.jspecify)
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)

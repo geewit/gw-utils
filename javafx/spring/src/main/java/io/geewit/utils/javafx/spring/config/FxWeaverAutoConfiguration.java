@@ -13,10 +13,16 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
+import org.springframework.context.support.MessageSourceResourceBundle;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.core.io.ResourceLoader;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
@@ -33,8 +39,26 @@ import java.util.ResourceBundle;
 })
 public class FxWeaverAutoConfiguration {
 
+    private final static String I18N_BASENAME = "i18n/messages";
+
     public FxWeaverAutoConfiguration() {
         log.info(I18nSupport.message("log.fxWeaverAutoConfiguration.init"));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(MessageSource.class)
+    public MessageSource messageSource() {
+        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+        messageSource.setBasename(ResourceLoader.CLASSPATH_URL_PREFIX + I18N_BASENAME);
+        messageSource.setDefaultEncoding(StandardCharsets.UTF_8.displayName());
+        messageSource.setDefaultLocale(Locale.SIMPLIFIED_CHINESE);
+        return messageSource;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ResourceBundle.class)
+    public ResourceBundle resourceBundle(MessageSource messageSource) {
+        return new MessageSourceResourceBundle(messageSource, Locale.getDefault());
     }
 
     @Bean(destroyMethod = "shutdown")
@@ -59,6 +83,4 @@ public class FxWeaverAutoConfiguration {
             InjectionPoint injectionPoint) {
         return injectionPointLazyFxControllerAndViewResolver.resolve(injectionPoint);
     }
-
-
 }
