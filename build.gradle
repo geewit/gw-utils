@@ -1,6 +1,11 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
+plugins {
+    // 版本号仍然通过 settings.gradle 里的 pluginManagement 解析
+    id 'org.jreleaser' apply false
+}
+
 // 动态选择 Java 语言版本：优先使用 io.geewit.java.version，找不到对应 toolchain 就回退到当前运行时版本
 ext.determineJavaLanguageVersion = { Project project, int requestedVersion ->
     // 这里要求项目已经应用了 java / java-library 之类的插件
@@ -30,6 +35,11 @@ ext.determineJavaLanguageVersion = { Project project, int requestedVersion ->
     }
 }
 
+def publishEnabled = providers.gradleProperty('io.geewit.publish.enabled')
+        .map { it.toBoolean() }
+        .orElse(false)
+        .get()
+
 allprojects {
     group = providers.gradleProperty('group').orElse('com.geewit.utils').get()
     version = providers.gradleProperty('version').orElse('1.0.0').get()
@@ -39,15 +49,10 @@ subprojects { subproject ->
     // ------------------------------------------------
     // 1. 先应用插件，让 JavaToolchainService 等扩展可用
     // ------------------------------------------------
-    apply plugin: 'java-library'
+    subproject.pluginManager.apply('java-library')
 
-    def publishEnabled = providers.gradleProperty('io.geewit.publish.enabled')
-            .map { it.toBoolean() }
-            .orElse(false)
-            .get()
     if (publishEnabled) {
-        apply plugin: 'maven-publish'
-        apply plugin: 'signing'
+        subproject.pluginManager.apply('org.jreleaser')
     }
 
     // ------------------------------------------------
