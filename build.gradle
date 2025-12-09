@@ -2,6 +2,8 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jreleaser.model.Active
 
+import java.nio.charset.StandardCharsets
+
 plugins {
     // 版本号仍然通过 settings.gradle 里的 pluginManagement 解析
     id 'org.jreleaser' apply false
@@ -36,24 +38,39 @@ ext.determineJavaLanguageVersion = { Project project, int requestedVersion ->
     }
 }
 
-ext.publishEnabled = providers.gradleProperty('io.geewit.publish.enabled')
+// -------------------------------
+// 外部开关 & 凭据（懒加载友好写法）
+// -------------------------------
+def publishEnabled = providers.gradleProperty('io.geewit.publish.enabled')
         .map { it.toBoolean() }
-        .orElse(false)
-        .get()
+        .getOrElse(false)
 
-ext.sonatypeUsername = providers.gradleProperty('SONATYPE_USERNAME')
-        .orElse(null)
-        .get()
-ext.sonatypePassword = providers.gradleProperty('SONATYPE_PASSWORD')
-        .orElse(null)
-        .get()
+def sonatypeUsername = providers.gradleProperty('SONATYPE_USERNAME').getOrNull()
+def sonatypePassword = providers.gradleProperty('SONATYPE_PASSWORD').getOrNull()
+
+// 如有其它地方需要，也还能通过 ext 访问
+ext.publishEnabled = publishEnabled
+ext.sonatypeUsername = sonatypeUsername
+ext.sonatypePassword = sonatypePassword
+
 
 allprojects {
-    group = providers.gradleProperty('group').orElse('com.geewit.utils').get()
-    version = providers.gradleProperty('version').orElse('1.0.0').get()
+    version = providers.gradleProperty('version').getOrElse('1.0.0')
 }
 
 subprojects { subproject ->
+
+    Properties localProps = new Properties()
+    File localPropsFile = subproject.file('gradle.properties')
+    if (localPropsFile.exists()) {
+        localPropsFile.withInputStream { localProps.load(it) }
+    }
+
+    String localGroup = localProps.getProperty('group')
+    String localArtifactId = localProps.getProperty('artifactId')
+    // 只使用子项目自己的 group / artifactId；没配就用默认值
+    subproject.group = localGroup ?: 'com.geewit.utils'
+    subproject.name = localArtifactId ?: subproject.name
     // ------------------------------------------------
     // 1. 先应用插件，让 JavaToolchainService 等扩展可用
     // ------------------------------------------------
@@ -83,7 +100,7 @@ subprojects { subproject ->
             .get()
     def javaLanguageVersion = determineJavaLanguageVersion(subproject, configuredJavaVersion) as JavaLanguageVersion
 
-    java {
+    subproject.java {
         toolchain {
             languageVersion.set(javaLanguageVersion)
             implementation.set(JvmImplementation.VENDOR_SPECIFIC)
@@ -95,7 +112,7 @@ subprojects { subproject ->
     // ------------------------------------------------
     // 4. 统一依赖排除 + 版本对齐
     // ------------------------------------------------
-    configurations {
+    subproject.configurations {
         configureEach { config ->
             config.exclude([group: 'com.google.protobuf'])
             config.exclude([group: 'org.springframework.boot', module: 'spring-boot-dependencies'])
@@ -110,11 +127,11 @@ subprojects { subproject ->
             config.exclude([group: 'ua.net.nlp', module: 'morfologik-ukrainian-search'])
 
             resolutionStrategy {
+                if (!libs) {
+                    // 没有 version catalog 就直接跳过
+                    return
+                }
                 eachDependency { details ->
-                    if (libs == null) {
-                        // 没有 version catalog 就直接跳过
-                        return
-                    }
 
                     def requestedGroup = details.requested.group as String
                     def requestedName = details.requested.name as String
@@ -163,13 +180,13 @@ subprojects { subproject ->
     // 5. 编译 & 测试配置
     // ------------------------------------------------
     tasks.withType(JavaCompile).configureEach {
-        options.encoding = 'UTF-8'
+        options.encoding = StandardCharsets.UTF_8.name()
     }
 
     tasks.withType(Javadoc).configureEach {
-        options.encoding = 'UTF-8'
-        options.charSet = 'UTF-8'
-        options.docEncoding = 'UTF-8'
+        options.encoding = StandardCharsets.UTF_8.name()
+        options.charSet = StandardCharsets.UTF_8.name()
+        options.docEncoding = StandardCharsets.UTF_8.name()
         options.addBooleanOption('Xdoclint:none', true)
         options.addBooleanOption('quiet', true)
     }
@@ -186,7 +203,7 @@ subprojects { subproject ->
     // 6. 发布配置（只在 io.geewit.publish.enabled = true 时启用）
     // ------------------------------------------------
     if (publishEnabled) {
-        jreleaser {
+        subproject.jreleaser {
             project {
                 name = 'gw-utils'
                 description = 'Geewit utility libraries'
@@ -302,7 +319,7 @@ subprojects { subproject ->
 
                             // Deployment identifier used for publication.
                             //
-                            deploymentId = UUID.randomUUID().toString()
+                            deploymentId = "${project.group}:${project.name}:${project.version}"
 
                             // Time to wait between state transition checks, in seconds.
                             // Defaults to `20`.
