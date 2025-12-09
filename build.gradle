@@ -45,6 +45,11 @@ def publishEnabled = providers.gradleProperty('io.geewit.publish.enabled')
         .map { it.toBoolean() }
         .getOrElse(false)
 
+def gpgKeyId = providers.gradleProperty('signing.keyId').getOrNull()
+def gpgKeyPassword = providers.gradleProperty('signing.password').getOrNull()
+def gpgSecretKeyRingDir = providers.gradleProperty('signing.secretKeyRingDir').getOrNull()
+def gpgSecretKeyRingFilename = providers.gradleProperty('signing.secretKeyRingFilename').getOrNull()
+
 def sonatypeUsername = providers.gradleProperty('SONATYPE_USERNAME').getOrNull()
 def sonatypePassword = providers.gradleProperty('SONATYPE_PASSWORD').getOrNull()
 
@@ -70,7 +75,6 @@ subprojects { subproject ->
     String localArtifactId = localProps.getProperty('artifactId')
     // 只使用子项目自己的 group / artifactId；没配就用默认值
     subproject.group = localGroup ?: 'com.geewit.utils'
-    subproject.name = localArtifactId ?: subproject.name
     // ------------------------------------------------
     // 1. 先应用插件，让 JavaToolchainService 等扩展可用
     // ------------------------------------------------
@@ -205,7 +209,8 @@ subprojects { subproject ->
     if (publishEnabled) {
         subproject.jreleaser {
             project {
-                name = 'gw-utils'
+
+                name = localArtifactId ?: subproject.name
                 description = 'Geewit utility libraries'
                 authors = ['Huang Fang']
                 license = 'MIT'
@@ -214,11 +219,42 @@ subprojects { subproject ->
                 // Maven Central 要求签名
                 active = Active.ALWAYS
                 armored = true
+                mode = 'COMMAND'
+                command {
+                    // The executable used for signing.
+                    // Defaults to `gpg[.exe]`.
+                    // When mode = `COMMAND`.
+                    //
+                    executable = 'gpg'
 
-                // 建议通过环境变量传递
-                publicKey  = System.getenv('JRELEASER_GPG_PUBLIC_KEY')
-                secretKey  = System.getenv('JRELEASER_GPG_SECRET_KEY')
-                passphrase = System.getenv('JRELEASER_GPG_PASSPHRASE')
+                    // The directory from which gpg will load keyrings.
+                    // Defaults to empty.
+                    // When mode = `COMMAND`.
+                    //
+                    homeDir = gpgSecretKeyRingDir
+
+                    // The "name" of the key to sign with.
+                    // Defaults to empty.
+                    // When mode = `COMMAND`.
+                    keyName = ''
+
+                    // The path to a public keyring to add to the list of keyrings.
+                    // Defaults to empty.
+                    // When mode = `COMMAND`.
+                    //
+                    publicKeyring = gpgSecretKeyRingFilename
+
+                    // Whether to add the default keyrings from gpg's home directory to the list of used keyrings.
+                    // Defaults to `true`.
+                    // When mode = `COMMAND`.
+                    //
+                    defaultKeyring = true
+
+                    // Sets the arguments to be passed to gpg.
+                    // When mode = `COMMAND`.
+                    //
+                    args = ['--no-random-seed-file']
+                }
             }
             deploy {
                 maven {
@@ -319,7 +355,7 @@ subprojects { subproject ->
 
                             // Deployment identifier used for publication.
                             //
-                            deploymentId = "${project.group}:${project.name}:${project.version}"
+                            deploymentId = "${subproject.group}:${subproject.name}:${rootProject.version}"
 
                             // Time to wait between state transition checks, in seconds.
                             // Defaults to `20`.
