@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.jreleaser.model.Active
 
 plugins {
     // 版本号仍然通过 settings.gradle 里的 pluginManagement 解析
@@ -178,64 +179,149 @@ subprojects { subproject ->
     // 6. 发布配置（只在 io.geewit.publish.enabled = true 时启用）
     // ------------------------------------------------
     if (publishEnabled) {
-        publishing {
-            publications {
-                mavenJava(MavenPublication) {   // ✅ 推荐写法，不再用 create(...)
-                    from components.java
-                    pom {
-                        name = providers.gradleProperty('POM_NAME').orElse(project.name).get()
-                        description = providers.gradleProperty('POM_DESCRIPTION').orElse(project.name).get()
-                        url = providers.gradleProperty('POM_URL').orElse('').get()
-                        licenses {
-                            license {
-                                name = providers.gradleProperty('POM_LICENCE_NAME').orElse('MIT License').get()
-                                url = providers.gradleProperty('POM_LICENCE_URL').orElse('https://mit-license.org/').get()
-                            }
-                        }
-                        developers {
-                            developer {
-                                id = providers.gradleProperty('POM_DEVELOPER_ID').orElse('').get()
-                                name = providers.gradleProperty('POM_DEVELOPER_NAME').orElse('').get()
-                                email = providers.gradleProperty('POM_DEVELOPER_EMAIL').orElse('').get()
-                            }
-                        }
-                        scm {
-                            url = providers.gradleProperty('POM_SCM_URL').orElse('').get()
-                            connection = providers.gradleProperty('POM_SCM_CONNECTION').orElse('').get()
-                            developerConnection = providers.gradleProperty('POM_SCM_DEV_CONNECTION').orElse('').get()
-                        }
-                    }
-                }
+        jreleaser {
+            project {
+                name = 'gw-utils'
+                description = 'Geewit utility libraries'
+                authors = ['Huang Fang']
+                license = 'MIT'
             }
-            repositories {
-                mavenLocal()
-                maven {
-                    name = 'nexus'
-                    def releaseUrl = providers.gradleProperty('nexus.releaseUrl').orElse('').get()
-                    def snapshotUrl = providers.gradleProperty('nexus.snapshotUrl').orElse('').get()
-                    def target = project.version.toString().endsWith('-SNAPSHOT') && snapshotUrl ? snapshotUrl : releaseUrl
-                    if (!target) {
-                        logger.lifecycle('No nexus repository url configured; skipping remote publication for {}', project.name)
-                    }
-                    def fallbackRepo = layout.buildDirectory.dir("publications/${project.name}").get().asFile.toURI()
-                    url = target ? uri(target) : fallbackRepo
-                    credentials {
-                        username = providers.gradleProperty('nexus.username').orElse(System.getenv('NEXUS_USERNAME') ?: '').get()
-                        password = providers.gradleProperty('nexus.password').orElse(System.getenv('NEXUS_PASSWORD') ?: '').get()
-                    }
-                }
-            }
-        }
+            signing {
+                // Maven Central 要求签名
+                active = Active.ALWAYS
+                armored = true
 
-        signing {
-            required {
-                providers.gradleProperty('io.geewit.signing.enabled')
-                        .map { it.toBoolean() }
-                        .orElse(false)
-                        .get() && !project.version.toString().endsWith('SNAPSHOT')
+                // 建议通过环境变量传递
+                publicKey  = System.getenv('JRELEASER_GPG_PUBLIC_KEY')
+                secretKey  = System.getenv('JRELEASER_GPG_SECRET_KEY')
+                passphrase = System.getenv('JRELEASER_GPG_PASSPHRASE')
             }
-            // 这里名字还是 mavenJava，对应上面的 publication 名
-            sign publishing.publications.mavenJava
+            release {
+                git {
+                    commitAuthor {
+                        name  = 'Huang Fang'
+                        email = 'hf@geewit.io'
+                    }
+                }
+                // 如果你暂时不想用 GitHub release，可以这样关掉
+                github {
+                    active = Active.NEVER
+                }
+            }
+            deploy {
+                maven {
+                    //
+                    mavenCentral {
+                        // Deployers require a name.
+                        //
+                        app {
+
+                            // Enables or disables the deployer.
+                            // Supported values are [`NEVER`, `ALWAYS`, `RELEASE`, `SNAPSHOT`].
+                            // Defaults to `NEVER`.
+                            //
+                            active = Active.RELEASE
+
+                            // URL where the MavenCentral service is enabled.
+                            //
+                            url = 'https://central.sonatype.com/api/v1/publisher'
+
+                            // Activates publication of snapshot artifacts.
+                            // Defaults to `false`.
+                            //
+                            snapshotSupported = false
+
+                            // The username required for authorization.
+                            //
+                            username = 'zLHmsf'
+
+                            // Password for login into the MAVENCENTRAL service.
+                            //
+                            password = 'gAiBoCa8EMpY2JQa4ArnZQx48I0Gx1RRG'
+
+                            // The authorization method to use.
+                            // Supported values are [`NONE`, `BASIC`, `BEARER`].
+                            // `Basic` requires both username & password.
+                            // `BEARER` requires a token (set as password).
+                            // Defaults to `BEARER`.
+                            //
+                            authorization = 'BEARER'
+
+                            // Signs artifacts with the configured credentials.
+                            // The Signing section must be configured as well.
+                            // Defaults to `false` unless `applyMavenCentralRules` is set to `true`.
+                            //
+                            sign = true
+
+                            // Checksums all artifacts with `MD5`, `SHA-1`, `SHA-256`, and `SHA-512`.
+                            // Defaults to `false` unless `applyMavenCentralRules` is set to `true`.
+                            //
+                            checksums = true
+
+                            // Verifies that a matching `-sources.jar` artifact is staged.
+                            // Defaults to `false` unless `applyMavenCentralRules` is set to `true`.
+                            //
+                            sourceJar = true
+
+                            // Verifies that a matching `-javadoc.jar` artifact is staged.
+                            // Defaults to `false` unless `applyMavenCentralRules` is set to `true`.
+                            //
+                            javadocJar = true
+
+                            // Verifies that POM files comply with the minimum requirements for publication
+                            // to Maven Central. Checks rules using PomChecker.
+                            // Defaults to `false` unless `applyMavenCentralRules` is set to `true`.
+                            //
+                            verifyPom = true
+
+                            // Verifies pom files, signs all artifacts, verifies that matching `-sources.jar` and
+                            // `-javadoc.jar` artifacts are also staged.
+                            // Defaults to `false`.
+                            //
+                            applyMavenCentralRules = true
+
+
+                            // List of directories where staged artifacts can be found.
+                            //
+                            stagingRepository(layout.buildDirectory.dir('staging-deploy').get().asFile.absolutePath)
+
+                            // Defines the connection timeout in seconds.
+                            // Defaults to `20`.
+                            //
+                            connectTimeout = 20
+
+                            // Defines the read timeout in seconds.
+                            // Defaults to `60`.
+                            //
+                            readTimeout = 60
+
+                            // URL for checking artifacts may be already deployed.
+                            // Additional template tokens: `groupId`, `artifactId`, `version`, `path`, `filename`.
+                            //
+                            verifyUrl = "https://repo1.maven.org/maven2/{{path}}/{{filename}}"
+
+                            // Registered publication namespace.
+                            // Defaults to `${project.java.groupId}`.
+                            //
+                            namespace = 'io.geewit'
+
+                            // Deployment identifier used for publication.
+                            //
+                            deploymentId = UUID.randomUUID().toString()
+
+                            // Time to wait between state transition checks, in seconds.
+                            // Defaults to `20`.
+                            //
+                            retryDelay = 20
+
+                            // Maximum number of attempts to verify state transition.
+                            // Defaults to `100`.
+                            //
+                            maxRetries = 100
+                        }
+                    }
+                }
+            }
         }
     }
 }
