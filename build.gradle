@@ -36,9 +36,16 @@ ext.determineJavaLanguageVersion = { Project project, int requestedVersion ->
     }
 }
 
-def publishEnabled = providers.gradleProperty('io.geewit.publish.enabled')
+ext.publishEnabled = providers.gradleProperty('io.geewit.publish.enabled')
         .map { it.toBoolean() }
         .orElse(false)
+        .get()
+
+ext.sonatypeUsername = providers.gradleProperty('SONATYPE_USERNAME')
+        .orElse(null)
+        .get()
+ext.sonatypePassword = providers.gradleProperty('SONATYPE_PASSWORD')
+        .orElse(null)
         .get()
 
 allprojects {
@@ -196,18 +203,6 @@ subprojects { subproject ->
                 secretKey  = System.getenv('JRELEASER_GPG_SECRET_KEY')
                 passphrase = System.getenv('JRELEASER_GPG_PASSPHRASE')
             }
-            release {
-                git {
-                    commitAuthor {
-                        name  = 'Huang Fang'
-                        email = 'hf@geewit.io'
-                    }
-                }
-                // 如果你暂时不想用 GitHub release，可以这样关掉
-                github {
-                    active = Active.NEVER
-                }
-            }
             deploy {
                 maven {
                     //
@@ -233,11 +228,11 @@ subprojects { subproject ->
 
                             // The username required for authorization.
                             //
-                            username = 'zLHmsf'
+                            username = sonatypeUsername
 
                             // Password for login into the MAVENCENTRAL service.
                             //
-                            password = 'gAiBoCa8EMpY2JQa4ArnZQx48I0Gx1RRG'
+                            password = sonatypePassword
 
                             // The authorization method to use.
                             // Supported values are [`NONE`, `BASIC`, `BEARER`].

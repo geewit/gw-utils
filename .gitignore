@@ -167,4 +167,5 @@
 /web/json/out
 /web/json/.gradle
 /web/json/bin
+/web/json/build
 
