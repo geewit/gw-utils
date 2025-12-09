@@ -208,6 +208,9 @@ subprojects { subproject ->
     // ------------------------------------------------
     if (publishEnabled) {
         subproject.jreleaser {
+            // ★★ 关键：让 JReleaser 从当前子模块目录向上查找 .git ★★
+            gitRootSearch = true
+
             announce {
                 active = Active.NEVER
             }
@@ -224,156 +227,55 @@ subprojects { subproject ->
                 license = 'MIT'
                 vendor = 'Geewit inc.'
             }
+            release {
+                github {
+                    // 必须配置一个 releaser + 非空 token
+                    // token 从 gradle.properties 或环境变量拿，不存在时就是 dummy-token
+                    repoOwner = 'geewit'              // 你的 GitHub 用户/组织
+                    overwrite = true
+                    token = 'githubToken'
+
+                    // 可选：本地避免误触发 tag/release（真正发版时用 CI 覆盖这些配置）
+                    skipTag = true
+                    skipRelease = true
+                }
+            }
             signing {
-                // Maven Central 要求签名
                 active = Active.ALWAYS
                 armored = true
                 mode = 'COMMAND'
                 command {
-                    // The executable used for signing.
-                    // Defaults to `gpg[.exe]`.
-                    // When mode = `COMMAND`.
-                    //
                     executable = 'gpg'
-
-                    // The directory from which gpg will load keyrings.
-                    // Defaults to empty.
-                    // When mode = `COMMAND`.
-                    //
                     homeDir = gpgSecretKeyRingDir
-
-                    // The "name" of the key to sign with.
-                    // Defaults to empty.
-                    // When mode = `COMMAND`.
-                    keyName = ''
-
-                    // The path to a public keyring to add to the list of keyrings.
-                    // Defaults to empty.
-                    // When mode = `COMMAND`.
-                    //
+                    keyName = gpgKeyId ?: ''
                     publicKeyring = gpgSecretKeyRingFilename
-
-                    // Whether to add the default keyrings from gpg's home directory to the list of used keyrings.
-                    // Defaults to `true`.
-                    // When mode = `COMMAND`.
-                    //
                     defaultKeyring = true
-
-                    // Sets the arguments to be passed to gpg.
-                    // When mode = `COMMAND`.
-                    //
                     args = ['--no-random-seed-file']
                 }
             }
             deploy {
                 maven {
-                    //
                     mavenCentral {
-                        // Deployers require a name.
-                        //
-                        app {
-
-                            // Enables or disables the deployer.
-                            // Supported values are [`NEVER`, `ALWAYS`, `RELEASE`, `SNAPSHOT`].
-                            // Defaults to `NEVER`.
-                            //
+                        sonatype {
                             active = Active.RELEASE
-
-                            // URL where the MavenCentral service is enabled.
-                            //
                             url = 'https://central.sonatype.com/api/v1/publisher'
-
-                            // Activates publication of snapshot artifacts.
-                            // Defaults to `false`.
-                            //
                             snapshotSupported = false
-
-                            // The username required for authorization.
-                            //
                             username = sonatypeUsername
-
-                            // Password for login into the MAVENCENTRAL service.
-                            //
                             password = sonatypePassword
-
-                            // The authorization method to use.
-                            // Supported values are [`NONE`, `BASIC`, `BEARER`].
-                            // `Basic` requires both username & password.
-                            // `BEARER` requires a token (set as password).
-                            // Defaults to `BEARER`.
-                            //
                             authorization = 'BEARER'
-
-                            // Signs artifacts with the configured credentials.
-                            // The Signing section must be configured as well.
-                            // Defaults to `false` unless `applyMavenCentralRules` is set to `true`.
-                            //
                             sign = true
-
-                            // Checksums all artifacts with `MD5`, `SHA-1`, `SHA-256`, and `SHA-512`.
-                            // Defaults to `false` unless `applyMavenCentralRules` is set to `true`.
-                            //
                             checksums = true
-
-                            // Verifies that a matching `-sources.jar` artifact is staged.
-                            // Defaults to `false` unless `applyMavenCentralRules` is set to `true`.
-                            //
                             sourceJar = true
-
-                            // Verifies that a matching `-javadoc.jar` artifact is staged.
-                            // Defaults to `false` unless `applyMavenCentralRules` is set to `true`.
-                            //
                             javadocJar = true
-
-                            // Verifies that POM files comply with the minimum requirements for publication
-                            // to Maven Central. Checks rules using PomChecker.
-                            // Defaults to `false` unless `applyMavenCentralRules` is set to `true`.
-                            //
                             verifyPom = true
-
-                            // Verifies pom files, signs all artifacts, verifies that matching `-sources.jar` and
-                            // `-javadoc.jar` artifacts are also staged.
-                            // Defaults to `false`.
-                            //
                             applyMavenCentralRules = true
-
-
-                            // List of directories where staged artifacts can be found.
-                            //
                             stagingRepository(layout.buildDirectory.dir('staging-deploy').get().asFile.absolutePath)
-
-                            // Defines the connection timeout in seconds.
-                            // Defaults to `20`.
-                            //
                             connectTimeout = 20
-
-                            // Defines the read timeout in seconds.
-                            // Defaults to `60`.
-                            //
                             readTimeout = 60
-
-                            // URL for checking artifacts may be already deployed.
-                            // Additional template tokens: `groupId`, `artifactId`, `version`, `path`, `filename`.
-                            //
                             verifyUrl = "https://repo1.maven.org/maven2/{{path}}/{{filename}}"
-
-                            // Registered publication namespace.
-                            // Defaults to `${project.java.groupId}`.
-                            //
                             namespace = 'io.geewit'
-
-                            // Deployment identifier used for publication.
-                            //
                             deploymentId = "${subproject.group}:${subproject.name}:${rootProject.version}"
-
-                            // Time to wait between state transition checks, in seconds.
-                            // Defaults to `20`.
-                            //
                             retryDelay = 20
-
-                            // Maximum number of attempts to verify state transition.
-                            // Defaults to `100`.
-                            //
                             maxRetries = 100
                         }
                     }
@@ -384,4 +286,5 @@ subprojects { subproject ->
             }
         }
     }
+
 }
