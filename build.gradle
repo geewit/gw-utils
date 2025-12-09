@@ -208,12 +208,21 @@ subprojects { subproject ->
     // ------------------------------------------------
     if (publishEnabled) {
         subproject.jreleaser {
+            announce {
+                active = Active.NEVER
+            }
+            assemble {
+                active = Active.NEVER
+            }
+            catalog {
+                active = Active.NEVER
+            }
             project {
-
                 name = localArtifactId ?: subproject.name
                 description = 'Geewit utility libraries'
                 authors = ['Huang Fang']
                 license = 'MIT'
+                vendor = 'Geewit inc.'
             }
             signing {
                 // Maven Central 要求签名
@@ -369,6 +378,9 @@ subprojects { subproject ->
                         }
                     }
                 }
+            }
+            upload {
+                active = Active.NEVER
             }
         }
     }
