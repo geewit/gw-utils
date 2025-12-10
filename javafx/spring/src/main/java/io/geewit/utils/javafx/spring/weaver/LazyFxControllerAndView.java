@@ -44,9 +44,7 @@ public class LazyFxControllerAndView<C, V extends Node> implements FxControllerA
      * Non-threadsafe lazy loader implementation.
      * <p/>
      * If thread safety is really required, a derived class may override this method to provide a threadsafe variant.
-     *
-     * @noinspection WeakerAccess
-     * */
+     */
     protected FxControllerAndView<C, V> initOrGet() {
         if (inner == null) {
             inner = supplier.get();

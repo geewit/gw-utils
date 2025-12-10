@@ -41,7 +41,6 @@ import java.util.ResourceBundle;
  * </pre>
  *
  * @author Rene Gielen
- * @noinspection unused, WeakerAccess
  * @see FxmlView
  */
 @Slf4j

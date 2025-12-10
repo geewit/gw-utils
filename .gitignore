@@ -140,6 +140,7 @@
 /javafx/spring/out
 /javafx/spring/.gradle
 /javafx/spring/bin
+/javafx/spring/build
 /web/*.iml
 /web/logs
 /web/target

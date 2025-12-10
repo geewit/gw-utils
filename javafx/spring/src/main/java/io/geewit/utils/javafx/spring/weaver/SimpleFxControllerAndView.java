@@ -9,7 +9,6 @@ import java.util.Optional;
  * SimpleFxControllerAndView is a container class for Controller beans and their corresponding Views.
  *
  * @author Rene Gielen
- * @noinspection WeakerAccess
  */
 public record SimpleFxControllerAndView<C, V extends Node>(C controller, V view) implements FxControllerAndView<C, V> {
 
