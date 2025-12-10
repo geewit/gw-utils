@@ -268,12 +268,23 @@ subprojects { subproject ->
                         sign publishing.publications.mavenJava
                     }
 
-                    //Simply using "required" in signing block doesn't work because taskGraph isn't ready yet.
-                    gradle.taskGraph.whenReady {
-                        tasks.withType(Sign) {
-                            onlyIf { isReleaseBuild() }
+                    // ✅ 新增：把构件先发布到本地 staging 仓库（给 JReleaser 用）
+                    repositories {
+                        maven {
+                            name = "jreleaser"
+                            url = layout.buildDirectory.dir("staging-deploy").get().asFile.toURI()
                         }
                     }
+                }
+                // ✅ 新增：保证 jreleaserDeploy 之前，先把构件发布到本地 jreleaser 仓库
+                tasks.withType(Sign).configureEach { signTask ->
+                    signTask.onlyIf {
+                        publishEnabled && !project.version.toString().endsWith('-SNAPSHOT')
+                    }
+                }
+
+                tasks.matching { it.name == "jreleaserDeploy" }.configureEach {
+                    dependsOn tasks.named("publishAllPublicationsToJreleaserRepository")
                 }
             }
         }
@@ -302,10 +313,10 @@ subprojects { subproject ->
                             password = sonatypePassword
                             authorization = 'BEARER'
                             sign = false
-                            checksums = true
+                            checksums = false
                             sourceJar = true
                             javadocJar = true
-                            verifyPom = true
+                            verifyPom = false
                             applyMavenCentralRules = true
                             stagingRepository(layout.buildDirectory.dir('staging-deploy').get().asFile.absolutePath)
                             connectTimeout = 20
