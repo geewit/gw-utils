@@ -6,7 +6,9 @@ import java.nio.charset.StandardCharsets
 
 plugins {
     // 版本号仍然通过 settings.gradle 里的 pluginManagement 解析
-    id 'org.jreleaser' apply false
+    id('maven-publish')
+    id('signing')
+    id('org.jreleaser') apply(false)
 }
 
 // 动态选择 Java 语言版本：优先使用 io.geewit.java.version，找不到对应 toolchain 就回退到当前运行时版本
@@ -53,6 +55,10 @@ def gpgSecretKeyRingFilename = providers.gradleProperty('signing.secretKeyRingFi
 def sonatypeUsername = providers.gradleProperty('SONATYPE_USERNAME').getOrNull()
 def sonatypePassword = providers.gradleProperty('SONATYPE_PASSWORD').getOrNull()
 
+def githubTokenProvider = providers.gradleProperty('jreleaser.github.token')
+        .orElse(providers.environmentVariable('JRELEASER_GITHUB_TOKEN'))
+def githubToken = githubTokenProvider.getOrElse('DUMMY-GITHUB-TOKEN')
+
 // 如有其它地方需要，也还能通过 ext 访问
 ext.publishEnabled = publishEnabled
 ext.sonatypeUsername = sonatypeUsername
@@ -66,6 +72,12 @@ allprojects {
 subprojects { subproject ->
 
     Properties localProps = new Properties()
+    File localGradleFile = subproject.file('build.gradle')
+    boolean isSubproject = localGradleFile.exists()
+    logger.info("project '${subproject.name}' is a subproject: $isSubproject")
+    if (!isSubproject) {
+        return
+    }
     File localPropsFile = subproject.file('gradle.properties')
     if (localPropsFile.exists()) {
         localPropsFile.withInputStream { localProps.load(it) }
@@ -80,7 +92,9 @@ subprojects { subproject ->
     // ------------------------------------------------
     subproject.pluginManager.apply('java-library')
 
-    if (publishEnabled) {
+    if (publishEnabled && isSubproject) {
+        subproject.pluginManager.apply('maven-publish')
+        subproject.pluginManager.apply('signing')
         subproject.pluginManager.apply('org.jreleaser')
     }
 
@@ -142,9 +156,9 @@ subprojects { subproject ->
 
                     // 小工具：按 alias 从 libs 里取版本并应用
                     def useCatalogVersion = { String alias ->
-                        def v = libs.findVersion(alias)
-                        if (v.present) {
-                            details.useVersion v.get().requiredVersion
+                        def catalogVersion = libs.findVersion(alias)
+                        if (catalogVersion.present) {
+                            details.useVersion catalogVersion.get().requiredVersion
                         }
                     }
 
@@ -206,11 +220,65 @@ subprojects { subproject ->
     // ------------------------------------------------
     // 6. 发布配置（只在 io.geewit.publish.enabled = true 时启用）
     // ------------------------------------------------
-    if (publishEnabled) {
+    if (publishEnabled && isSubproject) {
+        afterEvaluate { project ->
+            //Workaround android not having components populated yet.
+            afterEvaluate {
+                publishing {
+                    publications {
+                        mavenJava(MavenPublication) {
+                            //Most normal java projects
+                            if (components.findByName("java") != null)
+                                from components.java
+
+                            //Android
+                            if (components.findByName("release") != null) {
+                                from components.release
+                            }
+
+                            pom {
+                                name = POM_NAME
+                                if (!POM_DESCRIPTION.isEmpty())
+                                    description = POM_DESCRIPTION
+                                url = POM_URL
+                                licenses {
+                                    license {
+                                        name = POM_LICENCE_NAME
+                                        url = POM_LICENCE_URL
+                                        distribution = POM_LICENCE_DIST
+                                    }
+                                }
+                                developers {
+                                    developer {
+                                        id = "Geewit Utils Developers"
+                                        url = "https://github.com/geewit/gw-utils/graphs/contributors"
+                                    }
+                                }
+                                scm {
+                                    connection = POM_SCM_CONNECTION
+                                    developerConnection = POM_SCM_DEV_CONNECTION
+                                    url = POM_SCM_URL
+                                }
+                            }
+                        }
+                    }
+
+                    signing {
+                        useGpgCmd()
+                        sign publishing.publications.mavenJava
+                    }
+
+                    //Simply using "required" in signing block doesn't work because taskGraph isn't ready yet.
+                    gradle.taskGraph.whenReady {
+                        tasks.withType(Sign) {
+                            onlyIf { isReleaseBuild() }
+                        }
+                    }
+                }
+            }
+        }
         subproject.jreleaser {
             // ★★ 关键：让 JReleaser 从当前子模块目录向上查找 .git ★★
-            gitRootSearch = true
-
             announce {
                 active = Active.NEVER
             }
@@ -220,38 +288,8 @@ subprojects { subproject ->
             catalog {
                 active = Active.NEVER
             }
-            project {
-                name = localArtifactId ?: subproject.name
-                description = 'Geewit utility libraries'
-                authors = ['Huang Fang']
-                license = 'MIT'
-                vendor = 'Geewit inc.'
-            }
-            release {
-                github {
-                    // 必须配置一个 releaser + 非空 token
-                    // token 从 gradle.properties 或环境变量拿，不存在时就是 dummy-token
-                    repoOwner = 'geewit'              // 你的 GitHub 用户/组织
-                    overwrite = true
-                    token = 'githubToken'
-
-                    // 可选：本地避免误触发 tag/release（真正发版时用 CI 覆盖这些配置）
-                    skipTag = true
-                    skipRelease = true
-                }
-            }
             signing {
-                active = Active.ALWAYS
-                armored = true
-                mode = 'COMMAND'
-                command {
-                    executable = 'gpg'
-                    homeDir = gpgSecretKeyRingDir
-                    keyName = gpgKeyId ?: ''
-                    publicKeyring = gpgSecretKeyRingFilename
-                    defaultKeyring = true
-                    args = ['--no-random-seed-file']
-                }
+                active = Active.NEVER
             }
             deploy {
                 maven {
@@ -263,7 +301,7 @@ subprojects { subproject ->
                             username = sonatypeUsername
                             password = sonatypePassword
                             authorization = 'BEARER'
-                            sign = true
+                            sign = false
                             checksums = true
                             sourceJar = true
                             javadocJar = true
@@ -286,5 +324,4 @@ subprojects { subproject ->
             }
         }
     }
-
 }

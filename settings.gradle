@@ -8,7 +8,9 @@ pluginManagement {
     }
 
     plugins {
-        id('org.jreleaser') version getProperty('jreleaser.plugin.version').toString() apply false
+        id('maven-publish') apply(false)
+        id('signing') apply(false)
+        id('org.jreleaser') version(getProperty('jreleaser.plugin.version').toString()) apply(false)
     }
 }
 
