@@ -40,18 +40,83 @@ ext.determineJavaLanguageVersion = { Project project, int requestedVersion ->
     }
 }
 
+ext.generateGroupId = { Project project, Project rootProject ->
+    println "thisProject.name = ${thisProject.name}"
+    Project parentProject = thisProject.parent
+    String groupId = null
+    Properties projectProps = new Properties()
+    File projectPropsFile = thisProject.file('gradle.properties')
+    if(projectPropsFile.exists()) {
+        projectProps.load(projectPropsFile.newReader() as Reader)
+        String thisGroup = projectProps.getProperty('group')
+        if (thisGroup != null) {
+            groupId = thisGroup
+        }
+    }
+    if(groupId == null) {
+        println 'project has not groupId'
+        groupId = rootProject.group.toString()
+        println "groupId = ${groupId}"
+        if(thisProject.parent != null) {
+            def deepth = 1
+            println "thisProject.name = ${thisProject.name}"
+            String group_suffix = ""
+            while (parentProject != null) {
+                println "deepth = ${deepth}"
+                if(parentProject.parent != null) {
+                    if(group_suffix.length() > 0) {
+                        group_suffix = parentProject.name + "." + group_suffix
+                    } else {
+                        group_suffix = parentProject.name
+                    }
+                }
+                println "group_suffix = ${group_suffix}"
+                parentProject = parentProject.parent
+                deepth++
+            }
+            if(group_suffix.length() > 0) {
+                groupId = groupId + "." + group_suffix
+            }
+        } else {
+            println 'thisProject.parent == null'
+            groupId = thisProject.group.toString()
+            println "groupId = ${groupId}"
+        }
+    }
+    println "--------- final groupId = ${groupId}"
+    thisProject.group(groupId)
+    return groupId
+}
+
+ext.generateGroupId = { Project project, Project rootProject ->
+    Project prj = project.parent
+
+    String artifactId
+    if(project.hasProperty('artifactId')) {
+        artifactId = project.property('artifactId').toString()
+        println "project.artifactId = ${artifactId}"
+    } else {
+        println 'project has not artifactId'
+        artifactId = project.name
+        println "artifactId = ${artifactId}"
+        while (prj != null) {
+            println "prj.name = ${prj.name}"
+            println "prj.depth = ${prj.depth}"
+            artifactId = "${prj.name}-${artifactId}"
+            println "artifactId = ${artifactId}"
+            prj = prj.parent
+        }
+    }
+    println "--------- final artifactId = ${artifactId}"
+    return artifactId
+}
+
 // -------------------------------
 // 外部开关 & 凭据（懒加载友好写法）
 // -------------------------------
 def publishEnabled = providers.gradleProperty('io.geewit.publish.enabled')
         .map { it.toBoolean() }
         .getOrElse(false)
-
-def gpgKeyId = providers.gradleProperty('signing.keyId').getOrNull()
-def gpgKeyPassword = providers.gradleProperty('signing.password').getOrNull()
-def gpgSecretKeyRingDir = providers.gradleProperty('signing.secretKeyRingDir').getOrNull()
-def gpgSecretKeyRingFilename = providers.gradleProperty('signing.secretKeyRingFilename').getOrNull()
-
 def sonatypeUsername = providers.gradleProperty('SONATYPE_USERNAME').getOrNull()
 def sonatypePassword = providers.gradleProperty('SONATYPE_PASSWORD').getOrNull()
 
@@ -227,8 +292,8 @@ subprojects { subproject ->
                 publishing {
                     publications {
                         mavenJava(MavenPublication) {
-                            groupId project.group
-                            artifactId project.name
+                            groupId localGroup
+                            artifactId localArtifactId
                             version rootProject.version
                             from components.java
 
@@ -260,7 +325,6 @@ subprojects { subproject ->
                     }
 
                     signing {
-//                        useGpgCmd()
                         sign publishing.publications.mavenJava
                     }
 
@@ -319,7 +383,7 @@ subprojects { subproject ->
                             readTimeout = 60
                             verifyUrl = "https://repo1.maven.org/maven2/{{path}}/{{filename}}"
                             namespace = 'io.geewit'
-                            deploymentId = "${subproject.group}:${subproject.name}:${rootProject.version}"
+                            deploymentId = "${localGroup}:${localArtifactId}:${rootProject.version}"
                             retryDelay = 20
                             maxRetries = 100
                         }
