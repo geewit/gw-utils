@@ -292,9 +292,9 @@ subprojects { subproject ->
                 publishing {
                     publications {
                         mavenJava(MavenPublication) {
-                            groupId localGroup
-                            artifactId localArtifactId
-                            version rootProject.version
+                            groupId(localGroup)
+                            artifactId(localArtifactId)
+                            version(rootProject.version)
                             from components.java
 
                             pom {
