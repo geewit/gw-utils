@@ -371,7 +371,7 @@ subprojects { subproject ->
                             snapshotSupported = false
                             username = sonatypeUsername
                             password = sonatypePassword
-                            authorization = 'BEARER'
+                            authorization = 'BASIC'
                             sign = false
                             checksums = false
                             sourceJar = true
