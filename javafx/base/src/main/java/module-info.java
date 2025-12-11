@@ -12,6 +12,7 @@ module io.geewit.utils.javafx.base {
     requires org.kordamp.bootstrapfx.core;
     requires org.reactivestreams;
     requires transitive org.slf4j;
+    requires static lombok;
     exports io.geewit.utils.javafx.base;
     exports io.geewit.utils.javafx.base.scene;
     exports io.geewit.utils.javafx.base.scheduler;
