@@ -46,7 +46,6 @@ dependencyResolutionManagement {
             version('commons-math3', getProperty('commons-math3.version').toString())
             version('commons-text', getProperty('commons-text.version').toString())
             version('djl', getProperty('djl.version').toString())
-            version('geewit.utils', getProperty('geewit.utils.version').toString())
             version('google.errorprone', getProperty('google.errorprone.version').toString())
             version('google.gson', getProperty('google.gson.version').toString())
             version('google.guava', getProperty('google.guava.version').toString())
@@ -145,10 +144,6 @@ dependencyResolutionManagement {
             library('commons-lang3', 'org.apache.commons', 'commons-lang3').versionRef('commons-lang3')
             library('commons-collections4', 'org.apache.commons', 'commons-collections4').versionRef('commons-collections4')
             library('commons-codec', 'commons-codec', 'commons-codec').versionRef('commons-codec')
-            library('gw-core-enums', 'io.geewit.utils.core', 'enums').versionRef('geewit.utils')
-            library('gw-data-commons', 'io.geewit.utils.data', 'commons').versionRef('geewit.utils')
-            library('gw-web-converter', 'io.geewit.utils.web', 'converter').versionRef('geewit.utils')
-            library('gw-web-json', 'io.geewit.utils.web', 'json').versionRef('geewit.utils')
             library('google-guava', 'com.google.guava', 'guava').versionRef('google.guava')
             library('hanlp', 'com.hankcs', 'hanlp').versionRef('hanlp')
             library('h2', 'com.h2database', 'h2').versionRef('h2')
@@ -240,12 +235,6 @@ dependencyResolutionManagement {
             bundle('apache-commons-bundle', [
                     'commons-lang3',
                     'commons-collections4'
-            ])
-
-            bundle('geewit-utils-bundle', [
-                    'gw-core-enums',
-                    'gw-data-commons',
-                    'gw-web-converter'
             ])
 
             bundle('jackson-bundle', [

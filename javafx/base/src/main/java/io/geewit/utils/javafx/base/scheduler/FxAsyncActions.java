@@ -5,6 +5,7 @@ import javafx.scene.Node;
 import javafx.scene.control.ProgressIndicator;
 import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Publisher;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -26,7 +27,8 @@ public record FxAsyncActions(FxScheduler fxScheduler,
     /**
      * 运行一个 Mono 任务（onSuccess = Mono 的结果）
      */
-    public <T> void runMono(Supplier<Mono<@NonNull T>> taskSupplier,
+    @SuppressWarnings("unused")
+    public <T> Disposable runMono(Supplier<Mono<@NonNull T>> taskSupplier,
                                   Node trigger,
                                   ProgressIndicator indicator,
                                   Supplier<?> onStart,
@@ -34,7 +36,7 @@ public record FxAsyncActions(FxScheduler fxScheduler,
                                   Consumer<? super Throwable> onError,
                                   Supplier<?> onFinally) {
         // 允许传 null；不改变原有签名
-        this.runReactive(
+        return this.runReactive(
                 taskSupplier,
                 trigger,
                 indicator,
@@ -47,6 +49,7 @@ public record FxAsyncActions(FxScheduler fxScheduler,
     /**
      * 运行一个 Flux 任务（onNext = Flux 的每个元素）
      */
+    @SuppressWarnings("unused")
     public <T> void runFlux(Supplier<Flux<@NonNull T>> taskSupplier,
                             Node trigger,
                             ProgressIndicator indicator,
@@ -65,7 +68,8 @@ public record FxAsyncActions(FxScheduler fxScheduler,
     }
 
     // -------------------- 去重后的核心实现 --------------------
-    private <T> void runReactive(Supplier<? extends Publisher<? extends T>> taskSupplier,
+    @SuppressWarnings("unused")
+    private <T> Disposable runReactive(Supplier<? extends Publisher<? extends T>> taskSupplier,
                                  Node trigger,
                                  ProgressIndicator indicator,
                                  Supplier<?> onStart,
@@ -88,7 +92,7 @@ public record FxAsyncActions(FxScheduler fxScheduler,
         Consumer<? super Throwable> sOnError = (onError != null) ? onError : _ -> {};
         Supplier<?> sOnFinally = (onFinally != null) ? onFinally : FxAsyncActions::noop;
 
-        Flux.from(source)
+        return Flux.from(source)
                 .subscribeOn(virtualScheduler.scheduler())
                 .publishOn(fxScheduler.scheduler())
                 .doOnSubscribe(_ -> this.toggleUi(trigger, indicator, true, sOnStart))
@@ -96,7 +100,9 @@ public record FxAsyncActions(FxScheduler fxScheduler,
                 .subscribe(sOnNext, sOnError);
     }
 
-    private static Object noop() { return null; }
+    private static Object noop() {
+        return null;
+    }
 
     // -------------------- UI 辅助 --------------------
 
