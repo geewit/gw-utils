@@ -1,7 +1,9 @@
 package io.geewit.utils.core.lang;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -87,5 +89,25 @@ public class StringUtils {
             buf.append(array[i]);
         }
         return buf.toString();
+    }
+
+    /**
+     * 将给定值转换为字符串，如果值为null或转换结果为null则返回默认值
+     *
+     * @param value 要转换的值，可以为null
+     * @param mapper 用于将值转换为字符串的函数，不可为null
+     * @param defaultValue 当值为null或转换结果为null时返回的默认值，可以为null
+     * @param <T> 值的类型
+     * @return 转换后的字符串或默认值
+     */
+    public static <T> String toStringOrDefault(T value,
+                                               Function<? super T, String> mapper,
+                                               String defaultValue) {
+        // 如果值为null，直接返回默认值
+        if (value == null) {
+            return defaultValue;
+        }
+        // 应用转换函数，如果结果为null则返回默认值
+        return Objects.requireNonNullElse(mapper.apply(value), defaultValue);
     }
 }

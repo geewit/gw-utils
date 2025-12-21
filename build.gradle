@@ -1,7 +1,7 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.jreleaser.gradle.plugin.JReleaserExtension
 import org.jreleaser.model.Active
-
 import java.nio.charset.StandardCharsets
 
 plugins {
@@ -40,77 +40,6 @@ ext.determineJavaLanguageVersion = { Project project, int requestedVersion ->
     }
 }
 
-ext.generateGroupId = { Project project, Project rootProject ->
-    println "thisProject.name = ${thisProject.name}"
-    Project parentProject = thisProject.parent
-    String groupId = null
-    Properties projectProps = new Properties()
-    File projectPropsFile = thisProject.file('gradle.properties')
-    if(projectPropsFile.exists()) {
-        projectProps.load(projectPropsFile.newReader() as Reader)
-        String thisGroup = projectProps.getProperty('group')
-        if (thisGroup != null) {
-            groupId = thisGroup
-        }
-    }
-    if(groupId == null) {
-        println 'project has not groupId'
-        groupId = rootProject.group.toString()
-        println "groupId = ${groupId}"
-        if(thisProject.parent != null) {
-            def deepth = 1
-            println "thisProject.name = ${thisProject.name}"
-            String group_suffix = ""
-            while (parentProject != null) {
-                println "deepth = ${deepth}"
-                if(parentProject.parent != null) {
-                    if(group_suffix.length() > 0) {
-                        group_suffix = parentProject.name + "." + group_suffix
-                    } else {
-                        group_suffix = parentProject.name
-                    }
-                }
-                println "group_suffix = ${group_suffix}"
-                parentProject = parentProject.parent
-                deepth++
-            }
-            if(group_suffix.length() > 0) {
-                groupId = groupId + "." + group_suffix
-            }
-        } else {
-            println 'thisProject.parent == null'
-            groupId = thisProject.group.toString()
-            println "groupId = ${groupId}"
-        }
-    }
-    println "--------- final groupId = ${groupId}"
-    thisProject.group(groupId)
-    return groupId
-}
-
-ext.generateGroupId = { Project project, Project rootProject ->
-    Project prj = project.parent
-
-    String artifactId
-    if(project.hasProperty('artifactId')) {
-        artifactId = project.property('artifactId').toString()
-        println "project.artifactId = ${artifactId}"
-    } else {
-        println 'project has not artifactId'
-        artifactId = project.name
-        println "artifactId = ${artifactId}"
-        while (prj != null) {
-            println "prj.name = ${prj.name}"
-            println "prj.depth = ${prj.depth}"
-            artifactId = "${prj.name}-${artifactId}"
-            println "artifactId = ${artifactId}"
-            prj = prj.parent
-        }
-    }
-    println "--------- final artifactId = ${artifactId}"
-    return artifactId
-}
-
 // -------------------------------
 // 外部开关 & 凭据（懒加载友好写法）
 // -------------------------------
@@ -120,10 +49,6 @@ def publishEnabled = providers.gradleProperty('io.geewit.publish.enabled')
 def sonatypeUsername = providers.gradleProperty('SONATYPE_USERNAME').getOrNull()
 def sonatypePassword = providers.gradleProperty('SONATYPE_PASSWORD').getOrNull()
 
-def githubTokenProvider = providers.gradleProperty('jreleaser.github.token')
-        .orElse(providers.environmentVariable('JRELEASER_GITHUB_TOKEN'))
-def githubToken = githubTokenProvider.getOrElse('DUMMY-GITHUB-TOKEN')
-
 // 如有其它地方需要，也还能通过 ext 访问
 ext.publishEnabled = publishEnabled
 ext.sonatypeUsername = sonatypeUsername
@@ -131,7 +56,7 @@ ext.sonatypePassword = sonatypePassword
 
 
 allprojects {
-    version = providers.gradleProperty('version').getOrElse('1.0.0')
+    version = rootProject.providers.gradleProperty('version').getOrNull()
 }
 
 subprojects { subproject ->
@@ -183,19 +108,10 @@ subprojects { subproject ->
             .get()
     def javaLanguageVersion = determineJavaLanguageVersion(subproject, configuredJavaVersion) as JavaLanguageVersion
 
-    subproject.java {
-        toolchain {
-            languageVersion.set(javaLanguageVersion)
-            implementation.set(JvmImplementation.VENDOR_SPECIFIC)
-        }
-        withSourcesJar()
-        withJavadocJar()
-    }
-
     // ------------------------------------------------
     // 4. 统一依赖排除 + 版本对齐
     // ------------------------------------------------
-    subproject.configurations {
+    configurations {
         configureEach { config ->
             config.exclude([group: 'com.google.protobuf'])
             config.exclude([group: 'org.springframework.boot', module: 'spring-boot-dependencies'])
@@ -259,26 +175,47 @@ subprojects { subproject ->
         }
     }
 
+    extensions.configure(JavaPluginExtension) { javaExt ->
+        javaExt.toolchain { toolchain ->
+            toolchain.languageVersion.set(javaLanguageVersion)
+            toolchain.implementation.set(JvmImplementation.VENDOR_SPECIFIC)
+        }
+        javaExt.withSourcesJar()
+        javaExt.withJavadocJar()
+    }
+
     // ------------------------------------------------
     // 5. 编译 & 测试配置
     // ------------------------------------------------
-    tasks.withType(JavaCompile).configureEach {
-        options.encoding = StandardCharsets.UTF_8.name()
+    tasks.withType(JavaCompile).configureEach { JavaCompile javaCompile ->
+        javaCompile.options.encoding = StandardCharsets.UTF_8.name()
     }
 
-    tasks.withType(Javadoc).configureEach {
-        options.encoding = StandardCharsets.UTF_8.name()
-        options.charSet = StandardCharsets.UTF_8.name()
-        options.docEncoding = StandardCharsets.UTF_8.name()
-        options.addBooleanOption('Xdoclint:none', true)
-        options.addBooleanOption('quiet', true)
+    tasks.withType(Javadoc).configureEach { Javadoc javadoc ->
+        javadoc.options.encoding = StandardCharsets.UTF_8.name()
+        javadoc.options.charSet = StandardCharsets.UTF_8.name()
+        javadoc.options.docEncoding = StandardCharsets.UTF_8.name()
+        javadoc.options.addBooleanOption('Xdoclint:none', true)
+        javadoc.options.addBooleanOption('quiet', true)
     }
 
-    tasks.withType(Test).configureEach {
-        useJUnitPlatform()
-        testLogging {
+    tasks.withType(Test).configureEach { Test test ->
+        test.useJUnitPlatform()
+        test.testLogging {
             events TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.PASSED
             exceptionFormat = TestExceptionFormat.FULL
+        }
+    }
+
+    tasks.withType(Jar).configureEach { Jar jar ->
+        // 只给“主构件”写（archiveClassifier 为空的是主 jar）
+        if (jar.archiveClassifier.getOrElse('') == '') {
+            jar.manifest {
+                attributes(
+                        'Implementation-Title': "${localGroup}:${localArtifactId}",
+                        'Implementation-Version': subproject.version as String
+                )
+            }
         }
     }
 
@@ -289,108 +226,135 @@ subprojects { subproject ->
         afterEvaluate { project ->
             //Workaround android not having components populated yet.
             afterEvaluate {
-                publishing {
-                    publications {
-                        mavenJava(MavenPublication) {
-                            groupId(localGroup)
-                            artifactId(localArtifactId)
-                            version(rootProject.version)
-                            from components.java
+                if (publishEnabled && isSubproject) {
 
-                            pom {
-                                name = POM_NAME
-                                if (!POM_DESCRIPTION.isEmpty())
-                                    description = POM_DESCRIPTION
-                                url = POM_URL
-                                licenses {
-                                    license {
-                                        name = POM_LICENCE_NAME
-                                        url = POM_LICENCE_URL
-                                        distribution = POM_LICENCE_DIST
+                    // 1) publishing：只管 publications + repositories（不要在这里嵌 signing）
+                    extensions.configure(PublishingExtension) { PublishingExtension publishing ->
+
+                        publishing.publications { publications ->
+                            publications.register("mavenJava", MavenPublication) { MavenPublication publication ->
+                                groupId = (localGroup ?: subproject.group.toString())
+                                artifactId = (localArtifactId ?: subproject.name)
+                                version = rootProject.version.toString()
+
+                                from subproject.components.java
+
+                                pom {
+                                    name = POM_NAME
+                                    if (!POM_DESCRIPTION.isEmpty()) {
+                                        description = POM_DESCRIPTION
+                                    }
+                                    url = POM_URL
+                                    licenses {
+                                        license {
+                                            name = POM_LICENCE_NAME
+                                            url = POM_LICENCE_URL
+                                            distribution = POM_LICENCE_DIST
+                                        }
+                                    }
+                                    developers {
+                                        developer {
+                                            id = "Geewit Utils Developers"
+                                            url = "https://github.com/geewit/gw-utils/graphs/contributors"
+                                        }
+                                    }
+                                    scm {
+                                        connection = POM_SCM_CONNECTION
+                                        developerConnection = POM_SCM_DEV_CONNECTION
+                                        url = POM_SCM_URL
                                     }
                                 }
-                                developers {
-                                    developer {
-                                        id = "Geewit Utils Developers"
-                                        url = "https://github.com/geewit/gw-utils/graphs/contributors"
-                                    }
-                                }
-                                scm {
-                                    connection = POM_SCM_CONNECTION
-                                    developerConnection = POM_SCM_DEV_CONNECTION
-                                    url = POM_SCM_URL
-                                }
+                            }
+                        }
+
+                        publishing.repositories {
+                            maven {
+                                name = "jreleaser"
+                                url = layout.buildDirectory.dir("staging-deploy").get().asFile.toURI()
                             }
                         }
                     }
 
-                    signing {
-                        sign publishing.publications.mavenJava
+                    // 2) signing：单独配置 SigningExtension（这才是正确位置）
+                    extensions.configure(SigningExtension) { SigningExtension signingExt ->
+                        signingExt.required {
+                            publishEnabled && !subproject.version.toString().endsWith('-SNAPSHOT')
+                        }
+
+                        def publishing = extensions.getByType(PublishingExtension)
+                        // 你只有一个 mavenJava publication 时也可以只签它：sign publishing.publications.mavenJava
+                        signingExt.sign(publishing.publications)
                     }
 
-                    // ✅ 新增：把构件先发布到本地 staging 仓库（给 JReleaser 用）
-                    repositories {
-                        maven {
-                            name = "jreleaser"
-                            url = layout.buildDirectory.dir("staging-deploy").get().asFile.toURI()
+                    // 3) 只在 release 时执行 Sign 任务（你原来 onlyIf 的逻辑可以保留）
+                    tasks.withType(Sign).configureEach { Sign signTask ->
+                        signTask.onlyIf {
+                            publishEnabled && !subproject.version.toString().endsWith('-SNAPSHOT')
                         }
                     }
-                }
-                // ✅ 新增：保证 jreleaserDeploy 之前，先把构件发布到本地 jreleaser 仓库
-                tasks.withType(Sign).configureEach { signTask ->
-                    signTask.onlyIf {
-                        publishEnabled && !project.version.toString().endsWith('-SNAPSHOT')
-                    }
-                }
 
-                tasks.matching { it.name == "jreleaserDeploy" }.configureEach {
-                    dependsOn tasks.named("publishAllPublicationsToJreleaserRepository")
+                    // 4) jreleaserDeploy 之前，确保已发布到本地 staging 仓库
+                    tasks.matching { it.name == "jreleaserDeploy" }.configureEach {
+                        dependsOn tasks.named("publishAllPublicationsToJreleaserRepository")
+                    }
                 }
             }
         }
-        subproject.jreleaser {
-            // ★★ 关键：让 JReleaser 从当前子模块目录向上查找 .git ★★
-            announce {
+
+        // -----------------------------
+        // 4) JReleaser（强类型扩展）
+        // -----------------------------
+        extensions.configure(JReleaserExtension) { JReleaserExtension jreleaser ->
+            // 推荐：允许从子模块目录向上找 .git（尤其是多模块）
+            jreleaser.gitRootSearch = false  // 官方 FAQ 推荐项:contentReference[oaicite:5]{index=5}
+
+            jreleaser.announce {
                 active = Active.NEVER
             }
-            assemble {
+            jreleaser.assemble {
                 active = Active.NEVER
             }
-            catalog {
+            jreleaser.catalog {
                 active = Active.NEVER
             }
-            signing {
+            jreleaser.signing {
                 active = Active.NEVER
             }
-            deploy {
+            jreleaser.deploy {
                 maven {
                     mavenCentral {
-                        sonatype {
-                            active = Active.RELEASE
-                            url = 'https://central.sonatype.com/api/v1/publisher'
-                            snapshotSupported = false
+                        app {
+                            active.set(Active.RELEASE)
+                            url.set('https://central.sonatype.com/api/v1/publisher')
+                            snapshotSupported.set(false)
+
                             username = sonatypeUsername
                             password = sonatypePassword
-                            authorization = 'BASIC'
-                            sign = false
-                            checksums = false
-                            sourceJar = true
-                            javadocJar = true
-                            verifyPom = false
-                            applyMavenCentralRules = true
-                            stagingRepository(layout.buildDirectory.dir('staging-deploy').get().asFile.absolutePath)
-                            connectTimeout = 20
-                            readTimeout = 60
-                            verifyUrl = "https://repo1.maven.org/maven2/{{path}}/{{filename}}"
-                            namespace = 'io.geewit'
-                            deploymentId = "${localGroup}:${localArtifactId}:${rootProject.version}"
-                            retryDelay = 20
-                            maxRetries = 100
+                            setAuthorization(org.jreleaser.model.Http.Authorization.BASIC.name())
+
+                            sign.set(false)
+                            checksums.set(false)
+                            sourceJar.set(true)
+                            javadocJar.set(true)
+
+                            applyMavenCentralRules.set(true)
+                            verifyPom.set(false)
+
+                            stagingRepository(subproject.layout.buildDirectory.dir('staging-deploy').get().asFile.absolutePath)
+
+                            connectTimeout.set(20)
+                            readTimeout.set(60)
+                            verifyUrl.set('https://repo1.maven.org/maven2/{{path}}/{{filename}}')
+                            namespace.set('io.geewit')
+                            deploymentId.set("${localGroup}:${localArtifactId}:${rootProject.version as String}")
+                            retryDelay.set(20)
+                            maxRetries.set(100)
                         }
                     }
                 }
             }
-            upload {
+
+            jreleaser.upload {
                 active = Active.NEVER
             }
         }
