@@ -6,6 +6,7 @@ dependencies {
     implementation "org.openjfx:javafx-base:${libs.versions.openjfx.get() as String}:${javafxPlatform}"
     implementation "org.openjfx:javafx-controls:${libs.versions.openjfx.get() as String}:${javafxPlatform}"
     implementation "org.openjfx:javafx-graphics:${libs.versions.openjfx.get() as String}:${javafxPlatform}"
+    implementation libs.ikonli.javafx.get()
     api(libs.slf4j.api) {
         exclude group: 'org.slf4j', module: 'logback'
     }
