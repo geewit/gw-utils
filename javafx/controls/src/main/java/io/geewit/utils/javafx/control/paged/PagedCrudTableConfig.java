@@ -3,7 +3,10 @@ package io.geewit.utils.javafx.control.paged;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
-import java.util.function.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public record PagedCrudTableConfig<T, K, Q>(
         int pageSize,

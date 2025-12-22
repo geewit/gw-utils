@@ -1,7 +1,11 @@
 package io.geewit.utils.javafx.control.paged;
 
+import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Control;
@@ -17,6 +21,8 @@ public final class PagedCrudTableControl<T, K, Q> extends Control {
 
     @Getter
     private final ObservableList<T> items = FXCollections.observableArrayList();
+
+    private final ReadOnlyObjectWrapper<T> selectedItem = new ReadOnlyObjectWrapper<>();
 
     private final ObjectProperty<List<TableColumn<T, ?>>> columns =
             new SimpleObjectProperty<>(this, "columns", List.of());
@@ -69,6 +75,25 @@ public final class PagedCrudTableControl<T, K, Q> extends Control {
         Actions.of(this).search();
     }
 
+    public void searchWhenSkinReady() {
+        if (getSkin() != null) {
+            search();
+            return;
+        }
+        ChangeListener<Skin<?>> skinListener = new ChangeListener<>() {
+            @Override
+            public void changed(javafx.beans.value.ObservableValue<? extends Skin<?>> obs,
+                                Skin<?> oldSkin,
+                                Skin<?> newSkin) {
+                if (newSkin != null) {
+                    skinProperty().removeListener(this);
+                    Platform.runLater(() -> search());
+                }
+            }
+        };
+        skinProperty().addListener(skinListener);
+    }
+
     public void reloadCurrentPage() {
         Actions.of(this).reloadCurrentPage();
     }
@@ -83,6 +108,18 @@ public final class PagedCrudTableControl<T, K, Q> extends Control {
 
     public void deleteSelected() {
         Actions.of(this).deleteSelected();
+    }
+
+    ReadOnlyObjectWrapper<T> selectedItemWrapper() { // package-private 给 Skin 用
+        return selectedItem;
+    }
+
+    public ReadOnlyObjectProperty<T> selectedItemProperty() {
+        return selectedItem.getReadOnlyProperty();
+    }
+
+    public T getSelectedItem() {
+        return selectedItem.get();
     }
 
     /**

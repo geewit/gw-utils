@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
-import javafx.scene.control.SkinBase;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
