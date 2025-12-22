@@ -86,15 +86,13 @@ public final class PagedCrudTableControl<T, K, Q> extends Control {
      */
     public TableView<T> getTableView() {
         Skin<?> skin = this.getSkin();
-        if (!(skin instanceof PagedCrudTableSkin<?, ?, ?>)) {
-            this.applyCss();
-            this.layout();
-            skin = this.getSkin();
-        }
         if (skin instanceof PagedCrudTableSkin<?, ?, ?> s) {
             @SuppressWarnings("unchecked")
             TableView<T> tv = ((PagedCrudTableSkin<T, K, Q>) s).tableView();
             return tv;
+        } else {
+            this.applyCss();
+            this.layout();
         }
         throw new IllegalStateException("Cannot resolve TableView from control skin.");
     }

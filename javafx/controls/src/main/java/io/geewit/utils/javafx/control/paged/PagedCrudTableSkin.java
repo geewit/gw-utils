@@ -28,14 +28,14 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
 
         VBox root = new VBox(10, table, pagination);
         VBox.setVgrow(table, Priority.ALWAYS);
-        getChildren().add(root);
+        super.getChildren().add(root);
 
         table.setItems(control.getItems());
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         // 列变化：重建
-        control.columnsProperty().addListener((_, _, _) -> rebuildColumns());
+        control.columnsProperty().addListener((_, _, _) -> this.rebuildColumns());
         this.rebuildColumns();
 
         // 配置变化：刷新 placeholder/rowFactory 并重新查询
@@ -48,7 +48,7 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
         // page 切换：加载页
         pagination.currentPageIndexProperty().addListener((_, _, nv) -> {
             if (nv == null) return;
-            loadPage(nv.intValue());
+            this.loadPage(nv.intValue());
         });
 
         // 初始应用
@@ -97,7 +97,9 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
             // 右键菜单：仅对非空行
             ContextMenu menu = this.buildContextMenu(cfg, row);
             row.contextMenuProperty().bind(
-                    Bindings.when(row.emptyProperty()).then((ContextMenu) null).otherwise(menu)
+                    Bindings.when(row.emptyProperty())
+                            .then((ContextMenu) null)
+                            .otherwise(menu)
             );
 
             // 双击
@@ -124,38 +126,53 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
 
     private ContextMenu buildContextMenu(PagedCrudTableConfig<T, K, Q> cfg, TableRow<T> row) {
         ContextMenu menu = new ContextMenu();
-        List<RowAction<T>> actions = cfg.rowActions();
-        if (actions == null || actions.isEmpty()) {
+
+        MessageProvider mp = cfg.mp();
+        if (mp == null) {
             return menu;
         }
 
-        for (RowAction<T> action : actions) {
-            MenuItem item = new MenuItem(cfg.mp().message(action.textKey()));
+        List<MenuItem> menuItems = cfg.rowActions().stream()
+                .filter(Objects::nonNull)
+                .map(action -> this.createMenuItem(action, mp, row))
+                .toList();
 
-            if (action.iconLiteral() != null && !action.iconLiteral().isBlank()) {
-                item.setGraphic(new FontIcon(action.iconLiteral()));
-            }
+        menu.getItems().addAll(menuItems);
+        return menu;
+    }
 
-            item.setOnAction(_ -> {
-                T data = row.getItem();
-                if (data == null) {
-                    return;
-                }
-                if (action.isDisabled(data)) {
-                    return;
-                }
-                action.handler().accept(data);
-            });
+    private MenuItem createMenuItem(RowAction<T> action,
+                                    MessageProvider mp,
+                                    TableRow<T> row) {
+        MenuItem item = new MenuItem(mp.message(action.textKey()));
 
-            item.disableProperty().bind(Bindings.createBooleanBinding(() -> {
-                T data = row.getItem();
-                return data == null || action.isDisabled(data);
-            }, row.itemProperty()));
-
-            menu.getItems().add(item);
+        if (action.iconLiteral() != null && !action.iconLiteral().isBlank()) {
+            item.setGraphic(new FontIcon(action.iconLiteral()));
         }
 
-        return menu;
+        item.setOnAction(_ -> this.handleAction(action, row));
+        item.disableProperty().bind(Bindings.createBooleanBinding(
+                () -> this.isActionDisabled(action, row),
+                row.itemProperty()
+        ));
+
+        return item;
+    }
+
+    private void handleAction(RowAction<T> action, TableRow<T> row) {
+        Optional.ofNullable(row.getItem())
+                .filter(data -> !action.isDisabled(data))
+                .ifPresent(data -> {
+                    if (action.handler() != null) {
+                        action.handler().accept(data);
+                    }
+                });
+    }
+
+    private boolean isActionDisabled(RowAction<T> action, TableRow<T> row) {
+        return Optional.ofNullable(row.getItem())
+                .map(action::isDisabled)
+                .orElse(true);
     }
 
     void loadPage(int pageIndex) {

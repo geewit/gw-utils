@@ -161,11 +161,11 @@ subprojects { subproject ->
                         useCatalogVersion('jackson.annoations')
                     } else if (requestedGroup.startsWith('tools.jackson')) {
                         useCatalogVersion('jackson.core')
-                    } else if (requestedGroup.startsWith('org.springframework.boot')) {
-                        useCatalogVersion('spring-boot')
+                    } else if (requestedGroup == 'org.springframework.boot') {
+                        useCatalogVersion('spring.boot')
                     } else if (requestedGroup == 'org.springframework.data') {
                         useCatalogVersion('spring.data')
-                    } else if (requestedGroup.startsWith('org.springframework')) {
+                    } else if (requestedGroup == 'org.springframework') {
                         useCatalogVersion('spring')
                     } else if (requestedGroup == 'org.junit.jupiter') {
                         useCatalogVersion('junit-jupiter')
