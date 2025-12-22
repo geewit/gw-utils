@@ -285,7 +285,7 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
 
     private List<K> selectedIds(PagedCrudTableConfig<T, K, Q> cfg, List<T> rows) {
         return rows.stream()
-                .map(cfg.idFn())
+                .map(cfg.keyFn())
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();

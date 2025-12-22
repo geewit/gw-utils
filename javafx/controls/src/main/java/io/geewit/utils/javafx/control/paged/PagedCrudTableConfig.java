@@ -15,7 +15,6 @@ public record PagedCrudTableConfig<T, K, Q>(
 
         // Upsert / Delete 所需
         Function<T, K> keyFn,           // upsert 定位
-        Function<T, K> idFn,            // 从 row 提取 id，用于 deleteByIds
 
         BiConsumer<T, T> copier,        // src -> target（保持引用不变）
         boolean refreshAfterCopy,       // DTO 非 property 通常 true
