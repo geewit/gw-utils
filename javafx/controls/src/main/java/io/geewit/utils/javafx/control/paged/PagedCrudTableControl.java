@@ -28,6 +28,11 @@ public final class PagedCrudTableControl<T, K, Q> extends Control {
         super.getStyleClass().add("paged-crud-table");
     }
 
+    /**
+     * 创建默认的皮肤对象
+     *
+     * @return 返回一个新的PagedCrudTableSkin实例，用于渲染当前组件的视觉外观
+     */
     @Override
     protected Skin<?> createDefaultSkin() {
         return new PagedCrudTableSkin<>(this);

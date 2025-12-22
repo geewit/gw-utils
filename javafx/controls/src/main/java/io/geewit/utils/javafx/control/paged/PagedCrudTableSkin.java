@@ -47,7 +47,9 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
 
         // page 切换：加载页
         pagination.currentPageIndexProperty().addListener((_, _, nv) -> {
-            if (nv == null) return;
+            if (nv == null) {
+                return;
+            }
             this.loadPage(nv.intValue());
         });
 
@@ -59,12 +61,25 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
         }
     }
 
+    /**
+     * 获取表格视图对象
+     *
+     * @return 返回当前实例中的表格视图组件
+     */
     TableView<T> tableView() {
         return table;
     }
 
+    /**
+     * 重新构建表格列结构
+     * 该方法用于清除当前表格的所有列，并根据可装配对象的列配置重新添加列数据。
+     * 主要用于在表格结构发生变化时进行刷新重建。
+     */
     private void rebuildColumns() {
+        // 清除现有表格列
         table.getColumns().clear();
+
+        // 获取并添加新的列配置
         List<TableColumn<T, ?>> cols = super.getSkinnable().getColumns();
         if (cols != null && !cols.isEmpty()) {
             table.getColumns().addAll(cols);
@@ -82,6 +97,12 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
         table.setPlaceholder(new Label(text));
     }
 
+    /**
+     * 应用行工厂配置到表格中
+     *
+     * <p>该方法根据配置信息设置表格的行工厂，包括右键菜单和双击事件处理。
+     * 如果没有配置信息，则使用默认的行工厂。</p>
+     */
     private void applyRowFactory() {
         PagedCrudTableConfig<T, K, Q> cfg = super.getSkinnable().getConfig();
         if (cfg == null) {
@@ -91,6 +112,7 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
 
         final Consumer<T> onDblClick = cfg.onRowDoubleClick();
 
+        // 设置自定义行工厂，包含右键菜单和双击事件处理
         table.setRowFactory(_ -> {
             TableRow<T> row = new TableRow<>();
 
@@ -102,7 +124,7 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
                             .otherwise(menu)
             );
 
-            // 双击
+            // 双击事件处理：仅处理左键双击非空行的情况
             row.setOnMouseClicked(evt -> {
                 if (evt.getButton() != MouseButton.PRIMARY) {
                     return;
@@ -124,14 +146,23 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
         });
     }
 
+    /**
+     * 构建表格行的上下文菜单
+     *
+     * @param cfg 表格配置对象，包含菜单项配置和消息提供器
+     * @param row 表格行对象，用于获取当前行的数据
+     * @return 构建好的上下文菜单对象
+     */
     private ContextMenu buildContextMenu(PagedCrudTableConfig<T, K, Q> cfg, TableRow<T> row) {
         ContextMenu menu = new ContextMenu();
 
+        // 获取消息提供器，如果为空则返回空菜单
         MessageProvider mp = cfg.mp();
         if (mp == null) {
             return menu;
         }
 
+        // 根据配置创建菜单项列表
         List<MenuItem> menuItems = cfg.rowActions().stream()
                 .filter(Objects::nonNull)
                 .map(action -> this.createMenuItem(action, mp, row))
@@ -141,16 +172,29 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
         return menu;
     }
 
+    /**
+     * 创建菜单项
+     *
+     * @param action 行操作对象，包含菜单项的相关配置信息
+     * @param mp 消息提供者，用于获取菜单项显示文本
+     * @param row 表格行对象，表示当前操作所在的行数据
+     * @return 配置好的菜单项对象
+     */
     private MenuItem createMenuItem(RowAction<T> action,
                                     MessageProvider mp,
                                     TableRow<T> row) {
+        // 创建菜单项并设置显示文本
         MenuItem item = new MenuItem(mp.message(action.textKey()));
 
+        // 如果配置了图标，则为菜单项设置图标
         if (action.iconLiteral() != null && !action.iconLiteral().isBlank()) {
             item.setGraphic(new FontIcon(action.iconLiteral()));
         }
 
+        // 设置菜单项点击事件处理器
         item.setOnAction(_ -> this.handleAction(action, row));
+
+        // 绑定菜单项禁用状态，根据行数据和操作配置动态判断是否禁用
         item.disableProperty().bind(Bindings.createBooleanBinding(
                 () -> this.isActionDisabled(action, row),
                 row.itemProperty()
@@ -159,7 +203,14 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
         return item;
     }
 
+    /**
+     * 处理行操作事件
+     *
+     * @param action 行操作对象，包含操作的处理器和禁用状态判断逻辑
+     * @param row 表格行对象，包含行数据
+     */
     private void handleAction(RowAction<T> action, TableRow<T> row) {
+        // 过滤出非空且未被禁用的数据项，并执行相应的操作处理器
         Optional.ofNullable(row.getItem())
                 .filter(data -> !action.isDisabled(data))
                 .ifPresent(data -> {

@@ -3,6 +3,7 @@ package io.geewit.utils.javafx.control.paged;
 import javafx.scene.control.Skin;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 // ===== Actions =====
@@ -25,7 +26,9 @@ public final class Actions<T, K, Q> {
 
     public void add() {
         PagedCrudTableConfig<T, K, Q> cfg = pagedCrudTableSkin.getSkinnable().getConfig();
-        if (cfg == null) return;
+        if (cfg == null) {
+            return;
+        }
         Consumer<T> wb = pagedCrudTableSkin.upsertWriteBack(cfg);
 
         cfg.openCreateEditor().get()
@@ -71,9 +74,10 @@ public final class Actions<T, K, Q> {
         cfg.confirmDelete().apply(selected)
                 .thenCompose(ok -> {
                     if (!Boolean.TRUE.equals(ok)) {
-                        return java.util.concurrent.CompletableFuture.completedFuture(null);
+                        return CompletableFuture.completedFuture(null);
                     }
-                    return pagedCrudTableSkin.deleteBatch(cfg, selected).toCompletableFuture();
+                    return pagedCrudTableSkin.deleteBatch(cfg, selected)
+                            .toCompletableFuture();
                 })
                 .thenRun(() -> PagedCrudTableSkin.runOnFx(() -> {
                     // UI 先移除，再 reload 确保 pageCount/total 一致

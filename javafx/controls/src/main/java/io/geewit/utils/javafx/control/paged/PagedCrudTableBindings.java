@@ -19,10 +19,12 @@ public final class PagedCrudTableBindings {
         TableView<T> table = control.getTableView();
 
         if (editButton != null) {
-            editButton.disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
+            editButton.disableProperty()
+                    .bind(table.getSelectionModel().selectedItemProperty().isNull());
         }
         if (deleteButton != null) {
-            deleteButton.disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
+            deleteButton.disableProperty()
+                    .bind(table.getSelectionModel().selectedItemProperty().isNull());
         }
     }
 }

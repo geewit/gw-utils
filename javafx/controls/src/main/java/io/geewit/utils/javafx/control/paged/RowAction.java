@@ -15,7 +15,14 @@ public record RowAction<T>(
         Objects.requireNonNull(handler, "handler");
     }
 
+    /**
+     * 判断指定行是否被禁用
+     *
+     * @param row 行数据对象
+     * @return 如果行被禁用返回true，否则返回false
+     */
     public boolean isDisabled(T row) {
+        // 检查是否设置了启用条件，并且当前行不满足启用条件时返回true（表示禁用）
         return enabledWhen != null && !enabledWhen.test(row);
     }
 }
