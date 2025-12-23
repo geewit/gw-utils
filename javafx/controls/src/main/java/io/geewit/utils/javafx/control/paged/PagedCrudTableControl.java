@@ -34,38 +34,11 @@ public final class PagedCrudTableControl<T, K, Q> extends Control {
         super.getStyleClass().add("paged-crud-table");
     }
 
-    // ===== Builder =====
-    public static <T, K, Q> Builder<T, K, Q> builder() {
-        return new Builder<>();
-    }
-
-    public static final class Builder<T, K, Q> {
-        private List<TableColumn<T, ?>> columns;
-        private PagedCrudTableConfig<T, K, Q> config;
-
-        private Builder() {}
-
-        public Builder<T, K, Q> columns(List<TableColumn<T, ?>> columns) {
-            this.columns = columns;
-            return this;
-        }
-
-        public Builder<T, K, Q> config(PagedCrudTableConfig<T, K, Q> config) {
-            this.config = config;
-            return this;
-        }
-
-        public PagedCrudTableControl<T, K, Q> build() {
-            return new PagedCrudTableControl<T, K, Q>()
-                    .initialize(columns, config);
-        }
-    }
-
-    public PagedCrudTableControl<T, K, Q> initialize(List<TableColumn<T, ?>> columns,
+    public void initialize(List<TableColumn<T, ?>> columns,
                                                      PagedCrudTableConfig<T, K, Q> config) {
-        setColumns(columns);
-        setConfig(Objects.requireNonNull(config, "config must not be null"));
-        return this;
+        this.setColumns(columns);
+        this.setConfig(Objects.requireNonNull(config, "config must not be null"));
+        this.searchWhenSkinReady();
     }
 
     /**
