@@ -12,4 +12,9 @@ dependencies {
     }
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+
+    testImplementation(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.platform.launcher)
+    testImplementation(libs.assertj.core)
+    testRuntimeOnly("org.openjfx:javafx-graphics:${libs.versions.openjfx.get() as String}:${javafxPlatform}")
 }

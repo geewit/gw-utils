@@ -132,6 +132,7 @@ dependencyResolutionManagement {
             version('swagger-ui', getProperty('swagger.ui.version').toString())
 
             library('anserini', 'io.anserini', 'anserini').versionRef('anserini')
+            library('assertj-core', 'org.assertj', 'assertj-core').versionRef('assertj')
             library('atlantafx-base', 'io.github.mkpaz', 'atlantafx-base').versionRef('atlantafx')
             library('bootstrapfx-core', 'org.kordamp.bootstrapfx', 'bootstrapfx-core').versionRef('bootstrapfx')
             library('devtoolsfx-gui', 'io.github.mkpaz', 'devtoolsfx-gui').versionRef('devtoolsfx-gui')
