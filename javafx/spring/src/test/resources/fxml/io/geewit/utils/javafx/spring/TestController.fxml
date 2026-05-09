@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Button?>
+
+<VBox xmlns="http://javafx.com/javafx/25.0.3"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="io.geewit.utils.javafx.spring.TestController">
+    <Button fx:id="testButton" text="Test Button"/>
+</VBox>

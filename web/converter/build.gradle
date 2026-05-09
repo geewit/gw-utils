@@ -5,4 +5,8 @@ dependencies {
     }
     api(libs.commons.lang3)
     api(libs.spring.context)
+    testImplementation(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.platform.launcher)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.assertj.core)
 }

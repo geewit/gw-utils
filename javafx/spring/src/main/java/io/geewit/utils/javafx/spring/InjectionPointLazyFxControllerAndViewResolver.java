@@ -75,11 +75,6 @@ public record InjectionPointLazyFxControllerAndViewResolver(FxWeaver fxWeaver, R
             throw new IllegalArgumentException("Controller generic type could not be resolved for injection point: " + injectionPoint);
         }
 
-        // 检查类型安全（非必须，但提供额外验证）
-        if (!Object.class.isAssignableFrom(controllerRawClass)) {
-            throw new IllegalArgumentException("Resolved controller type is invalid: " + controllerRawClass.getName());
-        }
-
         // 安全转换（确保不触发 unchecked 警告）
         @SuppressWarnings("unchecked")
         Class<C> controllerClass = (Class<C>) controllerRawClass;

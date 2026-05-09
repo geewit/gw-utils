@@ -30,7 +30,7 @@
 执行前建议显式设置：
 
 ```bash
-export JAVA_HOME=/Users/geewit/.sdkman/candidates/java/25.0.2-graal
+export JAVA_HOME=/Users/geewit/.sdkman/candidates/java/current
 export GRADLE_HOME=/Users/geewit/.sdkman/candidates/gradle/current
 export PATH="$JAVA_HOME/bin:$GRADLE_HOME/bin:$PATH"
 ```

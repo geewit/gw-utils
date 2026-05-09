@@ -4,4 +4,7 @@ dependencies {
     }
     api(libs.commons.lang3)
     api(libs.spring.beans)
+
+    testImplementation(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.platform.launcher)
 }

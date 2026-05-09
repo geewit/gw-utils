@@ -5,4 +5,7 @@ dependencies {
     implementation(libs.spring.context)
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+    testImplementation(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.platform.launcher)
+    testImplementation(libs.mockito.core)
 }

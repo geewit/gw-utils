@@ -2,29 +2,42 @@ package io.geewit.utils.core.enums;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
+import java.util.*;
 
-public class EnumMapUtilsTest {
+import static org.junit.jupiter.api.Assertions.*;
 
-    @Test
-    public void toBinaryTest() {
-        int value = 3;
-        Map<UserExtraInfoRequest, Boolean> binaryMap = EnumMapUtils.toEnumMap(UserExtraInfoRequest.class, value);
-        System.out.println(binaryMap);
-        value = EnumMapUtils.toBinary(binaryMap);
-        System.out.println(value);
-    }
-
+class EnumMapUtilsTest {
 
     @Test
-    public void isTest() {
-        boolean isTrue = BinaryUtils.is(UserExtraInfoRequest.companies, 3);
-        System.out.println("isTrue = " + isTrue);
+    void toBinary_nullMap() {
+        assertEquals(0, EnumMapUtils.toBinary(null));
     }
 
     @Test
-    public void allTrueTest() {
-        int allTrue = BinaryUtils.allTrue(UserExtraInfoRequest.class);
-        System.out.println("allTrue = " + allTrue);
+    void toBinary_emptyMap() {
+        assertEquals(0, EnumMapUtils.toBinary(new HashMap<UserExtraInfoRequest, Boolean>()));
+    }
+
+    @Test
+    void toBinary_withValues() {
+        Map<UserExtraInfoRequest, Boolean> map = new HashMap<>();
+        map.put(UserExtraInfoRequest.orgs, true);
+        map.put(UserExtraInfoRequest.companies, false);
+        assertEquals(1, EnumMapUtils.toBinary(map));
+    }
+
+    @Test
+    void toEnumMap_convertsCorrectly() {
+        Map<UserExtraInfoRequest, Boolean> map = EnumMapUtils.toEnumMap(UserExtraInfoRequest.class, 3);
+        assertTrue(map.get(UserExtraInfoRequest.orgs));
+        assertTrue(map.get(UserExtraInfoRequest.companies));
+        assertFalse(map.get(UserExtraInfoRequest.resources));
+    }
+
+    @Test
+    void newEnumMap_createsMap() {
+        Map<UserExtraInfoRequest, Boolean> map = EnumMapUtils.newEnumMap(UserExtraInfoRequest.orgs, true);
+        assertEquals(1, map.size());
+        assertTrue(map.get(UserExtraInfoRequest.orgs));
     }
 }

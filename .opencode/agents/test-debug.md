@@ -2,7 +2,6 @@
 description: 跑测试并调试失败，直到通过或明确阻塞
 mode: subagent
 hidden: true
-model: minimax-cn-coding-plan/MiniMax-M2.7
 temperature: 0.1
 permission:
   "*": allow

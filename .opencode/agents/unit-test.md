@@ -2,7 +2,6 @@
 description: 单元测试作者，专注补充和修正测试
 mode: subagent
 hidden: true
-model: minimax-cn-coding-plan/MiniMax-M2.7
 temperature: 0.1
 permission:
   "*": allow

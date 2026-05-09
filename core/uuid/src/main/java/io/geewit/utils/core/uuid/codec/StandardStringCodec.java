@@ -4,8 +4,6 @@ import io.geewit.utils.core.uuid.UUID;
 import io.geewit.utils.core.uuid.codec.base.Base16Codec;
 import io.geewit.utils.core.uuid.exception.InvalidUuidException;
 import io.geewit.utils.core.uuid.util.UuidValidator;
-import io.geewit.utils.core.uuid.util.immutable.CharArray;
-import io.geewit.utils.core.uuid.util.internal.JavaVersionUtil;
 
 
 /**
@@ -53,10 +51,8 @@ public class StandardStringCodec implements UuidCodec<String> {
     private static final int LENGTH_WITH_CURLY_BRACES = 38;
 
     private static final byte[] MAP = Base16Codec.INSTANCE.getBase().getMap().array();
-    private static final CharArray ALPHABET = Base16Codec.INSTANCE.getBase().getAlphabet();
 
     private static final String URN_PREFIX = "urn:uuid:";
-    private static final boolean JAVA_VERSION_GREATER_THAN_8 = JavaVersionUtil.getJavaVersion() > 8;
 
     /**
      * Get a string from a UUID.
@@ -69,55 +65,8 @@ public class StandardStringCodec implements UuidCodec<String> {
      */
     @Override
     public String encode(UUID uuid) {
-
         UuidValidator.validate(uuid);
-
-        if (JAVA_VERSION_GREATER_THAN_8) {
-            return uuid.toString();
-        }
-
-        final char[] chars = new char[36];
-        final long msb = uuid.getMostSignificantBits();
-        final long lsb = uuid.getLeastSignificantBits();
-
-        chars[0x00] = ALPHABET.get((int) (msb >>> 0x3c & 0xf));
-        chars[0x01] = ALPHABET.get((int) (msb >>> 0x38 & 0xf));
-        chars[0x02] = ALPHABET.get((int) (msb >>> 0x34 & 0xf));
-        chars[0x03] = ALPHABET.get((int) (msb >>> 0x30 & 0xf));
-        chars[0x04] = ALPHABET.get((int) (msb >>> 0x2c & 0xf));
-        chars[0x05] = ALPHABET.get((int) (msb >>> 0x28 & 0xf));
-        chars[0x06] = ALPHABET.get((int) (msb >>> 0x24 & 0xf));
-        chars[0x07] = ALPHABET.get((int) (msb >>> 0x20 & 0xf));
-        chars[0x08] = '-'; // 8
-        chars[0x09] = ALPHABET.get((int) (msb >>> 0x1c & 0xf));
-        chars[0x0a] = ALPHABET.get((int) (msb >>> 0x18 & 0xf));
-        chars[0x0b] = ALPHABET.get((int) (msb >>> 0x14 & 0xf));
-        chars[0x0c] = ALPHABET.get((int) (msb >>> 0x10 & 0xf));
-        chars[0x0d] = '-'; // 13
-        chars[0x0e] = ALPHABET.get((int) (msb >>> 0x0c & 0xf));
-        chars[0x0f] = ALPHABET.get((int) (msb >>> 0x08 & 0xf));
-        chars[0x10] = ALPHABET.get((int) (msb >>> 0x04 & 0xf));
-        chars[0x11] = ALPHABET.get((int) (msb & 0xf));
-        chars[0x12] = '-'; // 18
-        chars[0x13] = ALPHABET.get((int) (lsb >>> 0x3c & 0xf));
-        chars[0x14] = ALPHABET.get((int) (lsb >>> 0x38 & 0xf));
-        chars[0x15] = ALPHABET.get((int) (lsb >>> 0x34 & 0xf));
-        chars[0x16] = ALPHABET.get((int) (lsb >>> 0x30 & 0xf));
-        chars[0x17] = '-'; // 23
-        chars[0x18] = ALPHABET.get((int) (lsb >>> 0x2c & 0xf));
-        chars[0x19] = ALPHABET.get((int) (lsb >>> 0x28 & 0xf));
-        chars[0x1a] = ALPHABET.get((int) (lsb >>> 0x24 & 0xf));
-        chars[0x1b] = ALPHABET.get((int) (lsb >>> 0x20 & 0xf));
-        chars[0x1c] = ALPHABET.get((int) (lsb >>> 0x1c & 0xf));
-        chars[0x1d] = ALPHABET.get((int) (lsb >>> 0x18 & 0xf));
-        chars[0x1e] = ALPHABET.get((int) (lsb >>> 0x14 & 0xf));
-        chars[0x1f] = ALPHABET.get((int) (lsb >>> 0x10 & 0xf));
-        chars[0x20] = ALPHABET.get((int) (lsb >>> 0x0c & 0xf));
-        chars[0x21] = ALPHABET.get((int) (lsb >>> 0x08 & 0xf));
-        chars[0x22] = ALPHABET.get((int) (lsb >>> 0x04 & 0xf));
-        chars[0x23] = ALPHABET.get((int) (lsb & 0xf));
-
-        return new String(chars);
+        return uuid.toString();
     }
 
     /**

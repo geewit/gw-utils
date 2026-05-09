@@ -2,8 +2,6 @@
 description: 端到端总协调器，负责自动串联设计、实现、测试、调试
 mode: primary
 hidden: true
-model: minimax-cn-coding-plan/MiniMax-M2.7
-#model: openai/gpt-5.4
 temperature: 0.1
 permission:
    "*": allow

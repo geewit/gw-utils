@@ -1,3 +1,7 @@
 dependencies {
     api(libs.spring.data.commons)
+    testImplementation(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.platform.launcher)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.assertj.core)
 }

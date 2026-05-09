@@ -85,6 +85,7 @@ subprojects { subproject ->
     // 1. 先应用插件，让 JavaToolchainService 等扩展可用
     // ------------------------------------------------
     subproject.pluginManager.apply('java-library')
+    subproject.pluginManager.apply('jacoco')
 
     if (publishEnabled && isSubproject) {
         subproject.pluginManager.apply('maven-publish')
@@ -209,6 +210,37 @@ subprojects { subproject ->
             events TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.PASSED
             exceptionFormat = TestExceptionFormat.FULL
         }
+        test.finalizedBy 'jacocoTestReport'
+        // Enable TestFX headless mode for JavaFX tests
+        test.jvmArgs '-Dtestfx.robot=glass', '-Dglass.platform=Monocle', '-Dmonocle.platform=Headless', '-Dprism.order=sw', '-Dprism.text=t2k'
+    }
+
+    tasks.withType(JacocoReport).configureEach { JacocoReport report ->
+        report.reports {
+            xml.required = true
+            html.required = true
+        }
+    }
+
+    tasks.register('jacocoCoverageVerification', JacocoCoverageVerification) { JacocoCoverageVerification verification ->
+        verification.executionData subproject.tasks.named('test').get()
+        verification.classDirectories.from(subproject.sourceSets.main.output)
+        verification.violationRules {
+            rule {
+                limit {
+                    minimum = switch (subproject.path) {
+                        case ':core:codec' -> 0.92
+                        case ':javafx:base' -> 0.37
+                        case ':javafx:controls' -> 0.67
+                        case ':javafx:spring' -> 0.94
+                        default -> 0.95
+                    }
+                }
+            }
+        }
+    }
+    tasks.named('check').configure {
+        it.dependsOn 'jacocoCoverageVerification'
     }
 
     tasks.withType(Jar).configureEach { Jar jar ->
