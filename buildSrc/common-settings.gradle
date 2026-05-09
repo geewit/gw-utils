@@ -1,267 +1,297 @@
 import org.gradle.api.initialization.resolve.RepositoriesMode
 
-settings.pluginManagement {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        gradlePluginPortal()
+Closure<String> prop = { String name ->
+    Object value = getProperty(name)
+    if (value == null) {
+        throw new GradleException("Missing required Gradle property: ${name}")
     }
 
-    plugins {
-        id 'com.gradleup.shadow' version getProperty('shadow.plugin.version').toString() apply(false)
-        id 'org.springframework.boot' version getProperty('spring.boot.version').toString() apply(false)
-        id 'org.graalvm.buildtools.native' version getProperty('native.gradle.plugin.version').toString() apply(false)
-        id 'org.jreleaser' version getProperty('jreleaser.plugin.version').toString() apply(false)
+    String text = value.toString().trim()
+    if (text.isBlank()) {
+        throw new GradleException("Blank Gradle property: ${name}")
+    }
+
+    return text
+}
+
+settings.pluginManagement { PluginManagementSpec pluginManagementSpec ->
+
+    pluginManagementSpec.repositories { RepositoryHandler repositories ->
+        repositories.mavenLocal()
+        repositories.mavenCentral()
+        repositories.gradlePluginPortal()
+    }
+
+    pluginManagementSpec.plugins { PluginDependenciesSpec pluginSpec ->
+        pluginSpec.id('com.gradleup.shadow')
+                .version(getProperty('shadow.plugin.version').toString())
+                .apply(false)
+
+        pluginSpec.id('org.springframework.boot')
+                .version(getProperty('spring.boot.version').toString())
+                .apply(false)
+
+        pluginSpec.id('org.graalvm.buildtools.native')
+                .version(getProperty('native.gradle.plugin.version').toString())
+                .apply(false)
+
+        pluginSpec.id('org.jreleaser')
+                .version(getProperty('jreleaser.plugin.version').toString())
+                .apply(false)
     }
 }
 
-settings.dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        maven {
-            name 'tencent'
-            url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public'
+
+settings.dependencyResolutionManagement { dependencyResolutionManagement ->
+    dependencyResolutionManagement.repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+
+    dependencyResolutionManagement.repositories { RepositoryHandler repositories ->
+        repositories.mavenLocal()
+        repositories.mavenCentral()
+        repositories.maven {
+            name = 'tencent'
+            url = uri('https://mirrors.cloud.tencent.com/nexus/repository/maven-public')
         }
-        maven { url 'https://jitpack.io' }
+        repositories.maven {
+            url = uri('https://jitpack.io')
+        }
     }
 
-    versionCatalogs {
-        libs {
-            version('anserini', getProperty('anserini.version').toString())
-            version('antlr4', getProperty('antlr4.version').toString())
-            version('aQute.bnd', getProperty('aQute.bnd.version').toString())
-            version('caffeine', getProperty('caffeine.version').toString())
-            version('commons-logging', getProperty('commons-logging.version').toString())
-            version('geewit.utils', getProperty('geewit.utils.version').toString())
-            version('hamcrest', getProperty('hamcrest.version').toString())
-            version('jackson2.annotations', getProperty('jackson2.annotations.version').toString())
-            version('jackson2.core', getProperty('jackson2.core.version').toString())
-            version('jboss-logging', getProperty('jboss.logging.version').toString())
-            version('maven', getProperty('maven.version').toString())
-            version('osgi-resource', getProperty('osgi.resource.version').toString())
-            version('plexus-utils', getProperty('plexus.utils.version').toString())
-            version('plexus-xml', getProperty('plexus.xml.version').toString())
-            version('rototor-pdfbox', getProperty('rototor-pdfbox.version').toString())
-            version('snappy-java', getProperty('snappy-java.version').toString())
-            version('sqlite', getProperty('sqlite.version').toString())
-            version('stax2-api', getProperty('stax2-api.version').toString())
-            version('tomlj', getProperty('tomlj.version').toString())
-            version('twitter-text', getProperty('twitter-text.version').toString())
-            version('tukaani-xz', getProperty('tukaani-xz.version').toString())
-            version('xmlunit', getProperty('xmlunit.version').toString())
-            version('args4j', getProperty('args4j.version').toString())
-            version('asm', getProperty('asm.version').toString())
-            version('assertj', getProperty('assertj.version').toString())
-            version('awaitility', getProperty('awaitility.version').toString())
-            version('bytebuddy', getProperty('bytebuddy.version').toString())
-            version('cbor', getProperty('cbor.version').toString())
-            version('classmate', getProperty('classmate.version').toString())
-            version('commons-codec', getProperty('commons-codec.version').toString())
-            version('commons-collections4', getProperty('commons-collections4.version').toString())
-            version('commons-compress', getProperty('commons-compress.version').toString())
-            version('commons-csv', getProperty('commons-csv.version').toString())
-            version('commons-io', getProperty('commons-io.version').toString())
-            version('commons-lang3', getProperty('commons-lang3.version').toString())
-            version('commons-math3', getProperty('commons-math3.version').toString())
-            version('commons-text', getProperty('commons-text.version').toString())
-            version('djl', getProperty('djl.version').toString())
-            version('google.errorprone', getProperty('google.errorprone.version').toString())
-            version('google.gson', getProperty('google.gson.version').toString())
-            version('google.guava', getProperty('google.guava.version').toString())
-            version('google.findbugs', getProperty('google.findbugs.version').toString())
-            version('graalvm', getProperty('native.gradle.plugin.version').toString())
-            version('hanlp', getProperty('hanlp.version').toString())
-            version('h2', getProperty('h2.version').toString())
-            version('hibernate.validator', getProperty('hibernate.validator.version').toString())
-            version('jakarta.activation-api', getProperty('jakarta.activation-api.version').toString())
-            version('jakarta.annotation-api', getProperty('jakarta.annotation-api.version').toString())
-            version('jakarta.validation-api', getProperty('jakarta.validation-api.version').toString())
-            version('jakarta.xml.bind', getProperty('jakarta.xml.bind.version').toString())
-            version('jackson.annotations', getProperty('jackson.annotations.version').toString())
-            version('jackson.core', getProperty('jackson.core.version').toString())
-            version('javassist', getProperty('javassist.version').toString())
-            version('jbibtex', getProperty('jbibtex.version').toString())
-            version('jline', getProperty('jline.version').toString())
-            version('jna', getProperty('jna.version').toString())
-            version('openjfx', getProperty('openjfx.version').toString())
-            version('json-path', getProperty('json-path.version').toString())
-            version('json-smart', getProperty('json-smart.version').toString())
-            version('log4j', getProperty('log4j.version').toString())
-            version('logback', getProperty('logback.version').toString())
-            version('lombok', getProperty('lombok.version').toString())
-            version('micrometer', getProperty('micrometer.version').toString())
-            version('r2dbc-mysql', getProperty('r2dbc.mysql.version').toString())
-            version('r2dbc-pool', getProperty('r2dbc.pool.version').toString())
-            version('netty', getProperty('netty.version').toString())
-            version('nimbus.content-type', getProperty('nimbus.content-type.version').toString())
-            version('nimbus.jose-jwt', getProperty('nimbus.jose-jwt.version').toString())
-            version('nimbus.oauth2-oidc-sdk', getProperty('nimbus.oauth2-oidc-sdk').toString())
-            version('mockito', getProperty('mockito.version').toString())
-            version('mockito-inline', getProperty('mockito-inline.version').toString())
-            version('ognl', getProperty('ognl.version').toString())
-            version('onnxruntime', getProperty('onnxruntime.version').toString())
-            version('parquet', getProperty('parquet.version').toString())
-            version('parquet-floor', getProperty('parquet-floor.version').toString())
-            version('pdfbox', getProperty('pdfbox.version').toString())
-            version('poi', getProperty('poi.version').toString())
-            version('r2dbc-h2', getProperty('r2dbc.h2.version').toString())
-            version('reactor-core', getProperty('reactor.core.version').toString())
-            version('reactor-netty', getProperty('reactor.netty.version').toString())
-            version('reactor-pool', getProperty('reactor.pool.version').toString())
-            version('slf4j', getProperty('slf4j.version').toString())
-            version('spring', getProperty('spring.version').toString())
-            version('spring-ai', getProperty('spring.ai.version').toString())
-            version('spring-ai-alibaba', getProperty('spring.ai.alibaba.version').toString())
-            version('spring-ai-qianfan', getProperty('spring.ai.qianfan.version').toString())
-            version('spring-boot', getProperty('spring.boot.version').toString())
-            version('spring.data', getProperty('spring.data.version').toString())
-            version('spring-retry', getProperty('spring.retry.version').toString())
-            version('spring-security', getProperty('spring.security.version').toString())
-            version('springdoc', getProperty('springdoc.version').toString())
-            version('squareup-okhttp', getProperty('squareup.okhttp.version').toString())
-            version('squareup-okio', getProperty('squareup.okio.version').toString())
-            version('j2objc', getProperty('j2objc.version').toString())
-            version('junit-jupiter', getProperty('junit.jupiter.version').toString())
-            version('junit-platform', getProperty('junit.platform.version').toString())
-            version('atlantafx', getProperty('mkpaz.atlantafx.version').toString())
-            version('bootstrapfx', getProperty('bootstrapfx.version').toString())
-            version('devtoolsfx-gui', getProperty('mkpaz.devtoolsfx.gui.version').toString())
-            version('ikonli', getProperty('ikonli.version').toString())
-            version('jspecify', getProperty('jspecify.version').toString())
-            version('tinkerpop', getProperty('tinkerpop.version').toString())
-            version('tomcat', getProperty('tomcat.version').toString())
-            version('lucene', getProperty('lucene.version').toString())
-            version('thymeleaf', getProperty('thymeleaf.version').toString())
-            version('stringtemplate', getProperty('stringtemplate.version').toString())
-            version('openhtmltopdf', getProperty('openhtmltopdf.version').toString())
-            version('spotbugs', getProperty('spotbugs.version').toString())
-            version('woodstox', getProperty('woodstox.version').toString())
-            version('zstd-jni', getProperty('zstd-jni.version').toString())
-            version('zxing', getProperty('zxing.version').toString())
-            version('graphics2d', getProperty('graphics2d.version').toString())
-            version('fastutil', getProperty('fastutil.version').toString())
-            version('objenesis', getProperty('objenesis.version').toString())
-            version('jetbrains-annotations', getProperty('jetbrains.annotations.version').toString())
-            version('jetbrains-kotlin', getProperty('jetbrains.kotlin.version').toString())
-            version('jsoup', getProperty('jsoup.version').toString())
-            version('testcontainers', getProperty('testcontainers.version').toString())
-            version('mockwebserver', getProperty('mockwebserver.version').toString())
-            version('mysql-connector-j', getProperty('mysql.connector.version').toString())
-            version('swagger-core', getProperty('swagger.core.version').toString())
-            version('swagger-ui', getProperty('swagger.ui.version').toString())
+    dependencyResolutionManagement.versionCatalogs { catalogs ->
+        catalogs.create('libs') { VersionCatalogBuilder catalog ->
+            catalog.version('anserini', prop('anserini.version'))
+            catalog.version('antlr4', prop('antlr4.version'))
+            catalog.version('aQute.bnd', prop('aQute.bnd.version'))
+            catalog.version('caffeine', prop('caffeine.version'))
+            catalog.version('commons-logging', prop('commons-logging.version'))
+            catalog.version('geewit.utils', prop('geewit.utils.version'))
+            catalog.version('hamcrest', prop('hamcrest.version'))
+            catalog.version('jackson2.annotations', prop('jackson2.annotations.version'))
+            catalog.version('jackson2.core', prop('jackson2.core.version'))
+            catalog.version('jboss-logging', prop('jboss.logging.version'))
+            catalog.version('maven', prop('maven.version'))
+            catalog.version('osgi-resource', prop('osgi.resource.version'))
+            catalog.version('plexus-utils', prop('plexus.utils.version'))
+            catalog.version('plexus-xml', prop('plexus.xml.version'))
+            catalog.version('rototor-pdfbox', prop('rototor-pdfbox.version'))
+            catalog.version('snappy-java', prop('snappy-java.version'))
+            catalog.version('sqlite', prop('sqlite.version'))
+            catalog.version('stax2-api', prop('stax2-api.version'))
+            catalog.version('tomlj', prop('tomlj.version'))
+            catalog.version('twitter-text', prop('twitter-text.version'))
+            catalog.version('tukaani-xz', prop('tukaani-xz.version'))
+            catalog.version('xmlunit', prop('xmlunit.version'))
+            catalog.version('args4j', prop('args4j.version'))
+            catalog.version('asm', prop('asm.version'))
+            catalog.version('assertj', prop('assertj.version'))
+            catalog.version('awaitility', prop('awaitility.version'))
+            catalog.version('bytebuddy', prop('bytebuddy.version'))
+            catalog.version('cbor', prop('cbor.version'))
+            catalog.version('classmate', prop('classmate.version'))
+            catalog.version('commons-codec', prop('commons-codec.version'))
+            catalog.version('commons-collections4', prop('commons-collections4.version'))
+            catalog.version('commons-compress', prop('commons-compress.version'))
+            catalog.version('commons-csv', prop('commons-csv.version'))
+            catalog.version('commons-io', prop('commons-io.version'))
+            catalog.version('commons-lang3', prop('commons-lang3.version'))
+            catalog.version('commons-math3', prop('commons-math3.version'))
+            catalog.version('commons-text', prop('commons-text.version'))
+            catalog.version('djl', prop('djl.version'))
+            catalog.version('google.errorprone', prop('google.errorprone.version'))
+            catalog.version('google.gson', prop('google.gson.version'))
+            catalog.version('google.guava', prop('google.guava.version'))
+            catalog.version('google.findbugs', prop('google.findbugs.version'))
+            catalog.version('graalvm', prop('native.gradle.plugin.version'))
+            catalog.version('hanlp', prop('hanlp.version'))
+            catalog.version('h2', prop('h2.version'))
+            catalog.version('hibernate.validator', prop('hibernate.validator.version'))
+            catalog.version('jakarta.activation-api', prop('jakarta.activation-api.version'))
+            catalog.version('jakarta.annotation-api', prop('jakarta.annotation-api.version'))
+            catalog.version('jakarta.validation-api', prop('jakarta.validation-api.version'))
+            catalog.version('jakarta.xml.bind', prop('jakarta.xml.bind.version'))
+            catalog.version('jackson.annotations', prop('jackson.annotations.version'))
+            catalog.version('jackson.core', prop('jackson.core.version'))
+            catalog.version('javassist', prop('javassist.version'))
+            catalog.version('jbibtex', prop('jbibtex.version'))
+            catalog.version('jline', prop('jline.version'))
+            catalog.version('jna', prop('jna.version'))
+            catalog.version('openjfx', prop('openjfx.version'))
+            catalog.version('json-path', prop('json-path.version'))
+            catalog.version('json-smart', prop('json-smart.version'))
+            catalog.version('log4j', prop('log4j.version'))
+            catalog.version('logback', prop('logback.version'))
+            catalog.version('lombok', prop('lombok.version'))
+            catalog.version('micrometer' , prop('micrometer.version'))
+            catalog.version('r2dbc-mysql' , prop('r2dbc.mysql.version'))
+            catalog.version('r2dbc-pool' , prop('r2dbc.pool.version'))
+            catalog.version('netty' , prop('netty.version'))
+            catalog.version('nimbus.content-type' , prop('nimbus.content-type.version'))
+            catalog.version('nimbus.jose-jwt' , prop('nimbus.jose-jwt.version'))
+            catalog.version('nimbus.oauth2-oidc-sdk' , prop('nimbus.oauth2-oidc-sdk'))
+            catalog.version('mockito' , prop('mockito.version'))
+            catalog.version('mockito-inline' , prop('mockito-inline.version'))
+            catalog.version('ognl' , prop('ognl.version'))
+            catalog.version('onnxruntime' , prop('onnxruntime.version'))
+            catalog.version('parquet' , prop('parquet.version'))
+            catalog.version('parquet-floor' , prop('parquet-floor.version'))
+            catalog.version('pdfbox' , prop('pdfbox.version'))
+            catalog.version('poi' , prop('poi.version'))
+            catalog.version('r2dbc-h2' , prop('r2dbc.h2.version'))
+            catalog.version('reactor-core' , prop('reactor.core.version'))
+            catalog.version('reactor-netty' , prop('reactor.netty.version'))
+            catalog.version('reactor-pool' , prop('reactor.pool.version'))
+            catalog.version('slf4j' , prop('slf4j.version'))
+            catalog.version('spring' , prop('spring.version'))
+            catalog.version('spring-ai' , prop('spring.ai.version'))
+            catalog.version('spring-ai-alibaba' , prop('spring.ai.alibaba.version'))
+            catalog.version('spring-ai-qianfan' , prop('spring.ai.qianfan.version'))
+            catalog.version('spring-boot' , prop('spring.boot.version'))
+            catalog.version('spring.data' , prop('spring.data.version'))
+            catalog.version('spring-retry' , prop('spring.retry.version'))
+            catalog.version('spring-security' , prop('spring.security.version'))
+            catalog.version('springdoc' , prop('springdoc.version'))
+            catalog.version('squareup-okhttp' , prop('squareup.okhttp.version'))
+            catalog.version('squareup-okio' , prop('squareup.okio.version'))
+            catalog.version('j2objc' , prop('j2objc.version'))
+            catalog.version('junit-jupiter' , prop('junit.jupiter.version'))
+            catalog.version('junit-platform' , prop('junit.platform.version'))
+            catalog.version('atlantafx' , prop('mkpaz.atlantafx.version'))
+            catalog.version('bootstrapfx' , prop('bootstrapfx.version'))
+            catalog.version('devtoolsfx-gui' , prop('mkpaz.devtoolsfx.gui.version'))
+            catalog.version('ikonli' , prop('ikonli.version'))
+            catalog.version('jspecify' , prop('jspecify.version'))
+            catalog.version('tinkerpop' , prop('tinkerpop.version'))
+            catalog.version('tomcat' , prop('tomcat.version'))
+            catalog.version('lucene' , prop('lucene.version'))
+            catalog.version('thymeleaf' , prop('thymeleaf.version'))
+            catalog.version('stringtemplate' , prop('stringtemplate.version'))
+            catalog.version('openhtmltopdf' , prop('openhtmltopdf.version'))
+            catalog.version('spotbugs' , prop('spotbugs.version'))
+            catalog.version('woodstox' , prop('woodstox.version'))
+            catalog.version('zstd-jni' , prop('zstd-jni.version'))
+            catalog.version('zxing' , prop('zxing.version'))
+            catalog.version('graphics2d' , prop('graphics2d.version'))
+            catalog.version('fastutil' , prop('fastutil.version'))
+            catalog.version('objenesis' , prop('objenesis.version'))
+            catalog.version('jetbrains-annotations' , prop('jetbrains.annotations.version'))
+            catalog.version('jetbrains-kotlin' , prop('jetbrains.kotlin.version'))
+            catalog.version('jsoup' , prop('jsoup.version'))
+            catalog.version('testcontainers' , prop('testcontainers.version'))
+            catalog.version('mockwebserver' , prop('mockwebserver.version'))
+            catalog.version('mysql-connector-j' , prop('mysql.connector.version'))
+            catalog.version('swagger-core' , prop('swagger.core.version'))
+            catalog.version('swagger-ui' , prop('swagger.ui.version'))
 
-            library('anserini', 'io.anserini', 'anserini').versionRef('anserini')
-            library('assertj-core', 'org.assertj', 'assertj-core').versionRef('assertj')
-            library('atlantafx-base', 'io.github.mkpaz', 'atlantafx-base').versionRef('atlantafx')
-            library('bootstrapfx-core', 'org.kordamp.bootstrapfx', 'bootstrapfx-core').versionRef('bootstrapfx')
-            library('devtoolsfx-gui', 'io.github.mkpaz', 'devtoolsfx-gui').versionRef('devtoolsfx-gui')
-            library('ikonli-javafx', 'org.kordamp.ikonli', 'ikonli-javafx').versionRef('ikonli')
-            library('ikonli-fontawesome5-pack', 'org.kordamp.ikonli', 'ikonli-fontawesome5-pack').versionRef('ikonli')
-            library('ikonli-feather-pack', 'org.kordamp.ikonli', 'ikonli-feather-pack').versionRef('ikonli')
-            library('ikonli-material2-pack', 'org.kordamp.ikonli', 'ikonli-material2-pack').versionRef('ikonli')
+            catalog.library('anserini', 'io.anserini', 'anserini').versionRef('anserini')
+            catalog.library('assertj-core', 'org.assertj', 'assertj-core').versionRef('assertj')
+            catalog.library('atlantafx-base', 'io.github.mkpaz', 'atlantafx-base').versionRef('atlantafx')
+            catalog.library('bootstrapfx-core', 'org.kordamp.bootstrapfx', 'bootstrapfx-core').versionRef('bootstrapfx')
+            catalog.library('devtoolsfx-gui', 'io.github.mkpaz', 'devtoolsfx-gui').versionRef('devtoolsfx-gui')
+            catalog.library('ikonli-javafx', 'org.kordamp.ikonli', 'ikonli-javafx').versionRef('ikonli')
+            catalog.library('ikonli-fontawesome5-pack', 'org.kordamp.ikonli', 'ikonli-fontawesome5-pack').versionRef('ikonli')
+            catalog.library('ikonli-feather-pack', 'org.kordamp.ikonli', 'ikonli-feather-pack').versionRef('ikonli')
+            catalog.library('ikonli-material2-pack', 'org.kordamp.ikonli', 'ikonli-material2-pack').versionRef('ikonli')
 
-            library('classmate', 'com.fasterxml', 'classmate').versionRef('classmate')
-            library('commons-lang3', 'org.apache.commons', 'commons-lang3').versionRef('commons-lang3')
-            library('commons-collections4', 'org.apache.commons', 'commons-collections4').versionRef('commons-collections4')
-            library('commons-codec', 'commons-codec', 'commons-codec').versionRef('commons-codec')
-            library('google-guava', 'com.google.guava', 'guava').versionRef('google.guava')
-            library('hanlp', 'com.hankcs', 'hanlp').versionRef('hanlp')
-            library('h2', 'com.h2database', 'h2').versionRef('h2')
-            library('r2dbc-h2', 'io.r2dbc', 'r2dbc-h2').versionRef('r2dbc-h2')
-            library('r2dbc-mysql', 'io.asyncer', 'r2dbc-mysql').versionRef('r2dbc-mysql')
-            library('r2dbc-pool', 'io.r2dbc', 'r2dbc-pool').versionRef('r2dbc-pool')
-            library('jakarta-activation-api', 'jakarta.activation', 'jakarta.activation-api').versionRef('jakarta.activation-api')
-            library('jakarta-annotation-api', 'jakarta.annotation', 'jakarta.annotation-api').versionRef('jakarta.annotation-api')
-            library('jakarta-xml-bind', 'jakarta.xml.bind', 'jakarta.xml.bind-api').versionRef('jakarta.xml.bind')
-            library('jackson-annotations', 'com.fasterxml.jackson.core', 'jackson-annotations').versionRef('jackson.annotations')
-            library('jackson-core', 'tools.jackson.core', 'jackson-core').versionRef('jackson.core')
-            library('jackson-databind', 'tools.jackson.core', 'jackson-databind').versionRef('jackson.core')
-            library('jackson-dataformat-xml', 'com.fasterxml.jackson.dataformat', 'jackson-dataformat-xml').versionRef('jackson.core')
-            library('jackson-datatype-jsr353', 'tools.jackson.datatype', 'jackson-datatype-jsr353').versionRef('jackson.core')
-            library('jackson-modules-base', 'tools.jackson.module', 'jackson-modules-base').versionRef('jackson.core')
-            library('jetbrains-annotations', 'org.jetbrains', 'annotations').versionRef('jetbrains-annotations')
-            library('jspecify', 'org.jspecify', 'jspecify').versionRef('jspecify')
-            library('lombok', 'org.projectlombok', 'lombok').versionRef('lombok')
-            library('log4j-api', 'org.apache.logging.log4j', 'log4j-api').versionRef('log4j')
-            library('log4j-core', 'org.apache.logging.log4j', 'log4j-core').versionRef('log4j')
-            library('log4j-slf4j2-impl', 'org.apache.logging.log4j', 'log4j-slf4j2-impl').versionRef('log4j')
-            library('logback-classic', 'ch.qos.logback', 'logback-classic').versionRef('logback')
-            library('logback-core', 'ch.qos.logback', 'logback-core').versionRef('logback')
-            library('jul-to-slf4j', 'org.slf4j', 'jul-to-slf4j').versionRef('slf4j')
-            library('slf4j-api', 'org.slf4j', 'slf4j-api').versionRef('slf4j')
-            library('ognl', 'ognl', 'ognl').versionRef('ognl')
-            library('poi-ooxml', 'org.apache.poi', 'poi-ooxml').versionRef('poi')
-            library('reactor-core', 'io.projectreactor', 'reactor-core').versionRef('reactor-core')
-            library('reactor-test', 'io.projectreactor', 'reactor-test').versionRef('reactor-core')
-            library('reactor-netty-core', 'io.projectreactor.netty', 'reactor-netty-core').versionRef('reactor-netty')
-            library('reactor-netty-http', 'io.projectreactor.netty', 'reactor-netty-http').versionRef('reactor-netty')
-            library('spring-ai-bom', 'org.springframework.ai', 'spring-ai-bom').versionRef('spring-ai')
-            library('spring-ai-openai-starter', 'org.springframework.ai', 'spring-ai-starter-model-openai').versionRef('spring-ai')
-            library('spring-ai-alibaba-starter', 'com.alibaba.cloud.ai', 'spring-ai-alibaba-starter-dashscope').versionRef('spring-ai-alibaba')
-            library('spring-ai-alibaba-autoconfigure-memory', 'com.alibaba.cloud.ai', 'spring-ai-alibaba-autoconfigure-memory').versionRef('spring-ai-alibaba')
-            library('spring-ai-qianfan-starter', 'org.springaicommunity', 'qianfan-spring-boot-starter').versionRef('spring-ai-qianfan')
-            library('spring-ai-vector-store', 'org.springframework.ai', 'spring-ai-vector-store').versionRef('spring-ai')
-            library('spring-ai-commons', 'org.springframework.ai', 'spring-ai-commons').versionRef('spring-ai')
-            library('spring-boot', 'org.springframework.boot', 'spring-boot').versionRef('spring-boot')
-            library('spring-boot-autoconfigure', 'org.springframework.boot', 'spring-boot-autoconfigure').versionRef('spring-boot')
-            library('spring-boot-starter', 'org.springframework.boot', 'spring-boot-starter').versionRef('spring-boot')
-            library('spring-boot-starter-actuator', 'org.springframework.boot', 'spring-boot-starter-actuator').versionRef('spring-boot')
-            library('spring-boot-starter-data-r2dbc', 'org.springframework.boot', 'spring-boot-starter-data-r2dbc').versionRef('spring-boot')
-            library('spring-boot-starter-log4j2', 'org.springframework.boot', 'spring-boot-starter-log4j2').versionRef('spring-boot')
-            library('spring-boot-starter-mail', 'org.springframework.boot', 'spring-boot-starter-mail').versionRef('spring-boot')
-            library('spring-boot-starter-security-oauth2-client', 'org.springframework.boot', 'spring-boot-starter-security-oauth2-client').versionRef('spring-boot')
-            library('spring-boot-starter-security-oauth2-resource-server', 'org.springframework.boot', 'spring-boot-starter-security-oauth2-resource-server').versionRef('spring-boot')
-            library('spring-boot-starter-security', 'org.springframework.boot', 'spring-boot-starter-security').versionRef('spring-boot')
-            library('spring-boot-starter-webflux', 'org.springframework.boot', 'spring-boot-starter-webflux').versionRef('spring-boot')
-            library('spring-boot-starter-validation', 'org.springframework.boot', 'spring-boot-starter-validation').versionRef('spring-boot')
-            library('spring-boot-starter-test', 'org.springframework.boot', 'spring-boot-starter-test').versionRef('spring-boot')
-            library('spring-context', 'org.springframework', 'spring-context').versionRef('spring')
-            library('spring-core', 'org.springframework', 'spring-core').versionRef('spring')
-            library('spring-web', 'org.springframework', 'spring-web').versionRef('spring')
-            library('spring-beans', 'org.springframework', 'spring-beans').versionRef('spring')
-            library('spring-data-commons', 'org.springframework.data', 'spring-data-commons').versionRef('spring.data')
-            library('spring-security-web', 'org.springframework.security', 'spring-security-web').versionRef('spring-security')
-            library('springdoc-openapi-starter-webflux-api', 'org.springdoc', 'springdoc-openapi-starter-webflux-api').versionRef('springdoc')
-            library('springdoc-openapi-starter-webflux-ui', 'org.springdoc', 'springdoc-openapi-starter-webflux-ui').versionRef('springdoc')
-            library('netty-resolver-dns-native-macos', 'io.netty', 'netty-resolver-dns-native-macos').versionRef('netty')
-            library('tinkergraph-gremlin', 'org.apache.tinkerpop', 'tinkergraph-gremlin').versionRef('tinkerpop')
-            library('lucene-core', 'org.apache.lucene', 'lucene-core').versionRef('lucene')
-            library('lucene-analysis-common', 'org.apache.lucene', 'lucene-analysis-common').versionRef('lucene')
-            library('lucene-analysis-smartcn', 'org.apache.lucene', 'lucene-analysis-smartcn').versionRef('lucene')
-            library('lucene-backward-codecs', 'org.apache.lucene', 'lucene-backward-codecs').versionRef('lucene')
-            library('thymeleaf', 'org.thymeleaf', 'thymeleaf').versionRef('thymeleaf')
-            library('stringtemplate', 'org.antlr', 'ST4').versionRef('stringtemplate')
-            library('openhtmltopdf-core', 'io.github.openhtmltopdf', 'openhtmltopdf-core').versionRef('openhtmltopdf')
-            library('openhtmltopdf-pdfbox', 'io.github.openhtmltopdf', 'openhtmltopdf-pdfbox').versionRef('openhtmltopdf')
-            library('openhtmltopdf-slf4j', 'io.github.openhtmltopdf', 'openhtmltopdf-slf4j').versionRef('openhtmltopdf')
-            library('zxing-core', 'com.google.zxing', 'core').versionRef('zxing')
-            library('mockito-core', 'org.mockito', 'mockito-core').versionRef('mockito')
-            library('mockito-inline', 'org.mockito', 'mockito-inline').versionRef('mockito-inline')
-            library('testcontainers-junit-jupiter', 'org.testcontainers', 'testcontainers-junit-jupiter').versionRef('testcontainers')
-            library('testcontainers-mysql', 'org.testcontainers', 'testcontainers-mysql').versionRef('testcontainers')
-            library('mockwebserver', 'com.squareup.okhttp3', 'mockwebserver').versionRef('mockwebserver')
-            library('mysql-connector-j', 'com.mysql', 'mysql-connector-j').versionRef('mysql-connector-j')
-            library('junit-jupiter', 'org.junit.jupiter', 'junit-jupiter').versionRef('junit-jupiter')
-            library('junit-jupiter-engine', 'org.junit.jupiter', 'junit-jupiter-engine').versionRef('junit-jupiter')
-            library('junit-platform-launcher', 'org.junit.platform', 'junit-platform-launcher').versionRef('junit-platform')
-            library('junit-platform-suite', 'org.junit.platform', 'junit-platform-suite').versionRef('junit-platform')
+            catalog.library('classmate', 'com.fasterxml', 'classmate').versionRef('classmate')
+            catalog.library('commons-lang3', 'org.apache.commons', 'commons-lang3').versionRef('commons-lang3')
+            catalog.library('commons-collections4', 'org.apache.commons', 'commons-collections4').versionRef('commons-collections4')
+            catalog.library('commons-codec', 'commons-codec', 'commons-codec').versionRef('commons-codec')
+            catalog.library('google-guava', 'com.google.guava', 'guava').versionRef('google.guava')
+            catalog.library('hanlp', 'com.hankcs', 'hanlp').versionRef('hanlp')
+            catalog.library('h2', 'com.h2database', 'h2').versionRef('h2')
+            catalog.library('r2dbc-h2', 'io.r2dbc', 'r2dbc-h2').versionRef('r2dbc-h2')
+            catalog.library('r2dbc-mysql', 'io.asyncer', 'r2dbc-mysql').versionRef('r2dbc-mysql')
+            catalog.library('r2dbc-pool', 'io.r2dbc', 'r2dbc-pool').versionRef('r2dbc-pool')
+            catalog.library('jakarta-activation-api', 'jakarta.activation', 'jakarta.activation-api').versionRef('jakarta.activation-api')
+            catalog.library('jakarta-annotation-api', 'jakarta.annotation', 'jakarta.annotation-api').versionRef('jakarta.annotation-api')
+            catalog.library('jakarta-xml-bind', 'jakarta.xml.bind', 'jakarta.xml.bind-api').versionRef('jakarta.xml.bind')
+            catalog.library('jackson-annotations', 'com.fasterxml.jackson.core', 'jackson-annotations').versionRef('jackson.annotations')
+            catalog.library('jackson-core', 'tools.jackson.core', 'jackson-core').versionRef('jackson.core')
+            catalog.library('jackson-databind', 'tools.jackson.core', 'jackson-databind').versionRef('jackson.core')
+            catalog.library('jackson-dataformat-xml', 'com.fasterxml.jackson.dataformat', 'jackson-dataformat-xml').versionRef('jackson.core')
+            catalog.library('jackson-datatype-jsr353', 'tools.jackson.datatype', 'jackson-datatype-jsr353').versionRef('jackson.core')
+            catalog.library('jackson-modules-base', 'tools.jackson.module', 'jackson-modules-base').versionRef('jackson.core')
+            catalog.library('jetbrains-annotations', 'org.jetbrains', 'annotations').versionRef('jetbrains-annotations')
+            catalog.library('jspecify', 'org.jspecify', 'jspecify').versionRef('jspecify')
+            catalog.library('lombok', 'org.projectlombok', 'lombok').versionRef('lombok')
+            catalog.library('log4j-api', 'org.apache.logging.log4j', 'log4j-api').versionRef('log4j')
+            catalog.library('log4j-core', 'org.apache.logging.log4j', 'log4j-core').versionRef('log4j')
+            catalog.library('log4j-slf4j2-impl', 'org.apache.logging.log4j', 'log4j-slf4j2-impl').versionRef('log4j')
+            catalog.library('logback-classic', 'ch.qos.logback', 'logback-classic').versionRef('logback')
+            catalog.library('logback-core', 'ch.qos.logback', 'logback-core').versionRef('logback')
+            catalog.library('jul-to-slf4j', 'org.slf4j', 'jul-to-slf4j').versionRef('slf4j')
+            catalog.library('slf4j-api', 'org.slf4j', 'slf4j-api').versionRef('slf4j')
+            catalog.library('ognl', 'ognl', 'ognl').versionRef('ognl')
+            catalog.library('poi-ooxml', 'org.apache.poi', 'poi-ooxml').versionRef('poi')
+            catalog.library('reactor-core', 'io.projectreactor', 'reactor-core').versionRef('reactor-core')
+            catalog.library('reactor-test', 'io.projectreactor', 'reactor-test').versionRef('reactor-core')
+            catalog.library('reactor-netty-core', 'io.projectreactor.netty', 'reactor-netty-core').versionRef('reactor-netty')
+            catalog.library('reactor-netty-http', 'io.projectreactor.netty', 'reactor-netty-http').versionRef('reactor-netty')
+            catalog.library('spring-ai-bom', 'org.springframework.ai', 'spring-ai-bom').versionRef('spring-ai')
+            catalog.library('spring-ai-openai-starter', 'org.springframework.ai', 'spring-ai-starter-model-openai').versionRef('spring-ai')
+            catalog.library('spring-ai-alibaba-starter', 'com.alibaba.cloud.ai', 'spring-ai-alibaba-starter-dashscope').versionRef('spring-ai-alibaba')
+            catalog.library('spring-ai-alibaba-autoconfigure-memory', 'com.alibaba.cloud.ai', 'spring-ai-alibaba-autoconfigure-memory').versionRef('spring-ai-alibaba')
+            catalog.library('spring-ai-qianfan-starter', 'org.springaicommunity', 'qianfan-spring-boot-starter').versionRef('spring-ai-qianfan')
+            catalog.library('spring-ai-vector-store', 'org.springframework.ai', 'spring-ai-vector-store').versionRef('spring-ai')
+            catalog.library('spring-ai-commons', 'org.springframework.ai', 'spring-ai-commons').versionRef('spring-ai')
+            catalog.library('spring-boot', 'org.springframework.boot', 'spring-boot').versionRef('spring-boot')
+            catalog.library('spring-boot-autoconfigure', 'org.springframework.boot', 'spring-boot-autoconfigure').versionRef('spring-boot')
+            catalog.library('spring-boot-starter', 'org.springframework.boot', 'spring-boot-starter').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-actuator', 'org.springframework.boot', 'spring-boot-starter-actuator').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-data-r2dbc', 'org.springframework.boot', 'spring-boot-starter-data-r2dbc').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-log4j2', 'org.springframework.boot', 'spring-boot-starter-log4j2').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-mail', 'org.springframework.boot', 'spring-boot-starter-mail').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-security-oauth2-client', 'org.springframework.boot', 'spring-boot-starter-security-oauth2-client').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-security-oauth2-resource-server', 'org.springframework.boot', 'spring-boot-starter-security-oauth2-resource-server').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-security', 'org.springframework.boot', 'spring-boot-starter-security').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-webflux', 'org.springframework.boot', 'spring-boot-starter-webflux').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-validation', 'org.springframework.boot', 'spring-boot-starter-validation').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-test', 'org.springframework.boot', 'spring-boot-starter-test').versionRef('spring-boot')
+            catalog.library('spring-context', 'org.springframework', 'spring-context').versionRef('spring')
+            catalog.library('spring-core', 'org.springframework', 'spring-core').versionRef('spring')
+            catalog.library('spring-web', 'org.springframework', 'spring-web').versionRef('spring')
+            catalog.library('spring-beans', 'org.springframework', 'spring-beans').versionRef('spring')
+            catalog.library('spring-data-commons', 'org.springframework.data', 'spring-data-commons').versionRef('spring.data')
+            catalog.library('spring-security-web', 'org.springframework.security', 'spring-security-web').versionRef('spring-security')
+            catalog.library('springdoc-openapi-starter-webflux-api', 'org.springdoc', 'springdoc-openapi-starter-webflux-api').versionRef('springdoc')
+            catalog.library('springdoc-openapi-starter-webflux-ui', 'org.springdoc', 'springdoc-openapi-starter-webflux-ui').versionRef('springdoc')
+            catalog.library('netty-resolver-dns-native-macos', 'io.netty', 'netty-resolver-dns-native-macos').versionRef('netty')
+            catalog.library('tinkergraph-gremlin', 'org.apache.tinkerpop', 'tinkergraph-gremlin').versionRef('tinkerpop')
+            catalog.library('lucene-core', 'org.apache.lucene', 'lucene-core').versionRef('lucene')
+            catalog.library('lucene-analysis-common', 'org.apache.lucene', 'lucene-analysis-common').versionRef('lucene')
+            catalog.library('lucene-analysis-smartcn', 'org.apache.lucene', 'lucene-analysis-smartcn').versionRef('lucene')
+            catalog.library('lucene-backward-codecs', 'org.apache.lucene', 'lucene-backward-codecs').versionRef('lucene')
+            catalog.library('thymeleaf', 'org.thymeleaf', 'thymeleaf').versionRef('thymeleaf')
+            catalog.library('stringtemplate', 'org.antlr', 'ST4').versionRef('stringtemplate')
+            catalog.library('openhtmltopdf-core', 'io.github.openhtmltopdf', 'openhtmltopdf-core').versionRef('openhtmltopdf')
+            catalog.library('openhtmltopdf-pdfbox', 'io.github.openhtmltopdf', 'openhtmltopdf-pdfbox').versionRef('openhtmltopdf')
+            catalog.library('openhtmltopdf-slf4j', 'io.github.openhtmltopdf', 'openhtmltopdf-slf4j').versionRef('openhtmltopdf')
+            catalog.library('zxing-core', 'com.google.zxing', 'core').versionRef('zxing')
+            catalog.library('mockito-core', 'org.mockito', 'mockito-core').versionRef('mockito')
+            catalog.library('mockito-inline', 'org.mockito', 'mockito-inline').versionRef('mockito-inline')
+            catalog.library('testcontainers-junit-jupiter', 'org.testcontainers', 'testcontainers-junit-jupiter').versionRef('testcontainers')
+            catalog.library('testcontainers-mysql', 'org.testcontainers', 'testcontainers-mysql').versionRef('testcontainers')
+            catalog.library('mockwebserver', 'com.squareup.okhttp3', 'mockwebserver').versionRef('mockwebserver')
+            catalog.library('mysql-connector-j', 'com.mysql', 'mysql-connector-j').versionRef('mysql-connector-j')
+            catalog.library('junit-jupiter', 'org.junit.jupiter', 'junit-jupiter').versionRef('junit-jupiter')
+            catalog.library('junit-jupiter-engine', 'org.junit.jupiter', 'junit-jupiter-engine').versionRef('junit-jupiter')
+            catalog.library('junit-platform-launcher', 'org.junit.platform', 'junit-platform-launcher').versionRef('junit-platform')
+            catalog.library('junit-platform-suite', 'org.junit.platform', 'junit-platform-suite').versionRef('junit-platform')
 
-            library('javafx', 'org.openjfx', 'javafx').versionRef('openjfx')
-            library('javafx-base', 'org.openjfx', 'javafx-base').versionRef('openjfx')
-            library('javafx-controls', 'org.openjfx', 'javafx-controls').versionRef('openjfx')
-            library('javafx-fxml', 'org.openjfx', 'javafx-fxml').versionRef('openjfx')
-            library('javafx-graphics', 'org.openjfx', 'javafx-graphics').versionRef('openjfx')
-            library('javafx-media', 'org.openjfx', 'javafx-media').versionRef('openjfx')
-            library('javafx-web', 'org.openjfx', 'javafx-web').versionRef('openjfx')
+            catalog.library('javafx', 'org.openjfx', 'javafx').versionRef('openjfx')
+            catalog.library('javafx-base', 'org.openjfx', 'javafx-base').versionRef('openjfx')
+            catalog.library('javafx-controls', 'org.openjfx', 'javafx-controls').versionRef('openjfx')
+            catalog.library('javafx-fxml', 'org.openjfx', 'javafx-fxml').versionRef('openjfx')
+            catalog.library('javafx-graphics', 'org.openjfx', 'javafx-graphics').versionRef('openjfx')
+            catalog.library('javafx-media', 'org.openjfx', 'javafx-media').versionRef('openjfx')
+            catalog.library('javafx-web', 'org.openjfx', 'javafx-web').versionRef('openjfx')
 
-            bundle('apache-commons-bundle', [
+            catalog.bundle('apache-commons-bundle', [
                     'commons-lang3',
                     'commons-collections4'
             ])
 
-            bundle('jackson-bundle', [
+            catalog.bundle('jackson-bundle', [
                     'jackson-annotations',
                     'jackson-core',
                     'jackson-databind',
@@ -270,14 +300,14 @@ settings.dependencyResolutionManagement {
                     'jackson-modules-base'
             ])
 
-            bundle('javafx-bundle', [
+            catalog.bundle('javafx-bundle', [
                     'javafx-base',
                     'javafx-controls',
                     'javafx-fxml',
                     'javafx-graphics'
             ])
 
-            bundle('javafx-thirdparty-bundle', [
+            catalog.bundle('javafx-thirdparty-bundle', [
                     'bootstrapfx-core',
                     'ikonli-javafx',
                     'ikonli-feather-pack',
@@ -285,17 +315,17 @@ settings.dependencyResolutionManagement {
                     'ikonli-material2-pack'
             ])
 
-            bundle('h2-bundle', [
+            catalog.bundle('h2-bundle', [
                     'h2',
                     'r2dbc-h2'
             ])
 
-            bundle('mysql-bundle', [
+            catalog.bundle('mysql-bundle', [
                     'mysql-connector-j',
                     'r2dbc-mysql'
             ])
 
-            bundle('spring-boot-starter-app-bundle', [
+            catalog.bundle('spring-boot-starter-app-bundle', [
                     'spring-boot-starter',
                     'spring-boot-starter-data-r2dbc',
                     'spring-boot-starter-log4j2',
@@ -305,7 +335,7 @@ settings.dependencyResolutionManagement {
                     'ognl'
             ])
 
-            bundle('spring-boot-starter-server-bundle', [
+            catalog.bundle('spring-boot-starter-server-bundle', [
                     'spring-boot-starter',
                     'spring-boot-starter-data-r2dbc',
                     'spring-boot-starter-security-oauth2-client',
@@ -316,61 +346,61 @@ settings.dependencyResolutionManagement {
                     'ognl'
             ])
 
-            bundle('spring-boot-starter-security-oauth2-resource-server', [
+            catalog.bundle('spring-boot-starter-security-oauth2-resource-server', [
                     'spring-boot-starter-security-oauth2-resource-server'
             ])
 
-            bundle('spring-data-bundle', [
+            catalog.bundle('spring-data-bundle', [
                     'spring-data-commons'
             ])
 
-            bundle('springdoc-bundle', [
+            catalog.bundle('springdoc-bundle', [
                     'springdoc-openapi-starter-webflux-ui'
             ])
 
-            bundle('reactor-netty-bundle', [
+            catalog.bundle('reactor-netty-bundle', [
                     'reactor-netty-core',
                     'reactor-netty-http'
             ])
 
-            bundle('junit-bundle', [
+            catalog.bundle('junit-bundle', [
                     'junit-jupiter',
                     'junit-platform-launcher',
                     'junit-platform-suite',
                     'reactor-test'
             ])
 
-            bundle('log4j2-bundle', [
+            catalog.bundle('log4j2-bundle', [
                     'log4j-api',
                     'log4j-core',
                     'log4j-slf4j2-impl',
                     'jul-to-slf4j'
             ])
 
-            bundle('logback-bundle', [
+            catalog.bundle('logback-bundle', [
                     'logback-classic',
                     'logback-core',
                     'jul-to-slf4j'
             ])
 
-            bundle('lucene-bundle', [
+            catalog.bundle('lucene-bundle', [
                     'lucene-core',
                     'lucene-analysis-common',
                     'lucene-analysis-smartcn',
                     'lucene-backward-codecs'
             ])
 
-            bundle('poi-bundle', [
+            catalog.bundle('poi-bundle', [
                     'poi-ooxml'
             ])
 
-            bundle('openhtmltopdf-bundle', [
+            catalog.bundle('openhtmltopdf-bundle', [
                     'openhtmltopdf-core',
                     'openhtmltopdf-pdfbox',
                     'openhtmltopdf-slf4j'
             ])
 
-            bundle('testcontainers-bundle', [
+            catalog.bundle('testcontainers-bundle', [
                     'testcontainers-junit-jupiter',
                     'testcontainers-mysql'
             ])
