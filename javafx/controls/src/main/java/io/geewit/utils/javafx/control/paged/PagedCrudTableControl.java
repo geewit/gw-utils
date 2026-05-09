@@ -14,8 +14,11 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import lombok.Getter;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public final class PagedCrudTableControl<T, K, Q> extends Control {
 
@@ -30,15 +33,25 @@ public final class PagedCrudTableControl<T, K, Q> extends Control {
     private final ObjectProperty<PagedCrudTableConfig<T, K, Q>> config =
             new SimpleObjectProperty<>(this, "config");
 
+    private final ObjectProperty<Set<String>> selectableTextFieldIds =
+            new SimpleObjectProperty<>(this, "selectableTextFieldIds", Set.of());
+
     public PagedCrudTableControl() {
         super.getStyleClass().add("paged-crud-table");
     }
 
     public void initialize(List<TableColumn<T, ?>> columns,
-                                                     PagedCrudTableConfig<T, K, Q> config) {
+                                                      PagedCrudTableConfig<T, K, Q> config) {
         this.setColumns(columns);
         this.setConfig(Objects.requireNonNull(config, "config must not be null"));
         this.searchWhenSkinReady();
+    }
+
+    public void initialize(List<TableColumn<T, ?>> columns,
+                                                      PagedCrudTableConfig<T, K, Q> config,
+                                                      Collection<String> selectableTextFieldIds) {
+        this.setSelectableTextFieldIds(selectableTextFieldIds);
+        this.initialize(columns, config);
     }
 
     /**
@@ -74,6 +87,47 @@ public final class PagedCrudTableControl<T, K, Q> extends Control {
 
     public ObjectProperty<PagedCrudTableConfig<T, K, Q>> configProperty() {
         return config;
+    }
+
+    public Set<String> getSelectableTextFieldIds() {
+        return selectableTextFieldIds.get();
+    }
+
+    public void setSelectableTextFieldIds(Collection<String> fieldIds) {
+        this.selectableTextFieldIds.set(normalizeSelectableTextFieldIds(fieldIds));
+    }
+
+    public void setSelectableTextFieldIds(String... fieldIds) {
+        if (fieldIds == null || fieldIds.length == 0) {
+            this.selectableTextFieldIds.set(Set.of());
+            return;
+        }
+        Set<String> result = new LinkedHashSet<>();
+        for (String id : fieldIds) {
+            if (id == null || id.isBlank()) {
+                continue;
+            }
+            result.add(id.trim());
+        }
+        this.selectableTextFieldIds.set(Set.copyOf(result));
+    }
+
+    public ObjectProperty<Set<String>> selectableTextFieldIdsProperty() {
+        return selectableTextFieldIds;
+    }
+
+    private static Set<String> normalizeSelectableTextFieldIds(Collection<String> fieldIds) {
+        if (fieldIds == null || fieldIds.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> result = new LinkedHashSet<>();
+        for (String id : fieldIds) {
+            if (id == null || id.isBlank()) {
+                continue;
+            }
+            result.add(id.trim());
+        }
+        return Set.copyOf(result);
     }
 
     // ===== actions =====

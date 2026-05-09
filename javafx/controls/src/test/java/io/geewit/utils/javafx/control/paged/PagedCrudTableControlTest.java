@@ -13,6 +13,7 @@ import javafx.scene.control.TableView;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -257,6 +258,80 @@ class PagedCrudTableControlTest {
 
             // Verify config is set
             assertThat(control.getConfig()).isSameAs(config);
+        }
+    }
+
+    @Nested
+    @DisplayName("selectableTextFieldIds")
+    class SelectableTextFieldIds {
+
+        @Test
+        @DisplayName("should default to empty set")
+        void shouldDefaultToEmptySet() {
+            PagedCrudTableControl<TestEntity, String, String> control = new PagedCrudTableControl<>();
+
+            assertThat(control.getSelectableTextFieldIds()).isEqualTo(Set.of());
+        }
+
+        @Test
+        @DisplayName("should set from collection and normalize")
+        void shouldSetFromCollection() {
+            PagedCrudTableControl<TestEntity, String, String> control = new PagedCrudTableControl<>();
+
+            control.setSelectableTextFieldIds(java.util.Arrays.asList("name", "  remark  ", null, ""));
+
+            assertThat(control.getSelectableTextFieldIds()).containsExactly("name", "remark");
+        }
+
+        @Test
+        @DisplayName("should set from varargs and normalize")
+        void shouldSetFromVarargs() {
+            PagedCrudTableControl<TestEntity, String, String> control = new PagedCrudTableControl<>();
+
+            control.setSelectableTextFieldIds("name", "  remark  ", null, "");
+
+            assertThat(control.getSelectableTextFieldIds()).containsExactly("name", "remark");
+        }
+
+        @Test
+        @DisplayName("should return empty set when set to null collection")
+        void shouldHandleNullCollection() {
+            PagedCrudTableControl<TestEntity, String, String> control = new PagedCrudTableControl<>();
+
+            control.setSelectableTextFieldIds((Collection<String>) null);
+
+            assertThat(control.getSelectableTextFieldIds()).isEqualTo(Set.of());
+        }
+
+        @Test
+        @DisplayName("should return empty set when varargs is null")
+        void shouldHandleNullVarargs() {
+            PagedCrudTableControl<TestEntity, String, String> control = new PagedCrudTableControl<>();
+
+            control.setSelectableTextFieldIds((String[]) null);
+
+            assertThat(control.getSelectableTextFieldIds()).isEqualTo(Set.of());
+        }
+
+        @Test
+        @DisplayName("should provide property")
+        void shouldProvideProperty() {
+            PagedCrudTableControl<TestEntity, String, String> control = new PagedCrudTableControl<>();
+
+            assertThat(control.selectableTextFieldIdsProperty()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("should initialize with selectable field ids")
+        void shouldInitializeWithSelectableFieldIds() {
+            PagedCrudTableControl<TestEntity, String, String> control = new PagedCrudTableControl<>();
+            TableColumn<TestEntity, String> col = new TableColumn<>("Name");
+
+            control.initialize(List.of(col), createConfig(), Set.of("name", "remark"));
+
+            assertThat(control.getSelectableTextFieldIds()).containsExactly("name", "remark");
+            assertThat(control.getConfig()).isNotNull();
+            assertThat(control.getColumns()).hasSize(1);
         }
     }
 }

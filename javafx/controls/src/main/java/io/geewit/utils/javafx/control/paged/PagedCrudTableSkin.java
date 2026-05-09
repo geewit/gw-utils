@@ -33,8 +33,12 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
+        TableViewCopySupport.installCellCopy(table);
+
         // 列变化：重建
         control.columnsProperty().addListener((_, _, _) -> this.rebuildColumns());
+        // 可选文本字段变化：重建
+        control.selectableTextFieldIdsProperty().addListener((_, _, _) -> this.rebuildColumns());
         this.rebuildColumns();
 
         // 配置变化：刷新 placeholder/rowFactory 并重新查询
@@ -81,6 +85,11 @@ public final class PagedCrudTableSkin<T, K, Q> extends SkinBase<PagedCrudTableCo
         // 获取并添加新的列配置
         List<TableColumn<T, ?>> cols = super.getSkinnable().getColumns();
         if (cols != null && !cols.isEmpty()) {
+            TableViewCopySupport.applySelectableTextFields(
+                    cols,
+                    super.getSkinnable().getSelectableTextFieldIds()
+            );
+
             table.getColumns().addAll(cols);
         }
     }

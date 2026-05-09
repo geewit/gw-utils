@@ -10,6 +10,7 @@ import javafx.scene.control.TableView;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -248,6 +249,69 @@ class PagedCrudTableSkinTest {
 
             // Should not throw
             PagedCrudTableSkin.runOnFx(() -> {});
+        }
+    }
+
+    @Nested
+    @DisplayName("selectable text fields")
+    class SelectableTextFields {
+
+        @Test
+        @DisplayName("should apply selectable text field factory to matching columns")
+        void shouldApplySelectableFactory() {
+            PagedCrudTableControl<TestEntity, String, String> control = new PagedCrudTableControl<>();
+            control.setConfig(createConfig());
+
+            javafx.scene.control.TableColumn<TestEntity, String> nameCol = new javafx.scene.control.TableColumn<>("Name");
+            nameCol.setId("name");
+            javafx.scene.control.TableColumn<TestEntity, String> idCol = new javafx.scene.control.TableColumn<>("ID");
+            idCol.setId("id");
+
+            control.setColumns(List.of(nameCol, idCol));
+            control.setSelectableTextFieldIds(Set.of("name"));
+
+            PagedCrudTableSkin<TestEntity, String, String> skin = new PagedCrudTableSkin<>(control);
+
+            // The matching column should have its factory changed
+            assertThat(nameCol.getCellFactory()).isNotNull();
+            // The non-matching column should not be the same as the matching column's factory
+            assertThat(idCol.getCellFactory()).isNotSameAs(nameCol.getCellFactory());
+        }
+
+        @Test
+        @DisplayName("should restore original factory when selectable field ids change")
+        void shouldRestoreOriginalFactory() {
+            PagedCrudTableControl<TestEntity, String, String> control = new PagedCrudTableControl<>();
+            control.setConfig(createConfig());
+
+            javafx.scene.control.TableColumn<TestEntity, String> nameCol = new javafx.scene.control.TableColumn<>("Name");
+            nameCol.setId("name");
+            javafx.scene.control.TableCell<TestEntity, String> originalCell = new javafx.scene.control.TableCell<>();
+            javafx.util.Callback<javafx.scene.control.TableColumn<TestEntity, String>, javafx.scene.control.TableCell<TestEntity, String>> originalFactory = _ -> originalCell;
+            nameCol.setCellFactory(originalFactory);
+
+            control.setColumns(List.of(nameCol));
+            control.setSelectableTextFieldIds(Set.of("name"));
+
+            PagedCrudTableSkin<TestEntity, String, String> skin = new PagedCrudTableSkin<>(control);
+
+            // After applying selectable, factory should be different
+            assertThat(nameCol.getCellFactory()).isNotSameAs(originalFactory);
+
+            // Change selectable fields to empty
+            control.setSelectableTextFieldIds(Set.of());
+
+            // Factory should be restored
+            assertThat(nameCol.getCellFactory()).isSameAs(originalFactory);
+        }
+
+        @Test
+        @DisplayName("should install cell copy support")
+        void shouldInstallCellCopySupport() {
+            PagedCrudTableControl<TestEntity, String, String> control = new PagedCrudTableControl<>();
+            PagedCrudTableSkin<TestEntity, String, String> skin = new PagedCrudTableSkin<>(control);
+
+            assertThat(skin.table.getSelectionModel().isCellSelectionEnabled()).isTrue();
         }
     }
 }
