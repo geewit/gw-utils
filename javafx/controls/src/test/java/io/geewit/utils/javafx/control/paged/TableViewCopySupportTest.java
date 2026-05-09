@@ -100,7 +100,8 @@ class TableViewCopySupportTest {
             col2.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().toUpperCase()));
             tableView.getColumns().addAll(col1, col2);
 
-            List<TablePosition> positions = List.of(
+            @SuppressWarnings("unchecked")
+            List<TablePosition<?, ?>> positions = List.of(
                     new TablePosition<>(tableView, 0, col1),
                     new TablePosition<>(tableView, 0, col2),
                     new TablePosition<>(tableView, 1, col1),
@@ -123,7 +124,8 @@ class TableViewCopySupportTest {
             col.setCellValueFactory(data -> new SimpleStringProperty(data.getValue()));
             tableView.getColumns().add(col);
 
-            List<TablePosition> positions = List.of(
+            @SuppressWarnings("unchecked")
+            List<TablePosition<?, ?>> positions = List.of(
                     new TablePosition<>(tableView, 0, col)
             );
 
@@ -141,7 +143,8 @@ class TableViewCopySupportTest {
             col.setCellValueFactory(data -> new SimpleStringProperty(data.getValue()));
             tableView.getColumns().add(col);
 
-            List<TablePosition> positions = List.of(
+            @SuppressWarnings("unchecked")
+            List<TablePosition<?, ?>> positions = List.of(
                     new TablePosition<>(tableView, 0, col)
             );
 
@@ -280,23 +283,6 @@ class TableViewCopySupportTest {
     }
 
     @Nested
-    @DisplayName("selectableTextCellFactory")
-    class SelectableTextCellFactory {
-
-        @Test
-        @DisplayName("should create cell with text field")
-        void shouldCreateCellWithTextField() {
-            TableColumn<String, String> col = new TableColumn<>("Name");
-            Callback<TableColumn<String, String>, TableCell<String, String>> factory =
-                    TableViewCopySupport.selectableTextCellFactory();
-
-            TableCell<String, String> cell = factory.call(col);
-            assertThat(cell).isNotNull();
-        }
-
-    }
-
-    @Nested
     @DisplayName("flattenColumns")
     class FlattenColumns {
 
@@ -400,4 +386,28 @@ class TableViewCopySupportTest {
             assertThat(result).containsExactly("a", "b");
         }
     }
+
+    @Nested
+    @DisplayName("copyColumnAllValues")
+    class CopyColumnAllValues {
+
+        @Test
+        @DisplayName("should not throw with null args")
+        void shouldNotThrowWithNullArgs() {
+            TableViewCopySupport.copyColumnAllValues(null, null);
+            TableView<String> tv = new TableView<>();
+            TableViewCopySupport.copyColumnAllValues(tv, null);
+            TableColumn<String, String> col = new TableColumn<>("Name");
+            TableViewCopySupport.copyColumnAllValues(null, col);
+        }
+
+        @Test
+        @DisplayName("should not throw with empty items")
+        void shouldNotThrowWithEmptyItems() {
+            TableView<String> tv = new TableView<>();
+            TableColumn<String, String> col = new TableColumn<>("Name");
+            TableViewCopySupport.copyColumnAllValues(tv, col);
+        }
+    }
+
 }

@@ -1,8 +1,11 @@
 package io.geewit.utils.javafx.control.paged;
 
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TablePosition;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.Clipboard;
@@ -144,6 +147,9 @@ public final class TableViewCopySupport {
     /**
      * 创建只读 TextField 单元格工厂，支持鼠标选中文本。
      *
+     * <p>左键单击选中当前单元格/行；左键双击消费事件避免触发表格行双击。
+     * 右键显示合并菜单：包含"复制该列"以及调用方在行级别配置的原有菜单项。</p>
+     *
      * @param <S> 表格行数据类型
      * @param <V> 单元格值类型
      * @return 单元格工厂
@@ -151,6 +157,7 @@ public final class TableViewCopySupport {
     public static <S, V> Callback<TableColumn<S, V>, TableCell<S, V>> selectableTextCellFactory() {
         return column -> new TableCell<>() {
             private final TextField textField = createSelectableTextField();
+            private MenuItem copyItem;
 
             {
                 textField.setOnMouseClicked(event -> {
@@ -170,6 +177,28 @@ public final class TableViewCopySupport {
                     if (event.getClickCount() >= 2) {
                         event.consume();
                     }
+                });
+
+                // 右键：合并调用方行菜单并添加"复制"
+                textField.setOnContextMenuRequested(event -> {
+                    TableRow<?> row = getTableRow();
+                    ContextMenu rowMenu = row != null ? row.getContextMenu() : null;
+
+                    if (rowMenu != null) {
+                        if (copyItem == null) {
+                            copyItem = new MenuItem("复制");
+                            copyItem.setOnAction(_ -> copyColumnAllValues(getTableView(), column));
+                        }
+
+                        if (!rowMenu.getItems().contains(copyItem)) {
+                            rowMenu.getItems().addFirst(copyItem);
+                            rowMenu.setOnHidden(_ -> rowMenu.getItems().remove(copyItem));
+                        }
+
+                        rowMenu.show(textField, event.getScreenX(), event.getScreenY());
+                    }
+
+                    event.consume();
                 });
             }
 
@@ -202,6 +231,8 @@ public final class TableViewCopySupport {
         TextField textField = new TextField();
         textField.setEditable(false);
         textField.setFocusTraversable(true);
+        // 禁用 TextField 默认右键菜单（避免显示"全选"等编辑菜单项）
+        textField.setContextMenu(new ContextMenu());
         textField.setStyle(
                 "-fx-background-color: transparent;"
                         + " -fx-background-insets: 0;"
@@ -217,7 +248,17 @@ public final class TableViewCopySupport {
                            ObservableList<TablePosition<?, ?>> selectedCells) {
         // Sort by row then column to maintain reading order
         var sorted = selectedCells.stream()
-                .sorted()
+                .sorted((a, b) -> {
+                    int cmp = Integer.compare(a.getRow(), b.getRow());
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                    var colA = a.getTableColumn();
+                    var colB = b.getTableColumn();
+                    int idxA = colA == null ? -1 : tableView.getColumns().indexOf(colA);
+                    int idxB = colB == null ? -1 : tableView.getColumns().indexOf(colB);
+                    return Integer.compare(idxA, idxB);
+                })
                 .toList();
 
         StringBuilder sb = new StringBuilder();
@@ -240,6 +281,47 @@ public final class TableViewCopySupport {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * 复制指定列的全部值到系统剪贴板，每行一个值。
+     *
+     * @param tableView 目标表格
+     * @param column    目标列
+     */
+    public static void copyColumnAllValues(TableView<?> tableView, TableColumn<?, ?> column) {
+        if (tableView == null || column == null) {
+            return;
+        }
+        var items = tableView.getItems();
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < items.size(); i++) {
+            Object rowData = items.get(i);
+            String text;
+            if (rowData == null) {
+                text = "";
+            } else {
+                @SuppressWarnings("unchecked")
+                TableColumn<Object, ?> typedColumn = (TableColumn<Object, ?>) column;
+                Object value = typedColumn.getCellData(rowData);
+                text = value == null ? "" : String.valueOf(value);
+            }
+            if (i > 0) {
+                sb.append(System.lineSeparator());
+            }
+            sb.append(sanitizeForTsv(text));
+        }
+
+        String result = sb.toString();
+        if (!result.isEmpty()) {
+            ClipboardContent content = new ClipboardContent();
+            content.putString(result);
+            Clipboard.getSystemClipboard().setContent(content);
+        }
     }
 
     private static Object getCellValue(TableView<?> tableView, TablePosition<?, ?> pos) {

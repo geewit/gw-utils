@@ -1,10 +1,13 @@
 package io.geewit.utils.javafx.control.paged;
 
+import javafx.scene.control.TableColumn;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.framework.junit5.ApplicationExtension;
+import org.testfx.util.WaitForAsyncUtils;
 
 import java.util.Collection;
 import java.util.List;
@@ -263,10 +266,35 @@ class ActionsTest {
             TestEntity entity = new TestEntity("1", "Test");
 
             AtomicBoolean confirmed = new AtomicBoolean(false);
+            // Use a service with a hanging query to prevent the initial search
+            // from asynchronously clearing items after the test adds the entity.
+            PagedCrudService<TestEntity, String, String> hangingService = new PagedCrudService<>() {
+                private final CompletableFuture<PageResult<TestEntity>> hangingQuery = new CompletableFuture<>();
+
+                @Override
+                public CompletionStage<PageResult<TestEntity>> query(String query, int pageIndex, int pageSize) {
+                    return hangingQuery;
+                }
+
+                @Override
+                public CompletionStage<TestEntity> create(TestEntity e) {
+                    return CompletableFuture.completedFuture(e);
+                }
+
+                @Override
+                public CompletionStage<TestEntity> update(TestEntity e) {
+                    return CompletableFuture.completedFuture(e);
+                }
+
+                @Override
+                public CompletionStage<Void> deleteByIds(Collection<String> ids) {
+                    return CompletableFuture.completedFuture(null);
+                }
+            };
             PagedCrudTableConfig<TestEntity, String, String> config = PagedCrudTableConfig.<TestEntity, String, String>builder()
                     .pageSize(20)
                     .querySupplier(() -> "query")
-                    .service(mockService())
+                    .service(hangingService)
                     .keyFn(TestEntity::getId)
                     .confirmDelete(list -> {
                         confirmed.set(true);
@@ -275,7 +303,9 @@ class ActionsTest {
                     .build();
             control.setConfig(config);
             PagedCrudTableSkin<TestEntity, String, String> skin = new PagedCrudTableSkin<>(control);
-            // Add entity after skin creation to avoid it being cleared by async search
+            // Add a dummy column so that select(0) works with cell-selection enabled
+            TableColumn<TestEntity, String> dummyCol = new TableColumn<>("Dummy");
+            skin.table.getColumns().add(dummyCol);
             skin.table.getItems().add(entity);
             skin.table.getSelectionModel().select(0);
             Actions<TestEntity, String, String> actions = new Actions<>(skin);
