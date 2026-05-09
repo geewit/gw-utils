@@ -1,0 +1,109 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "plugin": [
+    ".opencode/plugins/graphify.js"
+  ],
+
+  "default_agent": "orchestrator",
+
+  "instructions": [
+    "AGENTS.md",
+    "readme.md",
+    ".opencode/README.md",
+    ".opencode/prompts/system.md",
+    ".opencode/prompts/repo_context.md",
+    ".opencode/prompts/test_strategy.md",
+    ".opencode/prompts/doc-routing.md",
+    ".opencode/prompts/module_core_utils.md",
+    ".opencode/prompts/module_data_utils.md",
+    ".opencode/prompts/module_i18n.md",
+    ".opencode/prompts/module_javafx_utils.md",
+    ".opencode/prompts/module_web_utils.md",
+    ".opencode/rules/coding-rules.md",
+    ".opencode/rules/openspec-workflow.md",
+    ".opencode/skills/architecture-spec/SKILL.md",
+    ".opencode/skills/gradle-spec/SKILL.md",
+    ".opencode/skills/spring-boot-spec/SKILL.md",
+    ".opencode/skills/javafx-spec/SKILL.md",
+    ".opencode/skills/testing-spec/SKILL.md",
+    ".opencode/skills/id-spec/SKILL.md",
+    ".opencode/skills/graalvm-spec/SKILL.md",
+    ".opencode/skills/openspec-spec/SKILL.md"
+  ],
+
+  "permission": {
+    "*": "allow",
+    "bash": {
+      "*": "allow",
+      "rm -rf *": "deny",
+      "git push *": "ask"
+    }
+  },
+
+  "watcher": {
+    "ignore": [
+      "**/.DS_Store",
+      "**/__MACOSX/**",
+      "**/.git/**",
+      "**/.gradle/**",
+      "**/.idea/**",
+      "**/.settings/**",
+      "**/.cache/**",
+      "**/.temp/**",
+      "**/*.iml",
+      "**/*.ipr",
+      "**/*.iws",
+      "**/*.db",
+      "**/*.sqlite",
+      "**/*.sqlite-lock",
+      "**/*.local",
+      "**/bin/**",
+      "**/build/**",
+      "**/dist/**",
+      "**/out/**",
+      "**/target/**",
+      "**/coverage/**",
+      "**/node_modules/**",
+      "graphify-out/**"
+    ]
+  },
+
+  "formatter": {
+    "prettier": {
+      "disabled": true
+    }
+  },
+
+  "agent": {
+    "orchestrator": {
+      "description": "gw-utils 主控设计与交付 agent。先盘点仓库现状，再按 AGENTS + OpenCode prompts/skills + 当前代码做最小增量实现、测试与验证闭环。",
+      "mode": "primary",
+      "template": "{file:.opencode/templates/flow.md}",
+      "permission": {
+        "*": "allow",
+        "bash": {
+          "*": "allow",
+          "rm -rf *": "deny",
+          "git push *": "ask"
+        }
+      }
+    }
+  },
+
+  "command": {
+    "flow": {
+      "description": "先盘点 gw-utils 现状，再按 AGENTS + prompts + skills + 当前代码做最小增量实现、测试与验证",
+      "agent": "orchestrator",
+      "template": "{file:.opencode/templates/flow.md}"
+    }
+  },
+
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 12000
+  },
+
+  "share": "manual"
+}

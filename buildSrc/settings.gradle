@@ -1,0 +1,18 @@
+// 1) 先加载父级 gradle.properties（相对 buildSrc 目录）
+def parentPropsFile = file("../gradle.properties")
+if (parentPropsFile.exists()) {
+    def properties = new Properties()
+    parentPropsFile.withInputStream { properties.load(it) }
+
+    // 2) 注入到 settings 的 extra properties，便于 common-settings.gradle 中 getProperty() 取到
+    properties.each { k, v ->
+        if (!settings.ext.has(k.toString())) { // 避免覆盖 buildSrc 自己的 gradle.properties
+            settings.ext.set(k.toString(), v)
+        }
+    }
+}
+
+// 3) 再 apply 你的共享 settings 逻辑（注意：共享脚本里用 settings.pluginManagement / settings.dependencyResolutionManagement）
+apply from: file("common-settings.gradle")
+
+rootProject.name = 'buildSrc'
