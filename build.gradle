@@ -48,6 +48,8 @@ subprojects { subproject ->
         localPropsFile.withInputStream { localProps.load(it) }
     }
 
+    boolean jreleaserSkip = (localProps.getProperty('io.geewit.jreleaser.skip') ?: 'false').toBoolean()
+
     String localGroup = localProps.getProperty('group')
     String localArtifactId = localProps.getProperty('artifactId')
     Closure<String> stringProperty = { String key, String defaultValue ->
@@ -80,7 +82,9 @@ subprojects { subproject ->
     if (publishEnabled) {
         subproject.pluginManager.apply('maven-publish')
         subproject.pluginManager.apply('signing')
-        subproject.pluginManager.apply('org.jreleaser')
+        if (!jreleaserSkip) {
+            subproject.pluginManager.apply('org.jreleaser')
+        }
     }
 
     VersionCatalogsExtension catalogs = rootProject.extensions.findByType(VersionCatalogsExtension)
@@ -272,66 +276,70 @@ subprojects { subproject ->
                 }
             }
 
-            tasks.matching { it.name in ['jreleaserDeploy', 'jreleaserFullRelease', 'jreleaserPublish'] }.configureEach {
-                dependsOn tasks.named('publishAllPublicationsToJreleaserRepository')
+            if (!jreleaserSkip) {
+                tasks.matching { it.name in ['jreleaserDeploy', 'jreleaserFullRelease', 'jreleaserPublish'] }.configureEach {
+                    dependsOn tasks.named('publishAllPublicationsToJreleaserRepository')
+                }
             }
         }
 
-        extensions.configure(JReleaserExtension) { JReleaserExtension jreleaser ->
-            jreleaser.gitRootSearch = true
+        if (!jreleaserSkip) {
+            extensions.configure(JReleaserExtension) { JReleaserExtension jreleaser ->
+                jreleaser.gitRootSearch = true
 
-            jreleaser.announce { active = Active.NEVER }
-            jreleaser.assemble { active = Active.NEVER }
-            jreleaser.catalog { active = Active.NEVER }
-            jreleaser.release {
-                github {
-                    token = providers.gradleProperty('jreleaser.github.token').getOrElse('DUMMY_TOKEN')
+                jreleaser.announce { active = Active.NEVER }
+                jreleaser.assemble { active = Active.NEVER }
+                jreleaser.catalog { active = Active.NEVER }
+                jreleaser.release {
+                    github {
+                        token = providers.gradleProperty('jreleaser.github.token').getOrElse('DUMMY_TOKEN')
+                    }
                 }
-            }
-            jreleaser.signing { active = Active.NEVER }
+                jreleaser.signing { active = Active.NEVER }
 
-            jreleaser.deploy {
-                maven {
-                    mavenCentral {
-                        app {
-                            active.set(Active.RELEASE)
-                            url.set('https://central.sonatype.com/api/v1/publisher')
-                            snapshotSupported.set(false)
+                jreleaser.deploy {
+                    maven {
+                        mavenCentral {
+                            app {
+                                active.set(Active.RELEASE)
+                                url.set('https://central.sonatype.com/api/v1/publisher')
+                                snapshotSupported.set(false)
 
-                            if (sonatypeUsername != null && !sonatypeUsername.isBlank()) {
-                                username.set(sonatypeUsername)
+                                if (sonatypeUsername != null && !sonatypeUsername.isBlank()) {
+                                    username.set(sonatypeUsername)
+                                }
+                                if (sonatypePassword != null && !sonatypePassword.isBlank()) {
+                                    password.set(sonatypePassword)
+                                }
+
+                                authorization.set(org.jreleaser.model.Http.Authorization.BASIC)
+
+                                sign.set(false)
+                                checksums.set(false)
+                                sourceJar.set(true)
+                                javadocJar.set(true)
+
+                                applyMavenCentralRules.set(true)
+                                verifyPom.set(false)
+
+                                stagingRepositories.add(
+                                        subproject.layout.buildDirectory.dir('staging-deploy').get().asFile.absolutePath
+                                )
+
+                                connectTimeout.set(20)
+                                readTimeout.set(60)
+                                verifyUrl.set('https://repo1.maven.org/maven2/{{path}}/{{filename}}')
+                                namespace.set('io.geewit')
+                                deploymentId.set("${localGroup ?: subproject.group}:${localArtifactId ?: subproject.name}:${rootProject.version as String}")
+                                retryDelay.set(20)
+                                maxRetries.set(100)
                             }
-                            if (sonatypePassword != null && !sonatypePassword.isBlank()) {
-                                password.set(sonatypePassword)
-                            }
-
-                            authorization.set(org.jreleaser.model.Http.Authorization.BASIC)
-
-                            sign.set(false)
-                            checksums.set(false)
-                            sourceJar.set(true)
-                            javadocJar.set(true)
-
-                            applyMavenCentralRules.set(true)
-                            verifyPom.set(false)
-
-                            stagingRepositories.add(
-                                    subproject.layout.buildDirectory.dir('staging-deploy').get().asFile.absolutePath
-                            )
-
-                            connectTimeout.set(20)
-                            readTimeout.set(60)
-                            verifyUrl.set('https://repo1.maven.org/maven2/{{path}}/{{filename}}')
-                            namespace.set('io.geewit')
-                            deploymentId.set("${localGroup ?: subproject.group}:${localArtifactId ?: subproject.name}:${rootProject.version as String}")
-                            retryDelay.set(20)
-                            maxRetries.set(100)
                         }
                     }
                 }
-            }
 
-            jreleaser.upload { active = Active.NEVER }
+                jreleaser.upload { active = Active.NEVER }
+            }
         }
     }
 }
