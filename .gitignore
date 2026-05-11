@@ -9,7 +9,7 @@
 /.idea/
 /bin/
 /logs/
-/.settings/
+/**/.settings/
 /ddl/*.ldb
 /ddl/.gradle
 *.log
