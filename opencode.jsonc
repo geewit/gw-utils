@@ -20,11 +20,17 @@
     ".opencode/prompts/module_i18n.md",
     ".opencode/prompts/module_javafx_utils.md",
     ".opencode/prompts/module_web_utils.md",
+    ".opencode/prompts/fix-code-quality.md",
     ".opencode/rules/coding-rules.md",
+    ".opencode/rules/ddd-package-map.md",
     ".opencode/rules/openspec-workflow.md",
     ".opencode/skills/architecture-spec/SKILL.md",
+    ".opencode/skills/java-spec/SKILL.md",
+    ".opencode/skills/code-quality-spec/SKILL.md",
+    ".opencode/skills/modularization-spec/SKILL.md",
     ".opencode/skills/gradle-spec/SKILL.md",
     ".opencode/skills/spring-boot-spec/SKILL.md",
+    ".opencode/skills/reactor-spec/SKILL.md",
     ".opencode/skills/javafx-spec/SKILL.md",
     ".opencode/skills/testing-spec/SKILL.md",
     ".opencode/skills/id-spec/SKILL.md",
@@ -51,6 +57,7 @@
       "**/.settings/**",
       "**/.cache/**",
       "**/.temp/**",
+      "**/.codex/code-quality/**",
       "**/*.iml",
       "**/*.ipr",
       "**/*.iws",
@@ -96,6 +103,16 @@
       "description": "先盘点 gw-utils 现状，再按 AGENTS + prompts + skills + 当前代码做最小增量实现、测试与验证",
       "agent": "orchestrator",
       "template": "{file:.opencode/templates/flow.md}"
+    },
+    "code-quality-fix": {
+      "description": "根据质量报告或静态分析输出修复 gw-utils Java 代码质量问题",
+      "agent": "orchestrator",
+      "template": "{file:.opencode/prompts/fix-code-quality.md}"
+    },
+    "upgrade-dependencies": {
+      "description": "检查 gradle.properties 中依赖版本并按 Maven Central 最新 release 版本更新",
+      "agent": "orchestrator",
+      "template": "先运行 `node .opencode/scripts/upgrade-dependencies.js --dry-run` 预览；用户确认后运行 `node .opencode/scripts/upgrade-dependencies.js --yes`。更新后必须执行相关 gradle 编译或测试验证。"
     }
   },
 

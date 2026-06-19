@@ -1,21 +1,6 @@
 import org.gradle.api.initialization.resolve.RepositoriesMode
 
-Closure<String> prop = { String name ->
-    Object value = getProperty(name)
-    if (value == null) {
-        throw new GradleException("Missing required Gradle property: ${name}")
-    }
-
-    String text = value.toString().trim()
-    if (text.isBlank()) {
-        throw new GradleException("Blank Gradle property: ${name}")
-    }
-
-    return text
-}
-
 settings.pluginManagement { PluginManagementSpec pluginManagementSpec ->
-
     pluginManagementSpec.repositories { RepositoryHandler repositories ->
         repositories.mavenLocal()
         repositories.mavenCentral()
@@ -35,12 +20,27 @@ settings.pluginManagement { PluginManagementSpec pluginManagementSpec ->
                 .version(getProperty('native.gradle.plugin.version').toString())
                 .apply(false)
 
+        pluginSpec.id('com.google.protobuf')
+                .version(getProperty('protobuf.gradle.plugin.version').toString())
+                .apply(false)
+
         pluginSpec.id('org.jreleaser')
                 .version(getProperty('jreleaser.plugin.version').toString())
                 .apply(false)
+
+        pluginSpec.id('org.openrewrite.rewrite')
+                .version(getProperty('openrewrite.gradle.plugin.version').toString())
+                .apply(false)
+
+        pluginSpec.id('net.ltgt.errorprone')
+                .version(getProperty('errorprone.gradle.plugin.version').toString())
+                .apply(false)
+
+        pluginSpec.id('com.github.spotbugs')
+                .version(getProperty('spotbugs.gradle.plugin.version').toString())
+                .apply(false)
     }
 }
-
 
 settings.dependencyResolutionManagement { dependencyResolutionManagement ->
     dependencyResolutionManagement.repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -59,134 +59,148 @@ settings.dependencyResolutionManagement { dependencyResolutionManagement ->
 
     dependencyResolutionManagement.versionCatalogs { catalogs ->
         catalogs.create('libs') { VersionCatalogBuilder catalog ->
-            catalog.version('anserini', prop('anserini.version'))
-            catalog.version('antlr4', prop('antlr4.version'))
-            catalog.version('aQute.bnd', prop('aQute.bnd.version'))
-            catalog.version('caffeine', prop('caffeine.version'))
-            catalog.version('commons-logging', prop('commons-logging.version'))
-            catalog.version('geewit.utils', prop('geewit.utils.version'))
-            catalog.version('hamcrest', prop('hamcrest.version'))
-            catalog.version('jackson2.annotations', prop('jackson2.annotations.version'))
-            catalog.version('jackson2.core', prop('jackson2.core.version'))
-            catalog.version('jboss-logging', prop('jboss.logging.version'))
-            catalog.version('maven', prop('maven.version'))
-            catalog.version('osgi-resource', prop('osgi.resource.version'))
-            catalog.version('plexus-utils', prop('plexus.utils.version'))
-            catalog.version('plexus-xml', prop('plexus.xml.version'))
-            catalog.version('rototor-pdfbox', prop('rototor-pdfbox.version'))
-            catalog.version('snappy-java', prop('snappy-java.version'))
-            catalog.version('sqlite', prop('sqlite.version'))
-            catalog.version('stax2-api', prop('stax2-api.version'))
-            catalog.version('tomlj', prop('tomlj.version'))
-            catalog.version('twitter-text', prop('twitter-text.version'))
-            catalog.version('tukaani-xz', prop('tukaani-xz.version'))
-            catalog.version('xmlunit', prop('xmlunit.version'))
-            catalog.version('args4j', prop('args4j.version'))
-            catalog.version('asm', prop('asm.version'))
-            catalog.version('assertj', prop('assertj.version'))
-            catalog.version('awaitility', prop('awaitility.version'))
-            catalog.version('bytebuddy', prop('bytebuddy.version'))
-            catalog.version('cbor', prop('cbor.version'))
-            catalog.version('classmate', prop('classmate.version'))
-            catalog.version('commons-codec', prop('commons-codec.version'))
-            catalog.version('commons-collections4', prop('commons-collections4.version'))
-            catalog.version('commons-compress', prop('commons-compress.version'))
-            catalog.version('commons-csv', prop('commons-csv.version'))
-            catalog.version('commons-io', prop('commons-io.version'))
-            catalog.version('commons-lang3', prop('commons-lang3.version'))
-            catalog.version('commons-math3', prop('commons-math3.version'))
-            catalog.version('commons-text', prop('commons-text.version'))
-            catalog.version('djl', prop('djl.version'))
-            catalog.version('google.errorprone', prop('google.errorprone.version'))
-            catalog.version('google.gson', prop('google.gson.version'))
-            catalog.version('google.guava', prop('google.guava.version'))
-            catalog.version('google.findbugs', prop('google.findbugs.version'))
-            catalog.version('graalvm', prop('native.gradle.plugin.version'))
-            catalog.version('hanlp', prop('hanlp.version'))
-            catalog.version('h2', prop('h2.version'))
-            catalog.version('hibernate.validator', prop('hibernate.validator.version'))
-            catalog.version('jakarta.activation-api', prop('jakarta.activation-api.version'))
-            catalog.version('jakarta.annotation-api', prop('jakarta.annotation-api.version'))
-            catalog.version('jakarta.validation-api', prop('jakarta.validation-api.version'))
-            catalog.version('jakarta.xml.bind', prop('jakarta.xml.bind.version'))
-            catalog.version('jackson.annotations', prop('jackson.annotations.version'))
-            catalog.version('jackson.core', prop('jackson.core.version'))
-            catalog.version('javassist', prop('javassist.version'))
-            catalog.version('jbibtex', prop('jbibtex.version'))
-            catalog.version('jline', prop('jline.version'))
-            catalog.version('jna', prop('jna.version'))
-            catalog.version('openjfx', prop('openjfx.version'))
-            catalog.version('json-path', prop('json-path.version'))
-            catalog.version('json-smart', prop('json-smart.version'))
-            catalog.version('log4j', prop('log4j.version'))
-            catalog.version('logback', prop('logback.version'))
-            catalog.version('lombok', prop('lombok.version'))
-            catalog.version('micrometer' , prop('micrometer.version'))
-            catalog.version('r2dbc-mysql' , prop('r2dbc.mysql.version'))
-            catalog.version('r2dbc-pool' , prop('r2dbc.pool.version'))
-            catalog.version('netty' , prop('netty.version'))
-            catalog.version('nimbus.content-type' , prop('nimbus.content-type.version'))
-            catalog.version('nimbus.jose-jwt' , prop('nimbus.jose-jwt.version'))
-            catalog.version('nimbus.oauth2-oidc-sdk' , prop('nimbus.oauth2-oidc-sdk'))
-            catalog.version('mockito' , prop('mockito.version'))
-            catalog.version('mockito-inline' , prop('mockito-inline.version'))
-            catalog.version('ognl' , prop('ognl.version'))
-            catalog.version('onnxruntime' , prop('onnxruntime.version'))
-            catalog.version('parquet' , prop('parquet.version'))
-            catalog.version('parquet-floor' , prop('parquet-floor.version'))
-            catalog.version('pdfbox' , prop('pdfbox.version'))
-            catalog.version('poi' , prop('poi.version'))
-            catalog.version('r2dbc-h2' , prop('r2dbc.h2.version'))
-            catalog.version('reactor-core' , prop('reactor.core.version'))
-            catalog.version('reactor-netty' , prop('reactor.netty.version'))
-            catalog.version('reactor-pool' , prop('reactor.pool.version'))
-            catalog.version('slf4j' , prop('slf4j.version'))
-            catalog.version('spring' , prop('spring.version'))
-            catalog.version('spring-ai' , prop('spring.ai.version'))
-            catalog.version('spring-ai-alibaba' , prop('spring.ai.alibaba.version'))
-            catalog.version('spring-ai-qianfan' , prop('spring.ai.qianfan.version'))
-            catalog.version('spring-boot' , prop('spring.boot.version'))
-            catalog.version('spring.data' , prop('spring.data.version'))
-            catalog.version('spring-retry' , prop('spring.retry.version'))
-            catalog.version('spring-security' , prop('spring.security.version'))
-            catalog.version('springdoc' , prop('springdoc.version'))
-            catalog.version('squareup-okhttp' , prop('squareup.okhttp.version'))
-            catalog.version('squareup-okio' , prop('squareup.okio.version'))
-            catalog.version('j2objc' , prop('j2objc.version'))
-            catalog.version('junit-jupiter' , prop('junit.jupiter.version'))
-            catalog.version('junit-platform' , prop('junit.platform.version'))
-            catalog.version('atlantafx' , prop('mkpaz.atlantafx.version'))
-            catalog.version('bootstrapfx' , prop('bootstrapfx.version'))
-            catalog.version('devtoolsfx-gui' , prop('mkpaz.devtoolsfx.gui.version'))
-            catalog.version('ikonli' , prop('ikonli.version'))
-            catalog.version('jspecify' , prop('jspecify.version'))
-            catalog.version('tinkerpop' , prop('tinkerpop.version'))
-            catalog.version('tomcat' , prop('tomcat.version'))
-            catalog.version('lucene' , prop('lucene.version'))
-            catalog.version('thymeleaf' , prop('thymeleaf.version'))
-            catalog.version('stringtemplate' , prop('stringtemplate.version'))
-            catalog.version('openhtmltopdf' , prop('openhtmltopdf.version'))
-            catalog.version('monocle' , prop('openjfx.monocle.version'))
-            catalog.version('spotbugs' , prop('spotbugs.version'))
-            catalog.version('woodstox' , prop('woodstox.version'))
-            catalog.version('zstd-jni' , prop('zstd-jni.version'))
-            catalog.version('zxing' , prop('zxing.version'))
-            catalog.version('graphics2d' , prop('graphics2d.version'))
-            catalog.version('fastutil' , prop('fastutil.version'))
-            catalog.version('objenesis' , prop('objenesis.version'))
-            catalog.version('jetbrains-annotations' , prop('jetbrains.annotations.version'))
-            catalog.version('jetbrains-kotlin' , prop('jetbrains.kotlin.version'))
-            catalog.version('jsoup' , prop('jsoup.version'))
-            catalog.version('testcontainers' , prop('testcontainers.version'))
-            catalog.version('testfx' , prop('testfx.version'))
-            catalog.version('mockwebserver' , prop('mockwebserver.version'))
-            catalog.version('mysql-connector-j' , prop('mysql.connector.version'))
-            catalog.version('swagger-core' , prop('swagger.core.version'))
-            catalog.version('swagger-ui' , prop('swagger.ui.version'))
+            catalog.version('anserini', getProperty('anserini.version').toString())
+            catalog.version('antlr4', getProperty('antlr4.version').toString())
+            catalog.version('aQute.bnd', getProperty('aQute.bnd.version').toString())
+            catalog.version('caffeine', getProperty('caffeine.version').toString())
+            catalog.version('commons-logging', getProperty('commons-logging.version').toString())
+            catalog.version('geewit.utils', getProperty('geewit.utils.version').toString())
+            catalog.version('hamcrest', getProperty('hamcrest.version').toString())
+            catalog.version('jackson2.annotations', getProperty('jackson2.annotations.version').toString())
+            catalog.version('jackson2.core', getProperty('jackson2.core.version').toString())
+            catalog.version('jboss-logging', getProperty('jboss.logging.version').toString())
+            catalog.version('maven', getProperty('maven.version').toString())
+            catalog.version('osgi-resource', getProperty('osgi.resource.version').toString())
+            catalog.version('plexus-utils', getProperty('plexus-utils.version').toString())
+            catalog.version('plexus-xml', getProperty('plexus-xml.version').toString())
+            catalog.version('rototor-pdfbox', getProperty('rototor-pdfbox.version').toString())
+            catalog.version('snappy-java', getProperty('snappy-java.version').toString())
+            catalog.version('sqlite', getProperty('sqlite.version').toString())
+            catalog.version('stax2-api', getProperty('stax2-api.version').toString())
+            catalog.version('tomlj', getProperty('tomlj.version').toString())
+            catalog.version('twitter-text', getProperty('twitter-text.version').toString())
+            catalog.version('tukaani-xz', getProperty('tukaani-xz.version').toString())
+            catalog.version('xmlunit', getProperty('xmlunit.version').toString())
+            catalog.version('args4j', getProperty('args4j.version').toString())
+            catalog.version('asm', getProperty('asm.version').toString())
+            catalog.version('assertj', getProperty('assertj.version').toString())
+            catalog.version('awaitility', getProperty('awaitility.version').toString())
+            catalog.version('blockhound', getProperty('blockhound.version').toString())
+            catalog.version('bytebuddy', getProperty('bytebuddy.version').toString())
+            catalog.version('cbor', getProperty('cbor.version').toString())
+            catalog.version('classmate', getProperty('classmate.version').toString())
+            catalog.version('commons-codec', getProperty('commons-codec.version').toString())
+            catalog.version('commons-collections4', getProperty('commons-collections4.version').toString())
+            catalog.version('commons-compress', getProperty('commons-compress.version').toString())
+            catalog.version('commons-csv', getProperty('commons-csv.version').toString())
+            catalog.version('commons-io', getProperty('commons-io.version').toString())
+            catalog.version('commons-lang3', getProperty('commons-lang3.version').toString())
+            catalog.version('commons-math3', getProperty('commons-math3.version').toString())
+            catalog.version('commons-text', getProperty('commons-text.version').toString())
+            catalog.version('djl', getProperty('djl.version').toString())
+            catalog.version('google.errorprone', getProperty('google.errorprone.version').toString())
+            catalog.version('google.gson', getProperty('google.gson.version').toString())
+            catalog.version('google.guava', getProperty('google.guava.version').toString())
+            catalog.version('google.findbugs', getProperty('google.findbugs.version').toString())
+            catalog.version('nullaway', getProperty('nullaway.version').toString())
+            catalog.version('openrewrite-recipe-bom', getProperty('openrewrite.recipe.bom.version').toString())
+            catalog.version('archunit', getProperty('archunit.version').toString())
+            catalog.version('graalvm', getProperty('native.gradle.plugin.version').toString())
+            catalog.version('hanlp', getProperty('hanlp.version').toString())
+            catalog.version('protobuf', getProperty('protobuf.version').toString())
+            catalog.version('h2', getProperty('h2.version').toString())
+            catalog.version('hibernate.validator', getProperty('hibernate.validator.version').toString())
+            catalog.version('jakarta.activation-api', getProperty('jakarta.activation-api.version').toString())
+            catalog.version('jakarta.annotation-api', getProperty('jakarta.annotation-api.version').toString())
+            catalog.version('jakarta.validation-api', getProperty('jakarta.validation-api.version').toString())
+            catalog.version('jakarta.xml.bind', getProperty('jakarta.xml.bind.version').toString())
+            catalog.version('jackson.core', getProperty('jackson.core.version').toString())
+            catalog.version('javassist', getProperty('javassist.version').toString())
+            catalog.version('jbibtex', getProperty('jbibtex.version').toString())
+            catalog.version('jfree.chart', getProperty('jfree.chart.version').toString())
+            catalog.version('jfree.chart.fx', getProperty('jfree.chart.fx.version').toString())
+            catalog.version('jline', getProperty('jline.version').toString())
+            catalog.version('jsch', getProperty('jsch.version').toString())
+            catalog.version('jna', getProperty('jna.version').toString())
+            catalog.version('openjfx', getProperty('openjfx.version').toString())
+            catalog.version('json-path', getProperty('json-path.version').toString())
+            catalog.version('json-smart', getProperty('json-smart.version').toString())
+            catalog.version('log4j', getProperty('log4j.version').toString())
+            catalog.version('logback', getProperty('logback.version').toString())
+            catalog.version('lombok', getProperty('lombok.version').toString())
+            catalog.version('micrometer', getProperty('micrometer.version').toString())
+            catalog.version('r2dbc-mysql', getProperty('r2dbc.mysql.version').toString())
+            catalog.version('r2dbc-pool', getProperty('r2dbc.pool.version').toString())
+            catalog.version('netty', getProperty('netty.version').toString())
+            catalog.version('nimbus.content-type', getProperty('nimbus.content-type.version').toString())
+            catalog.version('nimbus.jose-jwt', getProperty('nimbus.jose-jwt.version').toString())
+            catalog.version('nimbus.oauth2-oidc-sdk', getProperty('nimbus.oauth2-oidc-sdk').toString())
+            catalog.version('mockito', getProperty('mockito.version').toString())
+            catalog.version('mockito-inline', getProperty('mockito-inline.version').toString())
+            catalog.version('ognl', getProperty('ognl.version').toString())
+            catalog.version('onnxruntime', getProperty('onnxruntime.version').toString())
+            catalog.version('parquet', getProperty('parquet.version').toString())
+            catalog.version('parquet-floor', getProperty('parquet-floor.version').toString())
+            catalog.version('pdfbox', getProperty('pdfbox.version').toString())
+            catalog.version('poi', getProperty('poi.version').toString())
+            catalog.version('r2dbc-h2', getProperty('r2dbc.h2.version').toString())
+            catalog.version('reactor-core', getProperty('reactor.core.version').toString())
+            catalog.version('reactor-netty', getProperty('reactor.netty.version').toString())
+            catalog.version('reactor-pool', getProperty('reactor.pool.version').toString())
+            catalog.version('slf4j', getProperty('slf4j.version').toString())
+            catalog.version('spring', getProperty('spring.version').toString())
+            catalog.version('spring-ai', getProperty('spring.ai.version').toString())
+            catalog.version('spring-ai-alibaba', getProperty('spring.ai.alibaba.version').toString())
+            catalog.version('spring-ai-qianfan', getProperty('spring.ai.qianfan.version').toString())
+            catalog.version('spring-boot', getProperty('spring.boot.version').toString())
+            catalog.version('spring.data', getProperty('spring.data.version').toString())
+            catalog.version('spring-retry', getProperty('spring.retry.version').toString())
+            catalog.version('spring-security', getProperty('spring.security.version').toString())
+            catalog.version('springdoc', getProperty('springdoc.version').toString())
+            catalog.version('squareup-okhttp', getProperty('squareup.okhttp.version').toString())
+            catalog.version('squareup-okio', getProperty('squareup.okio.version').toString())
+            catalog.version('j2objc', getProperty('j2objc.version').toString())
+            catalog.version('junit-jupiter', getProperty('junit.jupiter.version').toString())
+            catalog.version('junit-platform', getProperty('junit.platform.version').toString())
+            catalog.version('atlantafx', getProperty('mkpaz.atlantafx.version').toString())
+            catalog.version('bootstrapfx', getProperty('bootstrapfx.version').toString())
+            catalog.version('devtoolsfx-gui', getProperty('mkpaz.devtoolsfx.gui.version').toString())
+            catalog.version('ikonli', getProperty('ikonli.version').toString())
+            catalog.version('jspecify', getProperty('jspecify.version').toString())
+            catalog.version('tinkerpop', getProperty('tinkerpop.version').toString())
+            catalog.version('tomcat', getProperty('tomcat.version').toString())
+            catalog.version('lucene', getProperty('lucene.version').toString())
+            catalog.version('thymeleaf', getProperty('thymeleaf.version').toString())
+            catalog.version('stringtemplate', getProperty('stringtemplate.version').toString())
+            catalog.version('openhtmltopdf', getProperty('openhtmltopdf.version').toString())
+            catalog.version('monocle', getProperty('openjfx.monocle.version').toString())
+            catalog.version('spotbugs', getProperty('spotbugs.version').toString())
+            catalog.version('checkstyle', getProperty('checkstyle.version').toString())
+            catalog.version('pmd', getProperty('pmd.version').toString())
+            catalog.version('woodstox', getProperty('woodstox.version').toString())
+            catalog.version('zstd-jni', getProperty('zstd-jni.version').toString())
+            catalog.version('zxing', getProperty('zxing.version').toString())
+            catalog.version('graphics2d', getProperty('graphics2d.version').toString())
+            catalog.version('fastutil', getProperty('fastutil.version').toString())
+            catalog.version('objenesis', getProperty('objenesis.version').toString())
+            catalog.version('jetbrains-annotations', getProperty('jetbrains.annotations.version').toString())
+            catalog.version('jetbrains-kotlin', getProperty('jetbrains.kotlin.version').toString())
+            catalog.version('jsoup', getProperty('jsoup.version').toString())
+            catalog.version('testcontainers', getProperty('testcontainers.version').toString())
+            catalog.version('testfx', getProperty('testfx.version').toString())
+            catalog.version('mockwebserver', getProperty('mockwebserver.version').toString())
+            catalog.version('mysql-connector-j', getProperty('mysql.connector.version').toString())
+            catalog.version('swagger-core', getProperty('swagger.core.version').toString())
+            catalog.version('swagger-ui', getProperty('swagger.ui.version').toString())
+            catalog.version('vlcj', getProperty('vlcj.version').toString())
+            catalog.version('batik', getProperty('batik.version').toString())
 
             catalog.library('anserini', 'io.anserini', 'anserini').versionRef('anserini')
             catalog.library('assertj-core', 'org.assertj', 'assertj-core').versionRef('assertj')
             catalog.library('atlantafx-base', 'io.github.mkpaz', 'atlantafx-base').versionRef('atlantafx')
+            catalog.library('batik-transcoder', 'org.apache.xmlgraphics', 'batik-transcoder').versionRef('batik')
+            catalog.library('batik-codec', 'org.apache.xmlgraphics', 'batik-codec').versionRef('batik')
+            catalog.library('blockhound', 'io.projectreactor.tools', 'blockhound').versionRef('blockhound')
             catalog.library('bootstrapfx-core', 'org.kordamp.bootstrapfx', 'bootstrapfx-core').versionRef('bootstrapfx')
             catalog.library('devtoolsfx-gui', 'io.github.mkpaz', 'devtoolsfx-gui').versionRef('devtoolsfx-gui')
             catalog.library('ikonli-javafx', 'org.kordamp.ikonli', 'ikonli-javafx').versionRef('ikonli')
@@ -195,10 +209,19 @@ settings.dependencyResolutionManagement { dependencyResolutionManagement ->
             catalog.library('ikonli-material2-pack', 'org.kordamp.ikonli', 'ikonli-material2-pack').versionRef('ikonli')
 
             catalog.library('classmate', 'com.fasterxml', 'classmate').versionRef('classmate')
+            catalog.library('caffeine', 'com.github.ben-manes.caffeine', 'caffeine').versionRef('caffeine')
             catalog.library('commons-lang3', 'org.apache.commons', 'commons-lang3').versionRef('commons-lang3')
             catalog.library('commons-collections4', 'org.apache.commons', 'commons-collections4').versionRef('commons-collections4')
+            catalog.library('commons-logging', 'commons-logging', 'commons-logging').versionRef('commons-logging')
             catalog.library('commons-codec', 'commons-codec', 'commons-codec').versionRef('commons-codec')
             catalog.library('google-guava', 'com.google.guava', 'guava').versionRef('google.guava')
+            catalog.library('google-errorprone-core', 'com.google.errorprone', 'error_prone_core').versionRef('google.errorprone')
+            catalog.library('nullaway', 'com.uber.nullaway', 'nullaway').versionRef('nullaway')
+            catalog.library('openrewrite-recipe-bom', 'org.openrewrite.recipe', 'rewrite-recipe-bom').versionRef('openrewrite-recipe-bom')
+            catalog.library('openrewrite-static-analysis', 'org.openrewrite.recipe', 'rewrite-static-analysis').withoutVersion()
+            catalog.library('openrewrite-testing-frameworks', 'org.openrewrite.recipe', 'rewrite-testing-frameworks').withoutVersion()
+            catalog.library('archunit-junit5', 'com.tngtech.archunit', 'archunit-junit5').versionRef('archunit')
+            catalog.library('protobuf-java', 'com.google.protobuf', 'protobuf-java').versionRef('protobuf')
             catalog.library('hanlp', 'com.hankcs', 'hanlp').versionRef('hanlp')
             catalog.library('h2', 'com.h2database', 'h2').versionRef('h2')
             catalog.library('r2dbc-h2', 'io.r2dbc', 'r2dbc-h2').versionRef('r2dbc-h2')
@@ -206,14 +229,18 @@ settings.dependencyResolutionManagement { dependencyResolutionManagement ->
             catalog.library('r2dbc-pool', 'io.r2dbc', 'r2dbc-pool').versionRef('r2dbc-pool')
             catalog.library('jakarta-activation-api', 'jakarta.activation', 'jakarta.activation-api').versionRef('jakarta.activation-api')
             catalog.library('jakarta-annotation-api', 'jakarta.annotation', 'jakarta.annotation-api').versionRef('jakarta.annotation-api')
+            catalog.library('jakarta-validation-api', 'jakarta.validation', 'jakarta.validation-api').versionRef('jakarta.validation-api')
             catalog.library('jakarta-xml-bind', 'jakarta.xml.bind', 'jakarta.xml.bind-api').versionRef('jakarta.xml.bind')
-            catalog.library('jackson-annotations', 'com.fasterxml.jackson.core', 'jackson-annotations').versionRef('jackson.annotations')
+            catalog.library('jackson-annotations', 'com.fasterxml.jackson.core', 'jackson-annotations').versionRef('jackson2.annotations')
             catalog.library('jackson-core', 'tools.jackson.core', 'jackson-core').versionRef('jackson.core')
             catalog.library('jackson-databind', 'tools.jackson.core', 'jackson-databind').versionRef('jackson.core')
             catalog.library('jackson-dataformat-xml', 'com.fasterxml.jackson.dataformat', 'jackson-dataformat-xml').versionRef('jackson.core')
             catalog.library('jackson-datatype-jsr353', 'tools.jackson.datatype', 'jackson-datatype-jsr353').versionRef('jackson.core')
             catalog.library('jackson-modules-base', 'tools.jackson.module', 'jackson-modules-base').versionRef('jackson.core')
             catalog.library('jetbrains-annotations', 'org.jetbrains', 'annotations').versionRef('jetbrains-annotations')
+            catalog.library('jfree.chart', 'org.jfree', 'jfreechart').versionRef('jfree.chart')
+            catalog.library('jfree.chart.fx', 'org.jfree', 'org.jfree.chart.fx').versionRef('jfree.chart.fx')
+            catalog.library('jsch', 'com.github.mwiede', 'jsch').versionRef('jsch')
             catalog.library('jspecify', 'org.jspecify', 'jspecify').versionRef('jspecify')
             catalog.library('lombok', 'org.projectlombok', 'lombok').versionRef('lombok')
             catalog.library('log4j-api', 'org.apache.logging.log4j', 'log4j-api').versionRef('log4j')
@@ -230,6 +257,7 @@ settings.dependencyResolutionManagement { dependencyResolutionManagement ->
             catalog.library('reactor-netty-core', 'io.projectreactor.netty', 'reactor-netty-core').versionRef('reactor-netty')
             catalog.library('reactor-netty-http', 'io.projectreactor.netty', 'reactor-netty-http').versionRef('reactor-netty')
             catalog.library('spring-ai-bom', 'org.springframework.ai', 'spring-ai-bom').versionRef('spring-ai')
+            catalog.library('spring-ai-openai-model', 'org.springframework.ai', 'spring-ai-openai').versionRef('spring-ai')
             catalog.library('spring-ai-openai-starter', 'org.springframework.ai', 'spring-ai-starter-model-openai').versionRef('spring-ai')
             catalog.library('spring-ai-alibaba-starter', 'com.alibaba.cloud.ai', 'spring-ai-alibaba-starter-dashscope').versionRef('spring-ai-alibaba')
             catalog.library('spring-ai-alibaba-autoconfigure-memory', 'com.alibaba.cloud.ai', 'spring-ai-alibaba-autoconfigure-memory').versionRef('spring-ai-alibaba')
@@ -240,7 +268,9 @@ settings.dependencyResolutionManagement { dependencyResolutionManagement ->
             catalog.library('spring-boot-autoconfigure', 'org.springframework.boot', 'spring-boot-autoconfigure').versionRef('spring-boot')
             catalog.library('spring-boot-starter', 'org.springframework.boot', 'spring-boot-starter').versionRef('spring-boot')
             catalog.library('spring-boot-starter-actuator', 'org.springframework.boot', 'spring-boot-starter-actuator').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-data-jdbc', 'org.springframework.boot', 'spring-boot-starter-data-jdbc').versionRef('spring-boot')
             catalog.library('spring-boot-starter-data-r2dbc', 'org.springframework.boot', 'spring-boot-starter-data-r2dbc').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-jdbc', 'org.springframework.boot', 'spring-boot-starter-jdbc').versionRef('spring-boot')
             catalog.library('spring-boot-starter-log4j2', 'org.springframework.boot', 'spring-boot-starter-log4j2').versionRef('spring-boot')
             catalog.library('spring-boot-starter-mail', 'org.springframework.boot', 'spring-boot-starter-mail').versionRef('spring-boot')
             catalog.library('spring-boot-starter-security-oauth2-client', 'org.springframework.boot', 'spring-boot-starter-security-oauth2-client').versionRef('spring-boot')
@@ -249,12 +279,18 @@ settings.dependencyResolutionManagement { dependencyResolutionManagement ->
             catalog.library('spring-boot-starter-webflux', 'org.springframework.boot', 'spring-boot-starter-webflux').versionRef('spring-boot')
             catalog.library('spring-boot-starter-validation', 'org.springframework.boot', 'spring-boot-starter-validation').versionRef('spring-boot')
             catalog.library('spring-boot-starter-test', 'org.springframework.boot', 'spring-boot-starter-test').versionRef('spring-boot')
+            catalog.library('spring-boot-starter-webflux-test', 'org.springframework.boot', 'spring-boot-starter-webflux-test').versionRef('spring-boot')
             catalog.library('spring-context', 'org.springframework', 'spring-context').versionRef('spring')
             catalog.library('spring-core', 'org.springframework', 'spring-core').versionRef('spring')
             catalog.library('spring-web', 'org.springframework', 'spring-web').versionRef('spring')
             catalog.library('spring-beans', 'org.springframework', 'spring-beans').versionRef('spring')
             catalog.library('spring-data-commons', 'org.springframework.data', 'spring-data-commons').versionRef('spring.data')
+            catalog.library('spring-data-jdbc', 'org.springframework.data', 'spring-data-jdbc').versionRef('spring.data')
+            catalog.library('spring-data-r2dbc', 'org.springframework.data', 'spring-data-r2dbc').versionRef('spring.data')
+            catalog.library('spring-data-relational', 'org.springframework.data', 'spring-data-relational').versionRef('spring.data')
             catalog.library('spring-security-web', 'org.springframework.security', 'spring-security-web').versionRef('spring-security')
+            catalog.library('spring-security-oauth2-core', 'org.springframework.security', 'spring-security-oauth2-core').versionRef('spring-security')
+            catalog.library('nimbus-jose-jwt', 'com.nimbusds', 'nimbus-jose-jwt').versionRef('nimbus.jose-jwt')
             catalog.library('springdoc-openapi-starter-webflux-api', 'org.springdoc', 'springdoc-openapi-starter-webflux-api').versionRef('springdoc')
             catalog.library('springdoc-openapi-starter-webflux-ui', 'org.springdoc', 'springdoc-openapi-starter-webflux-ui').versionRef('springdoc')
             catalog.library('netty-resolver-dns-native-macos', 'io.netty', 'netty-resolver-dns-native-macos').versionRef('netty')
@@ -274,6 +310,9 @@ settings.dependencyResolutionManagement { dependencyResolutionManagement ->
             catalog.library('testcontainers-junit-jupiter', 'org.testcontainers', 'testcontainers-junit-jupiter').versionRef('testcontainers')
             catalog.library('testcontainers-mysql', 'org.testcontainers', 'testcontainers-mysql').versionRef('testcontainers')
             catalog.library('mockwebserver', 'com.squareup.okhttp3', 'mockwebserver').versionRef('mockwebserver')
+            catalog.library('mockwebserver3-junit5', 'com.squareup.okhttp3', 'mockwebserver3-junit5').versionRef('mockwebserver')
+            catalog.library('sqlite', 'org.xerial', 'sqlite-jdbc').versionRef('sqlite')
+            catalog.library('tomlj', 'org.tomlj', 'tomlj').versionRef('tomlj')
             catalog.library('mysql-connector-j', 'com.mysql', 'mysql-connector-j').versionRef('mysql-connector-j')
             catalog.library('junit-jupiter', 'org.junit.jupiter', 'junit-jupiter').versionRef('junit-jupiter')
             catalog.library('junit-jupiter-engine', 'org.junit.jupiter', 'junit-jupiter-engine').versionRef('junit-jupiter')
@@ -290,10 +329,12 @@ settings.dependencyResolutionManagement { dependencyResolutionManagement ->
             catalog.library('javafx-graphics', 'org.openjfx', 'javafx-graphics').versionRef('openjfx')
             catalog.library('javafx-media', 'org.openjfx', 'javafx-media').versionRef('openjfx')
             catalog.library('javafx-web', 'org.openjfx', 'javafx-web').versionRef('openjfx')
+            catalog.library('vlcj', 'uk.co.caprica', 'vlcj').versionRef('vlcj')
 
             catalog.bundle('apache-commons-bundle', [
                     'commons-lang3',
-                    'commons-collections4'
+                    'commons-collections4',
+                    'commons-logging'
             ])
 
             catalog.bundle('jackson-bundle', [
@@ -320,6 +361,11 @@ settings.dependencyResolutionManagement { dependencyResolutionManagement ->
                     'ikonli-material2-pack'
             ])
 
+            catalog.bundle('jfree-chart-bundle', [
+                    'jfree.chart',
+                    'jfree.chart.fx'
+            ])
+
             catalog.bundle('h2-bundle', [
                     'h2',
                     'r2dbc-h2'
@@ -330,33 +376,25 @@ settings.dependencyResolutionManagement { dependencyResolutionManagement ->
                     'r2dbc-mysql'
             ])
 
-            catalog.bundle('spring-boot-starter-app-bundle', [
-                    'spring-boot-starter',
-                    'spring-boot-starter-data-r2dbc',
-                    'spring-boot-starter-log4j2',
-                    'spring-boot-starter-security-oauth2-client',
-                    'spring-boot-starter-webflux',
-                    'spring-boot-starter-validation',
-                    'ognl'
-            ])
-
-            catalog.bundle('spring-boot-starter-server-bundle', [
-                    'spring-boot-starter',
-                    'spring-boot-starter-data-r2dbc',
-                    'spring-boot-starter-security-oauth2-client',
-                    'spring-boot-starter-security',
-                    'spring-boot-starter-webflux',
-                    'spring-boot-starter-validation',
-                    'spring-security-web',
-                    'ognl'
+            catalog.bundle('spring-boot-starter-test-bundle', [
+                    'spring-boot-starter-test',
+                    'spring-boot-starter-webflux-test'
             ])
 
             catalog.bundle('spring-boot-starter-security-oauth2-resource-server', [
                     'spring-boot-starter-security-oauth2-resource-server'
             ])
 
-            catalog.bundle('spring-data-bundle', [
-                    'spring-data-commons'
+            catalog.bundle('spring-data-jdbc-bundle', [
+                    'spring-data-commons',
+                    'spring-data-jdbc',
+                    'spring-data-relational'
+            ])
+
+            catalog.bundle('spring-data-r2dbc-bundle', [
+                    'spring-data-commons',
+                    'spring-data-r2dbc',
+                    'spring-data-relational'
             ])
 
             catalog.bundle('springdoc-bundle', [

@@ -17,13 +17,14 @@ metadata:
 - 更新 `.opencode/skills/*`
 - 更新 `.opencode/prompts/*`
 - 更新 `.opencode/rules/*`
+- 更新 `.codex/**`
 - 更新 `opencode.jsonc`
 - 将代码现状、模块结构、发布配置同步到文档
 
 ## 文档边界
 
 1. 文档必须以 gw-utils 工具库现状为准。
-2. 不把 friso 的 app/server/persistence 业务架构写成 gw-utils 当前架构。
+2. 不把应用工程的 app/server/persistence 业务架构写成 gw-utils 当前架构。
 3. 构建/发布文档必须保留 JReleaser、Maven Publish、Signing、POM 元数据。
 4. 文档中的命令统一使用 `gradle`，不要写 `./gradlew`。
 
@@ -42,10 +43,12 @@ metadata:
 - `opencode.jsonc`
 - `.opencode/README.md`
 - `.opencode/skills/README.md`
+- `.codex/README.md`
+- `.codex/instructions.md`
 - 当前涉及模块的 `build.gradle`
 
 ## 输出要求
 
-- 说明更新了哪些 root 文档 / skill / prompt。
+- 说明更新了哪些 root 文档 / codex 入口 / skill / prompt。
 - 说明文档对应的代码现状。
 - 如新增 skill，必须说明是否已接入 `opencode.jsonc`。

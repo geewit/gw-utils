@@ -42,9 +42,12 @@
 - Gradle：使用系统 `gradle` 命令
 - 版本目录：`buildSrc/common-settings.gradle`
 - 依赖对齐：`buildSrc/common-resolution-strategy.gradle`
+- buildSrc 自身配置：`buildSrc/build.gradle`、`buildSrc/gradle.properties`
 - 发布：`maven-publish` + `signing` + `org.jreleaser`
 - 发布开关：`io.geewit.publish.enabled`
 - staging 仓库：各模块 `build/staging-deploy`
+- Central 凭据：优先 `SONATYPE_BEARER_TOKEN` / `SONATYPE_TOKEN`，也支持由 `SONATYPE_USERNAME` + `SONATYPE_PASSWORD` 派生 Bearer token
+- JReleaser 插件执行：子模块可通过 `io.geewit.jreleaser.skip` 跳过
 
 ## 模块职责
 
@@ -87,10 +90,13 @@
 
 1. `AGENTS.md`
 2. `readme.md`
-3. `.opencode/README.md`
-4. `.opencode/prompts/repo_context.md`
-5. 与当前任务相关的 `.opencode/prompts/*.md`
-6. 与当前任务相关的 `.opencode/skills/*/SKILL.md`
+3. `opencode.jsonc`
+4. `.opencode/README.md`
+5. `.codex/README.md`（Codex 场景）
+6. `.codex/instructions.md`（Codex 场景）
+7. `.opencode/prompts/repo_context.md`
+8. 与当前任务相关的 `.opencode/prompts/*.md` / `.codex/prompts/*.md`
+9. 与当前任务相关的 `.opencode/skills/*/SKILL.md` / `.codex/skills/*/SKILL.md`
 
 ### 任务专项规则
 
@@ -101,6 +107,8 @@
 - `settings.gradle`
 - `build.gradle`
 - `gradle.properties`
+- `buildSrc/build.gradle`
+- `buildSrc/gradle.properties`
 - `buildSrc/common-settings.gradle`
 - `buildSrc/common-resolution-strategy.gradle`
 - `.opencode/skills/gradle-spec/SKILL.md`
@@ -118,6 +126,13 @@
 
 - `.opencode/prompts/module_data_utils.md`
 - `.opencode/skills/spring-boot-spec/SKILL.md`
+- `.opencode/skills/testing-spec/SKILL.md`
+
+#### i18n 工具模块
+
+必须先读：
+
+- `.opencode/prompts/module_i18n.md`
 - `.opencode/skills/testing-spec/SKILL.md`
 
 #### JavaFX 工具模块
@@ -138,8 +153,12 @@
 ## Skill 激活总原则
 
 - 修改 Gradle：激活 `gradle-spec`。
+- 修改普通 Java 工具源码：激活 `java-spec`。
+- 修改 JPMS / module-info / 模块化：激活 `modularization-spec`。
+- 修复静态分析或代码质量报告：激活 `code-quality-spec`。
 - 写 JavaFX 工具：激活 `javafx-spec`。
 - 写 Spring 相关工具：激活 `spring-boot-spec`。
+- 写 Reactor / Mono / Flux / Scheduler 工具：激活 `reactor-spec`。
 - 写测试：激活 `testing-spec`。
 - 修改 ID / UUID：激活 `id-spec`。
 - 修改 GraalVM/native image 支持：激活 `graalvm-spec`。
@@ -148,11 +167,12 @@
 ## 不允许的做法
 
 - 不允许使用 `./gradlew`。
-- 不允许把 friso 的 `app/server/persistence` 业务模块引入 gw-utils。
+- 不允许把应用工程中的 `app/server/persistence` 业务模块引入 gw-utils。
 - 不允许破坏 `group`、`artifactId`、`POM_*`、JReleaser 发布配置。
 - 不允许为了单个模块方便而新增平行版本管理机制。
 - 不允许在工具库中引入应用启动主流程作为默认测试方式。
 - 不允许扫描或修改 `build/`、`.gradle/`、`bin/`、`target/` 等生成目录。
+- 不允许把 `.codex/code-quality/`、`build/reports/` 等临时质量报告目录当作长期文档提交。
 
 ## 实施约束
 

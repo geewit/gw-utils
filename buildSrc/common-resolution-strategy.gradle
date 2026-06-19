@@ -1,7 +1,7 @@
 ext.determineJavaLanguageVersion = { Project project ->
     int requestedVersion = (rootProject.findProperty('io.geewit.java.version') ?: "${Runtime.version().feature()}").toString().toInteger()
     // 这里要求项目已经应用了 java / java-library 之类的插件
-    if (requestedVersion <= 21) {
+    if (requestedVersion < 25) {
         throw new IllegalArgumentException("Requested Java version must be positive, but was: ${requestedVersion}")
     }
 
@@ -31,270 +31,278 @@ ext.determineJavaLanguageVersion = { Project project ->
     }
 }
 
-ext.applyCommonResolutionStrategy = { config, libs, versions ->
-    config.resolutionStrategy {
-        eachDependency { details ->
-            def requestedGroup = details.requested.group as String
-            def requestedName = details.requested.name as String
+ext.applyCommonResolutionStrategy = { Configuration config, VersionCatalog libs, Map<String, String> versions ->
+    ResolutionStrategy resolutionStrategy = config.getResolutionStrategy()
 
-            def resolveVersion = { String alias ->
-                def v = libs?.findVersion(alias)
-                if (v?.present) {
-                    return v.get().requiredVersion
-                }
-                if (versions?.containsKey(alias)) {
-                    return versions.get(alias) as String
-                }
-                return null
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        String requestedGroup = details.requested.group as String
+        String requestedName = details.requested.name as String
+
+        def resolveVersion = { String alias ->
+            def v = libs?.findVersion(alias)
+            if (v?.present) {
+                return v.get().requiredVersion
             }
-
-            // 小工具：按 alias(可多个候选) 从 libs 里取版本并应用
-            def useCatalogVersion = { String... aliases ->
-                for (String alias : aliases) {
-                    def version = resolveVersion(alias)
-                    if (version) {
-                        println "useCatalogVersion alias: ${alias}, ${requestedGroup}:${requestedName} -> ${version}"
-                        details.useVersion(version)
-                        return true
-                    }
-                }
-                return false
+            if (versions?.containsKey(alias)) {
+                return versions.get(alias) as String
             }
+            return null
+        } as Closure<String>
 
-            // 小工具：用于 useTarget（例如把 org.jetbrains:* 统一改为 org.jetbrains:annotations）
-            def useCatalogTarget = { String versionAlias, Map<String, String> target ->
-                def version = resolveVersion(versionAlias)
+        // 小工具：按 alias(可多个候选) 从 libs 里取版本并应用
+        def useCatalogVersion = { String... aliases ->
+            for (String alias : aliases) {
+                def version = resolveVersion(alias)
                 if (version) {
-                    details.useTarget([
-                            group  : target.group,
-                            name   : target.name,
-                            version: version
-                    ])
+                    println "useCatalogVersion alias: ${alias}, ${requestedGroup}:${requestedName} -> ${version}"
+                    details.useVersion(version)
                     return true
                 }
-                return false
             }
+            return false
+        } as Closure<Boolean>
 
-            // ---------------------------
-            // 规则开始（按你原始逻辑重排）
-            // ---------------------------
-            if (requestedGroup == 'biz.aQute.bnd') {
-                useCatalogVersion('aQute.bnd')
-            } else if (requestedGroup == 'commons-codec' && requestedName == 'commons-codec') {
-                useCatalogVersion('commons-codec')
-            } else if (requestedGroup == 'commons-io' && requestedName == 'commons-io') {
-                useCatalogVersion('commons-io')
-            } else if (requestedGroup == 'commons-logging' && requestedName == 'commons-logging') {
-                useCatalogVersion('commons-logging')
-            } else if (requestedGroup == 'org.apache.commons') {
-                if (requestedName == 'commons-collections4') {
-                    useCatalogVersion('commons-collections4')
-                } else if (requestedName == 'commons-compress') {
-                    useCatalogVersion('commons-compress')
-                } else if (requestedName == 'commons-csv') {
-                    useCatalogVersion('commons-csv')
-                } else if (requestedName == 'commons-lang3') {
-                    useCatalogVersion('commons-lang3')
-                } else if (requestedName == 'commons-math3') {
-                    useCatalogVersion('commons-math3')
-                } else if (requestedName == 'commons-text') {
-                    useCatalogVersion('commons-text')
-                }
-            } else if (requestedGroup == 'args4j' && requestedName == 'args4j') {
-                useCatalogVersion('args4j')
-            } else if (requestedGroup == 'co.nstant.in' && requestedName == 'cbor') {
-                useCatalogVersion('cbor')
-            } else if (requestedGroup == 'ai.djl' || requestedGroup.startsWith('ai.djl.')) {
-                useCatalogVersion('djl')
-            } else if (requestedGroup == 'org.awaitility' && requestedName == 'awaitility') {
-                useCatalogVersion('awaitility')
-            } else if ('org.javassist' == requestedGroup) {
-                useCatalogVersion('javassist')
-            } else if (requestedGroup == 'org.slf4j' && requestedName == 'slf4j-api') {
-                useCatalogVersion('slf4j')
-            } else if (requestedGroup == 'org.projectlombok') {
-                useCatalogVersion('lombok')
-            } else if (requestedGroup == 'com.fasterxml' && requestedName == 'classmate') {
-                useCatalogVersion('classmate')
-            } else if (requestedGroup.startsWith('com.fasterxml.jackson')) {
-                if (requestedGroup == 'com.fasterxml.jackson.core') {
-                    if (requestedName == 'jackson-annotations') {
-                        useCatalogVersion('jackson2.annotations')
-                    } else {
-                        useCatalogVersion('jackson2.core')
-                    }
-                } else {
-                    useCatalogVersion('jackson2.core')
-                }
-            } else if (requestedGroup.startsWith('tools.jackson')) {
-                useCatalogVersion('jackson.core')
-            } else if (requestedGroup == 'com.fasterxml.classmate') {
-                useCatalogVersion('classmate')
-            } else if (requestedGroup == 'com.fasterxml.woodstox') {
-                useCatalogVersion('woodstox')
-            } else if (requestedGroup.startsWith('org.springframework')) {
-                if (requestedGroup == 'org.springframework') {
-                    useCatalogVersion('spring')
-                } else if (requestedGroup == 'org.springframework.boot') {
-                    useCatalogVersion('spring-boot')
-                } else if (requestedGroup == 'org.springframework.data') {
-                    useCatalogVersion('spring.data')
-                } else if (requestedGroup == 'org.springframework.retry') {
-                    useCatalogVersion('spring-retry')
-                } else if (requestedGroup == 'org.springframework.security') {
-                    useCatalogVersion('spring-security')
-                } else {
-                    useCatalogVersion('spring')
-                }
-            } else if (requestedGroup == 'org.hibernate.validator') {
-                useCatalogVersion('hibernate.validator')
-            } else if (requestedGroup == 'org.jbibtex') {
-                useCatalogVersion('jbibtex')
-            } else if (requestedGroup == 'org.jboss.logging') {
-                useCatalogVersion('jboss-logging')
-            } else if (requestedGroup == 'org.osgi' && requestedName == 'org.osgi.resource') {
-                useCatalogVersion('osgi-resource')
-            } else if (requestedGroup == 'org.junit.jupiter') {
-                useCatalogVersion('junit-jupiter')
-            } else if (requestedGroup == 'org.junit.platform') {
-                useCatalogVersion('junit-platform')
-            } else if (requestedGroup == 'org.apache.logging.log4j') {
-                useCatalogVersion('log4j')
-            } else if (requestedGroup == 'org.jline') {
-                useCatalogVersion('jline')
-            } else if (requestedGroup == 'jakarta.activation') {
-                useCatalogVersion('jakarta-activation-api', 'jakarta.activation.api')
-            } else if (requestedGroup == 'jakarta.annotation') {
-                useCatalogVersion('jakarta-annotation-api', 'jakarta.annotation.api')
-            } else if (requestedGroup == 'jakarta.validation') {
-                useCatalogVersion('jakarta-validation-api', 'jakarta.validation.api')
-            } else if (requestedGroup == 'jakarta.xml.bind') {
-                useCatalogVersion('jakarta-xml-bind', 'jakarta.xml.bind')
-            } else if (requestedGroup == 'org.antlr' && requestedName == 'antlr4-runtime') {
-                useCatalogVersion('antlr4', 'antlr4')
-            } else if (requestedGroup == 'org.assertj') {
-                useCatalogVersion('assertj')
-            } else if (requestedGroup == 'org.ow2.asm') {
-                useCatalogVersion('asm')
-            } else if (requestedGroup == 'org.apache.logging.log4j') {
-                useCatalogVersion('log4j')
-            } else if (requestedGroup == 'org.apache.lucene') {
-                useCatalogVersion('lucene')
-            } else if (requestedGroup == 'org.apache.pdfbox') {
-                useCatalogVersion('pdfbox')
-            } else if (requestedGroup == 'blue.strategic.parquet') {
-                useCatalogVersion('parquet-floor', 'parquet.floor')
-            } else if (requestedGroup == 'ch.qos.logback') {
-                useCatalogVersion('logback')
-            } else if (requestedGroup == 'org.slf4j') {
-                useCatalogVersion('slf4j')
-            } else if (requestedGroup == 'com.h2database') {
-                useCatalogVersion('h2')
-            } else if (requestedGroup == 'com.squareup.okhttp3') {
-                useCatalogVersion('squareup-okhttp')
-            } else if (requestedGroup == 'com.squareup.okio') {
-                useCatalogVersion('squareup-okio')
-            } else if (requestedGroup == 'net.bytebuddy') {
-                useCatalogVersion('bytebuddy')
-            } else if (requestedGroup == 'io.netty') {
-                useCatalogVersion('netty')
-            } else if (requestedGroup == 'io.projectreactor') {
-                useCatalogVersion('reactor-core')
-            } else if (requestedGroup == 'io.projectreactor.addons') {
-                useCatalogVersion('reactor-pool')
-            } else if (requestedGroup == 'io.micrometer'
-                    && (requestedName == 'micrometer-observation'
-                    || requestedName == 'micrometer-commons'
-                    || requestedName == 'micrometer-jakarta9')) {
-                useCatalogVersion('micrometer')
-            } else if (requestedGroup == 'io.projectreactor.netty') {
-                useCatalogVersion('reactor-netty')
-            } else if (requestedGroup == 'io.swagger.core.v3') {
-                useCatalogVersion('swagger-core')
-            } else if (requestedGroup == 'org.webjars' && requestedName == 'swagger-ui') {
-                useCatalogVersion('swagger-ui')
-            } else if (requestedGroup == 'org.apache.tomcat.embed') {
-                useCatalogVersion('tomcat')
-            } else if (requestedGroup == 'com.jayway.jsonpath' && requestedName == 'json-path') {
-                useCatalogVersion('json-path')
-            } else if (requestedGroup == 'net.minidev'
-                    && (requestedName == 'json-smart' || requestedName == 'accessors-smart')) {
-                useCatalogVersion('json-smart')
-            } else if (requestedGroup == 'net.java.dev.jna') {
-                useCatalogVersion('jna')
-            } else if (requestedGroup == 'com.nimbusds') {
-                if (requestedName == 'content-type') {
-                    useCatalogVersion('nimbus-content-type', 'nimbus.content.type')
-                } else if (requestedName == 'nimbus-jose-jwt') {
-                    useCatalogVersion('nimbus-jose-jwt', 'nimbus.jose.jwt')
-                } else if (requestedName == 'oauth2-oidc-sdk') {
-                    useCatalogVersion('nimbus-oauth2-oidc-sdk', 'nimbus.oauth2.oidc.sdk')
-                }
-            } else if (requestedGroup == 'org.junit.jupiter') {
-                useCatalogVersion('junit-jupiter')
-            } else if (requestedGroup == 'org.junit.platform') {
-                useCatalogVersion('junit-platform')
-            } else if (requestedGroup == 'com.google.errorprone') {
-                useCatalogVersion('google.errorprone')
-            } else if (requestedGroup == 'com.google.guava' && requestedName == 'guava') {
-                useCatalogVersion('google.guava')
-            } else if (requestedGroup == 'com.google.code.gson') {
-                useCatalogVersion('google.gson')
-            } else if (requestedGroup == 'com.google.code.findbugs') {
-                useCatalogVersion('google.findbugs')
-            } else if (requestedGroup.startsWith('com.fasterxml.jackson')) {
-                // 你原始逻辑：annotations 用 jackson2.annotations，其它 jackson2.core
-                if (requestedGroup == 'com.fasterxml.jackson.core' && requestedName == 'jackson-annotations') {
+        // 小工具：用于 useTarget（例如把 org.jetbrains:* 统一改为 org.jetbrains:annotations）
+        def useCatalogTarget = { String versionAlias, Map<String, String> target ->
+            def version = resolveVersion(versionAlias)
+            if (version) {
+                details.useTarget([
+                        group  : target.group,
+                        name   : target.name,
+                        version: version
+                ])
+                return true
+            }
+            return false
+        } as Closure<Boolean>
+
+        // ---------------------------
+        // 规则开始（按你原始逻辑重排）
+        // ---------------------------
+        if (requestedGroup == 'biz.aQute.bnd') {
+            useCatalogVersion('aQute.bnd')
+        } else if (requestedGroup == 'commons-codec' && requestedName == 'commons-codec') {
+            useCatalogVersion('commons-codec')
+        } else if (requestedGroup == 'commons-io' && requestedName == 'commons-io') {
+            useCatalogVersion('commons-io')
+        } else if (requestedGroup == 'commons-logging' && requestedName == 'commons-logging') {
+            useCatalogVersion('commons-logging')
+        } else if (requestedGroup == 'org.apache.commons') {
+            if (requestedName == 'commons-collections4') {
+                useCatalogVersion('commons-collections4')
+            } else if (requestedName == 'commons-compress') {
+                useCatalogVersion('commons-compress')
+            } else if (requestedName == 'commons-csv') {
+                useCatalogVersion('commons-csv')
+            } else if (requestedName == 'commons-lang3') {
+                useCatalogVersion('commons-lang3')
+            } else if (requestedName == 'commons-math3') {
+                useCatalogVersion('commons-math3')
+            } else if (requestedName == 'commons-text') {
+                useCatalogVersion('commons-text')
+            }
+        } else if (requestedGroup == 'args4j' && requestedName == 'args4j') {
+            useCatalogVersion('args4j')
+        } else if (requestedGroup == 'co.nstant.in' && requestedName == 'cbor') {
+            useCatalogVersion('cbor')
+        } else if (requestedGroup == 'ai.djl' || requestedGroup.startsWith('ai.djl.')) {
+            useCatalogVersion('djl')
+        } else if (requestedGroup == 'org.awaitility' && requestedName == 'awaitility') {
+            useCatalogVersion('awaitility')
+        } else if ('org.javassist' == requestedGroup) {
+            useCatalogVersion('javassist')
+        } else if (requestedGroup == 'org.slf4j' && requestedName == 'slf4j-api') {
+            useCatalogVersion('slf4j')
+        } else if (requestedGroup == 'org.projectlombok') {
+            useCatalogVersion('lombok')
+        } else if (requestedGroup == 'com.fasterxml' && requestedName == 'classmate') {
+            useCatalogVersion('classmate')
+        } else if (requestedGroup.startsWith('com.fasterxml.jackson')) {
+            if (requestedGroup == 'com.fasterxml.jackson.core') {
+                if (requestedName == 'jackson-annotations') {
                     useCatalogVersion('jackson2.annotations')
                 } else {
                     useCatalogVersion('jackson2.core')
                 }
-            } else if (requestedGroup.startsWith('tools.jackson')) {
-                useCatalogVersion('jackson.core')
-            } else if (requestedGroup.startsWith('com.microsoft.onnxruntime')) {
-                useCatalogVersion('onnxruntime')
-            } else if (requestedGroup.startsWith('com.github.spotbugs')) {
-                useCatalogVersion('spotbugs')
-            } else if (requestedGroup.startsWith('com.google.j2objc')) {
-                useCatalogVersion('j2objc')
-            } else if (requestedGroup == 'com.github.luben' && requestedName == 'zstd-jni') {
-                useCatalogVersion('zstd-jni')
-            } else if (requestedGroup == 'it.unimi.dsi' && requestedName == 'fastutil') {
-                useCatalogVersion('fastutil')
-            } else if (requestedGroup.startsWith('org.objenesis')) {
-                useCatalogVersion('objenesis')
-            } else if (requestedGroup.startsWith('org.jetbrains')) {
-                // 你原始逻辑：把 annotations-java5 / annotations 都重定向为 org.jetbrains:annotations
-                if (requestedName == 'annotations-java5' || requestedName == 'annotations') {
-                    useCatalogTarget('jetbrains-annotations', [group: 'org.jetbrains', name: 'annotations'])
-                } else if (requestedGroup == 'org.jetbrains.kotlin') {
-                    useCatalogVersion('jetbrains-kotlin')
-                }
-            } else if (requestedGroup.startsWith('org.jsoup')) {
-                useCatalogVersion('jsoup')
-            } else if (requestedGroup == 'com.twitter.twittertext') {
-                useCatalogVersion('twitter-text')
-            } else if (requestedGroup == 'de.rototor.pdfbox') {
-                useCatalogVersion('rototor-pdfbox')
-            } else if (requestedGroup == 'org.tukaani' && requestedName == 'xz') {
-                useCatalogVersion('tukaani-xz')
-            } else if (requestedGroup == 'org.xerial.snappy' && requestedName == 'snappy-java') {
-                useCatalogVersion('snappy-java')
-            } else if (requestedGroup == 'org.xmlunit') {
-                useCatalogVersion('xmlunit')
-            } else if (requestedGroup == 'org.tomlj') {
-                useCatalogVersion('tomlj')
-            } else if (requestedGroup == 'org.codehaus.plexus') {
-                if (requestedName == 'plexus-utils') {
-                    useCatalogVersion('plexus-utils')
-                } else if (requestedName == 'plexus-xml') {
-                    useCatalogVersion('plexus-xml')
-                }
-            } else if (requestedGroup == 'org.codehaus.woodstox' && requestedName == 'stax2-api') {
-                useCatalogVersion('stax2-api')
-            } else if (requestedGroup == 'org.hamcrest') {
-                useCatalogVersion('hamcrest')
+            } else {
+                useCatalogVersion('jackson2.core')
             }
+        } else if (requestedGroup.startsWith('tools.jackson')) {
+            useCatalogVersion('jackson.core')
+        } else if (requestedGroup == 'com.fasterxml.classmate') {
+            useCatalogVersion('classmate')
+        } else if (requestedGroup == 'com.fasterxml.woodstox') {
+            useCatalogVersion('woodstox')
+        } else if (requestedGroup == 'org.codehaus.plexus') {
+            if (requestedName == 'plexus-utils') {
+                useCatalogVersion('plexus-utils')
+            } else if (requestedName == 'plexus-xml') {
+                useCatalogVersion('plexus-xml')
+            }
+        } else if (requestedGroup == 'org.codehaus.woodstox') {
+            if (requestedName == 'stax2-api') {
+                useCatalogVersion('stax2-api')
+            }
+        } else if (requestedGroup.startsWith('org.springframework')) {
+            if (requestedGroup == 'org.springframework') {
+                useCatalogVersion('spring')
+            } else if (requestedGroup == 'org.springframework.ai') {
+                useCatalogVersion('spring-ai')
+            } else if (requestedGroup == 'org.springframework.boot') {
+                useCatalogVersion('spring-boot')
+            } else if (requestedGroup == 'org.springframework.data') {
+                useCatalogVersion('spring.data')
+            } else if (requestedGroup == 'org.springframework.retry') {
+                useCatalogVersion('spring-retry')
+            } else if (requestedGroup == 'org.springframework.security') {
+                useCatalogVersion('spring-security')
+            } else {
+                useCatalogVersion('spring')
+            }
+        } else if (requestedGroup == 'org.hibernate.validator') {
+            useCatalogVersion('hibernate.validator')
+        } else if (requestedGroup == 'org.jbibtex') {
+            useCatalogVersion('jbibtex')
+        } else if (requestedGroup == 'org.jboss.logging') {
+            useCatalogVersion('jboss-logging')
+        } else if (requestedGroup == 'org.osgi' && requestedName == 'org.osgi.resource') {
+            useCatalogVersion('osgi-resource')
+        } else if (requestedGroup == 'org.junit.jupiter') {
+            useCatalogVersion('junit-jupiter')
+        } else if (requestedGroup == 'org.junit.platform') {
+            useCatalogVersion('junit-platform')
+        } else if (requestedGroup == 'org.apache.logging.log4j') {
+            useCatalogVersion('log4j')
+        } else if (requestedGroup == 'org.jline') {
+            useCatalogVersion('jline')
+        } else if (requestedGroup == 'jakarta.activation') {
+            useCatalogVersion('jakarta-activation-api', 'jakarta.activation.api')
+        } else if (requestedGroup == 'jakarta.annotation') {
+            useCatalogVersion('jakarta-annotation-api', 'jakarta.annotation.api')
+        } else if (requestedGroup == 'jakarta.validation') {
+            useCatalogVersion('jakarta-validation-api', 'jakarta.validation.api')
+        } else if (requestedGroup == 'jakarta.xml.bind') {
+            useCatalogVersion('jakarta-xml-bind', 'jakarta.xml.bind')
+        } else if (requestedGroup == 'org.antlr' && requestedName == 'antlr4-runtime') {
+            useCatalogVersion('antlr4', 'antlr4')
+        } else if (requestedGroup == 'org.assertj') {
+            useCatalogVersion('assertj')
+        } else if (requestedGroup == 'org.ow2.asm') {
+            useCatalogVersion('asm')
+        } else if (requestedGroup == 'org.apache.logging.log4j') {
+            useCatalogVersion('log4j')
+        } else if (requestedGroup == 'org.apache.lucene') {
+            useCatalogVersion('lucene')
+        } else if (requestedGroup == 'org.apache.pdfbox') {
+            useCatalogVersion('pdfbox')
+        } else if (requestedGroup == 'blue.strategic.parquet') {
+            useCatalogVersion('parquet-floor', 'parquet.floor')
+        } else if (requestedGroup == 'ch.qos.logback') {
+            useCatalogVersion('logback')
+        } else if (requestedGroup == 'org.slf4j') {
+            useCatalogVersion('slf4j')
+        } else if (requestedGroup == 'com.h2database') {
+            useCatalogVersion('h2')
+        } else if (requestedGroup == 'com.squareup.okhttp3') {
+            useCatalogVersion('squareup-okhttp')
+        } else if (requestedGroup == 'com.squareup.okio') {
+            useCatalogVersion('squareup-okio')
+        } else if (requestedGroup == 'net.bytebuddy') {
+            useCatalogVersion('bytebuddy')
+        } else if (requestedGroup == 'io.netty') {
+            useCatalogVersion('netty')
+        } else if (requestedGroup == 'io.projectreactor') {
+            useCatalogVersion('reactor-core')
+        } else if (requestedGroup == 'io.projectreactor.addons') {
+            useCatalogVersion('reactor-pool')
+        } else if (requestedGroup == 'io.micrometer'
+                && (requestedName == 'micrometer-observation'
+                || requestedName == 'micrometer-commons'
+                || requestedName == 'micrometer-jakarta9')) {
+            useCatalogVersion('micrometer')
+        } else if (requestedGroup == 'io.projectreactor.netty') {
+            useCatalogVersion('reactor-netty')
+        } else if (requestedGroup == 'io.projectreactor.tools') {
+            useCatalogVersion('blockhound')
+        } else if (requestedGroup == 'io.swagger.core.v3') {
+            useCatalogVersion('swagger-core')
+        } else if (requestedGroup == 'org.webjars' && requestedName == 'swagger-ui') {
+            useCatalogVersion('swagger-ui')
+        } else if (requestedGroup == 'org.apache.tomcat.embed') {
+            useCatalogVersion('tomcat')
+        } else if (requestedGroup == 'org.tomlj') {
+            useCatalogVersion('tomlj')
+        } else if (requestedGroup == 'com.jayway.jsonpath' && requestedName == 'json-path') {
+            useCatalogVersion('json-path')
+        } else if (requestedGroup == 'net.minidev'
+                && (requestedName == 'json-smart' || requestedName == 'accessors-smart')) {
+            useCatalogVersion('json-smart')
+        } else if (requestedGroup == 'net.java.dev.jna') {
+            useCatalogVersion('jna')
+        } else if (requestedGroup == 'com.nimbusds') {
+            if (requestedName == 'content-type') {
+                useCatalogVersion('nimbus-content-type', 'nimbus.content.type')
+            } else if (requestedName == 'nimbus-jose-jwt') {
+                useCatalogVersion('nimbus-jose-jwt', 'nimbus.jose.jwt')
+            } else if (requestedName == 'oauth2-oidc-sdk') {
+                useCatalogVersion('nimbus-oauth2-oidc-sdk', 'nimbus.oauth2.oidc.sdk')
+            }
+        } else if (requestedGroup == 'org.junit.jupiter') {
+            useCatalogVersion('junit-jupiter')
+        } else if (requestedGroup == 'org.junit.platform') {
+            useCatalogVersion('junit-platform')
+        } else if (requestedGroup == 'com.google.errorprone') {
+            useCatalogVersion('google.errorprone')
+        } else if (requestedGroup == 'com.google.guava' && requestedName == 'guava') {
+            useCatalogVersion('google.guava')
+        } else if (requestedGroup == 'com.google.protobuf') {
+            useCatalogVersion('protobuf')
+        } else if (requestedGroup == 'com.google.code.gson') {
+            useCatalogVersion('google.gson')
+        } else if (requestedGroup == 'com.google.code.findbugs') {
+            useCatalogVersion('google.findbugs')
+        } else if (requestedGroup.startsWith('com.fasterxml.jackson')) {
+            // 你原始逻辑：annotations 用 jackson2.annotations，其它 jackson2.core
+            if (requestedGroup == 'com.fasterxml.jackson.core' && requestedName == 'jackson-annotations') {
+                useCatalogVersion('jackson2.annotations')
+            } else {
+                useCatalogVersion('jackson2.core')
+            }
+        } else if (requestedGroup.startsWith('tools.jackson')) {
+            useCatalogVersion('jackson.core')
+        } else if (requestedGroup.startsWith('com.microsoft.onnxruntime')) {
+            useCatalogVersion('onnxruntime')
+        } else if (requestedGroup.startsWith('com.github.spotbugs')) {
+            useCatalogVersion('spotbugs')
+        } else if (requestedGroup.startsWith('com.google.j2objc')) {
+            useCatalogVersion('j2objc')
+        } else if (requestedGroup == 'com.github.luben' && requestedName == 'zstd-jni') {
+            useCatalogVersion('zstd-jni')
+        } else if (requestedGroup == 'it.unimi.dsi' && requestedName == 'fastutil') {
+            useCatalogVersion('fastutil')
+        } else if (requestedGroup.startsWith('org.objenesis')) {
+            useCatalogVersion('objenesis')
+        } else if (requestedGroup.startsWith('org.jetbrains')) {
+            // 你原始逻辑：把 annotations-java5 / annotations 都重定向为 org.jetbrains:annotations
+            if (requestedName == 'annotations-java5' || requestedName == 'annotations') {
+                useCatalogTarget('jetbrains-annotations', [group: 'org.jetbrains', name: 'annotations'])
+            } else if (requestedGroup == 'org.jetbrains.kotlin') {
+                useCatalogVersion('jetbrains-kotlin')
+            }
+        } else if (requestedGroup.startsWith('org.jsoup')) {
+            useCatalogVersion('jsoup')
+        } else if (requestedGroup == 'com.twitter.twittertext') {
+            useCatalogVersion('twitter-text')
+        } else if (requestedGroup == 'de.rototor.pdfbox') {
+            useCatalogVersion('rototor-pdfbox')
+        } else if (requestedGroup == 'org.tukaani' && requestedName == 'xz') {
+            useCatalogVersion('tukaani-xz')
+        } else if (requestedGroup == 'org.xerial.snappy' && requestedName == 'snappy-java') {
+            useCatalogVersion('snappy-java')
+        } else if (requestedGroup == 'org.xmlunit') {
+            useCatalogVersion('xmlunit')
+        } else if (requestedGroup == 'org.hamcrest') {
+            useCatalogVersion('hamcrest')
         }
     }
 }

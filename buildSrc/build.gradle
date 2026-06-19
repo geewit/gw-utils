@@ -8,24 +8,35 @@ apply from: file("common-resolution-strategy.gradle")
 java {
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
-    withSourcesJar()
-    withJavadocJar()
+}
+
+sourceSets {
+    main {
+        java.setSrcDirs(['src/main/java'])
+        resources.setSrcDirs([])
+    }
+    test {
+        java.setSrcDirs(['src/test/java'])
+        resources.setSrcDirs([])
+    }
 }
 
 def rootProps = new Properties()
-file("${rootDir}/../gradle.properties").withInputStream { rootProps.load(it) }
+file("${projectDir}/../gradle.properties").withInputStream { rootProps.load(it) }
 
 def versionMap = rootProps.collectEntries { key, value ->
     String propKey = key.toString()
     String alias = propKey.endsWith('.version') ? propKey[0..-9] : propKey
     [(alias): value.toString()]
-}
-VersionCatalogsExtension catalogs = rootProject.extensions.findByType(VersionCatalogsExtension)
+} as Map<String, String>
+ExtensionContainer extensionContainer = rootProject.extensions
+VersionCatalogsExtension catalogs = extensionContainer.findByType(VersionCatalogsExtension)
 VersionCatalog libs = catalogs?.find("libs")?.orElse(null)
+def rootExtraProperties = extensionContainer.getByType(ExtraPropertiesExtension)
 
 configurations {
     configureEach { config ->
-        rootProject.ext.applyCommonResolutionStrategy(config, libs, versionMap)
+        rootExtraProperties.applyCommonResolutionStrategy(config, libs, versionMap)
     }
 }
 

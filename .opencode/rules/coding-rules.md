@@ -52,3 +52,31 @@
 2. 修复 bug 必须补能复现 bug 的测试。
 3. 公共工具类测试必须覆盖边界条件。
 4. 不为测试方便破坏公共 API。
+
+## Code Quality Loop
+
+- 修改 Java 代码后必须至少运行相关模块测试；收尾前按风险扩大到 `gradle test`。
+- 如果 `.codex/code-quality/summary.md` 存在，修复代码质量问题前必须优先读取该 summary、完整 log 与 reports 清单。
+- 修复顺序：编译/测试失败、OpenRewrite patch、Error Prone / NullAway、SpotBugs、PMD、Checkstyle、ArchUnit。
+- 不要为了消除告警随意添加 `@SuppressWarnings` 或 `// noinspection`；只有明确误报才允许抑制并说明原因。
+- gw-utils 当前没有默认质量扫描脚本时，不要把不存在的 `scripts/quality-scan.sh` 写成必跑入口。
+- 质量扫描命令如后续接入，必须统一使用 `gradle`，不要使用 Gradle wrapper 命令。
+
+## Java 清理与现代化规则
+
+### 移除未使用元素
+
+- 及时删除未使用的 import、字段、构造函数参数和方法。
+- 测试类中及时删除未使用的 mock 对象和 stub。
+
+### 优先使用现代 Java API
+
+- 优先使用清晰的 JDK / Apache Commons / Guava / Spring 工具方法替代重复 helper。
+- Java 25 基线下可以使用当前 JDK 已稳定提供的 API，但不要为了新语法牺牲兼容性或可读性。
+- 使用类型导入替代正文中的完全限定名；短类名冲突、配置 key、字符串类名可保留全名。
+- Stream 只需要最小元素时用 `min(comparator)` 替代 `sorted(comparator).findFirst()`。
+
+### 构造函数与 setter 规范
+
+- 构造函数和 setter 中对同名字段赋值时使用显式 `this.`。
+- 空值保护要覆盖变量的全部后续使用，不用非空断言掩盖合法分支。

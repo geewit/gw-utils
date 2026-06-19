@@ -31,16 +31,20 @@
 
 - 根 `settings.gradle` 加载 `buildSrc/common-settings.gradle`。
 - 根 `build.gradle` 加载 `buildSrc/common-resolution-strategy.gradle`。
+- `buildSrc/build.gradle` 与 `buildSrc/gradle.properties` 维护 buildSrc 自身构建。
 - 版本统一来自 `gradle.properties` 与 version catalog。
 - 每个子模块通过本模块 `gradle.properties` 定义 `group` 与 `artifactId`。
 - 发布链路保留：`maven-publish` + `signing` + `org.jreleaser`。
 - 发布开关：`io.geewit.publish.enabled=true|false`。
 - JReleaser staging 仓库：`build/staging-deploy`。
+- Central 凭据优先使用 `SONATYPE_BEARER_TOKEN` / `SONATYPE_TOKEN`，也支持由用户名和密码派生 Bearer token。
+- 子模块可通过 `io.geewit.jreleaser.skip` 跳过 JReleaser 插件执行。
 
 ## 模块规则
 
 - `core:*` 不依赖 `javafx:*`、`web:*`。
 - `javafx:*` 可以依赖基础 `core:*` 与 `i18n`，但不能反向污染 core。
+- `javafx:base` 当前使用 Reactor Core；修改 Mono / Flux / Scheduler 相关逻辑时必须加载 `reactor-spec`。
 - `web:*` 只沉淀通用 Web/JSON 能力，不引入应用业务语义。
 - 工具库不得引入 app/server 运行期概念。
 - 依赖应优先使用 `libs.*` alias，不直接散落版本号。

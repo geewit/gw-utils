@@ -15,6 +15,8 @@ metadata:
 - 修改根 `build.gradle`
 - 修改模块 `build.gradle`
 - 修改 `gradle.properties`
+- 修改 `buildSrc/build.gradle`
+- 修改 `buildSrc/gradle.properties`
 - 修改 `buildSrc/**`
 - 调整依赖、版本、仓库、插件
 - 调整 Java toolchain、Jacoco、Javadoc、sourcesJar、publishing、signing、JReleaser
@@ -52,6 +54,7 @@ web:json
 - `buildSrc/common-settings.gradle` 负责 pluginManagement、repository、version catalog。
 - 根 `build.gradle` 负责统一 Java Library、Jacoco、toolchain、依赖排除、发布配置。
 - `buildSrc/common-resolution-strategy.gradle` 负责依赖版本对齐。
+- `buildSrc/build.gradle` 与 `buildSrc/gradle.properties` 负责 buildSrc 自身构建与 Gradle 执行参数。
 - 子模块 `gradle.properties` 中的 `group` / `artifactId` 是发布坐标真相源。
 
 ## 发布链路硬约束
@@ -64,6 +67,8 @@ web:json
 6. 不得破坏 `POM_*` 元数据。
 7. 不得随意改变已有 artifact 的 groupId / artifactId。
 8. 发布凭据通过 Gradle properties / 环境注入，不写死真实 token、用户名、密码。
+9. Central 凭据路径必须保留 `SONATYPE_BEARER_TOKEN` / `SONATYPE_TOKEN`，以及 `SONATYPE_USERNAME` + `SONATYPE_PASSWORD` 派生 Bearer token 的兼容逻辑。
+10. 子模块可通过 `io.geewit.jreleaser.skip` 跳过 JReleaser 插件执行。
 
 ## 依赖方向
 
@@ -108,7 +113,7 @@ web:json
 ## 核心规则
 
 1. 统一使用 `gradle` 命令，不使用 `./gradlew`。
-2. 变更前先检查：`settings.gradle`、根 `build.gradle`、`gradle.properties`、`buildSrc/**`。
+2. 变更前先检查：`settings.gradle`、根 `build.gradle`、`gradle.properties`、`buildSrc/build.gradle`、`buildSrc/gradle.properties`、`buildSrc/common-*`。
 3. 依赖与版本尽量收敛到现有 version catalog，不随意新增平行版本源。
 4. 新增依赖先查是否已有 `libs.*` alias。
 5. 修改模块依赖时必须说明是否影响发布 artifact。

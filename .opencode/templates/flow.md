@@ -20,15 +20,18 @@ $ARGUMENTS
 
 1. `AGENTS.md`
 2. `readme.md`
-3. `.opencode/README.md`
-4. `.opencode/prompts/repo_context.md`
-5. 当前任务最相关的源码、测试、配置、Gradle 模块
+3. `opencode.jsonc`
+4. `.opencode/README.md`
+5. `.codex/README.md` 与 `.codex/instructions.md`（Codex 场景）
+6. `.opencode/prompts/repo_context.md`
+7. 当前任务最相关的源码、测试、配置、Gradle 模块
 
 识别：
 
 - 已纳入 `settings.gradle` 的模块。
 - 当前变更是否影响公共 API、发布坐标、JReleaser、version catalog。
 - 当前变更属于 core/data/i18n/javafx/web 哪个模块域。
+- 当前变更是否需要 `java-spec`、`code-quality-spec`、`modularization-spec`、`reactor-spec` 等通用技能。
 
 ## Phase 1：当前状态盘点
 
@@ -49,6 +52,7 @@ $ARGUMENTS
 - `AGENTS.md`
 - `.opencode/prompts/*.md`
 - `.opencode/skills/*/SKILL.md`
+- `.codex/**` 中的 Codex 入口或命令映射
 - 必要的 `docs/**/*.md`
 
 不要把临时聊天结论当作长期规格。

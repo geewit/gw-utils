@@ -5,6 +5,21 @@ import org.jreleaser.gradle.plugin.JReleaserExtension
 import org.jreleaser.model.Active
 import java.nio.charset.StandardCharsets
 
+// 强制 buildscript classpath（含 plugins {} 块传递依赖）中的关键依赖版本
+buildscript {
+    def rootProps = new Properties()
+    file("gradle.properties").withInputStream { rootProps.load(it) }
+
+    configurations.classpath {
+        resolutionStrategy {
+            eachDependency { details ->
+                if (details.requested.group == 'org.slf4j') {
+                    details.useVersion(rootProps['slf4j.version'] as String)
+                }
+            }
+        }
+    }
+}
 
 plugins {
     id 'maven-publish'
@@ -15,7 +30,12 @@ plugins {
     id 'org.jreleaser' apply(false)
 }
 
-apply from: file('buildSrc/common-resolution-strategy.gradle')
+apply from: file("buildSrc/common-resolution-strategy.gradle")
+
+ExtraPropertiesExtension rootExtraProperties = rootProject.extensions.getByType(ExtraPropertiesExtension)
+Closure applyCommonResolutionStrategy = rootExtraProperties.get('applyCommonResolutionStrategy') as Closure
+VersionCatalogsExtension catalogs = rootProject.extensions.findByType(VersionCatalogsExtension)
+VersionCatalog libs = catalogs?.named("libs")
 
 // -------------------------------
 // 发布开关与凭据：保持 gw-utils 既有 JReleaser 发布方式
@@ -25,10 +45,27 @@ def publishEnabled = providers.gradleProperty('io.geewit.publish.enabled')
         .getOrElse(false)
 def sonatypeUsername = providers.gradleProperty('SONATYPE_USERNAME').getOrNull()
 def sonatypePassword = providers.gradleProperty('SONATYPE_PASSWORD').getOrNull()
+def sonatypeBearerToken = providers.gradleProperty('SONATYPE_BEARER_TOKEN')
+        .orElse(providers.gradleProperty('SONATYPE_TOKEN'))
+        .getOrNull()
+if ((sonatypeBearerToken == null || sonatypeBearerToken.isBlank())
+        && sonatypeUsername != null && !sonatypeUsername.isBlank()
+        && sonatypePassword != null && !sonatypePassword.isBlank()) {
+    String decodedPassword = null
+    try {
+        decodedPassword = new String(Base64.decoder.decode(sonatypePassword), StandardCharsets.UTF_8)
+    } catch (IllegalArgumentException ignored) {
+        decodedPassword = null
+    }
+    sonatypeBearerToken = decodedPassword?.startsWith("${sonatypeUsername}:")
+            ? sonatypePassword
+            : Base64.encoder.encodeToString("${sonatypeUsername}:${sonatypePassword}".getBytes(StandardCharsets.UTF_8))
+}
 
 ext.publishEnabled = publishEnabled
 ext.sonatypeUsername = sonatypeUsername
 ext.sonatypePassword = sonatypePassword
+ext.sonatypeBearerToken = sonatypeBearerToken
 
 
 allprojects {
@@ -79,6 +116,10 @@ subprojects { subproject ->
     subproject.pluginManager.apply('java-library')
     subproject.pluginManager.apply('jacoco')
 
+    subproject.extensions.configure(JacocoPluginExtension) { JacocoPluginExtension jacocoExt ->
+        jacocoExt.toolVersion = rootProject.findProperty('jacoco.version') as String ?: '0.8.14'
+    }
+
     if (publishEnabled) {
         subproject.pluginManager.apply('maven-publish')
         subproject.pluginManager.apply('signing')
@@ -87,11 +128,8 @@ subprojects { subproject ->
         }
     }
 
-    VersionCatalogsExtension catalogs = rootProject.extensions.findByType(VersionCatalogsExtension)
-    VersionCatalog libs = catalogs?.named('libs')
-
     // ------------------------------------------------
-    // 2. Java toolchain：复用 friso 的统一解析逻辑
+    // 2. Java toolchain：复用 robot 的统一解析逻辑
     // ------------------------------------------------
     JavaLanguageVersion javaLanguageVersion = rootProject.ext.determineJavaLanguageVersion(subproject) as JavaLanguageVersion
 
@@ -110,8 +148,8 @@ subprojects { subproject ->
             config.exclude([group: 'org.mockito', module: 'mockito-all'])
             config.exclude([group: 'org.apache.ant'])
             config.exclude([group: 'io.netty', module: 'netty-tcnative-classes'])
-            config.exclude([group: 'ua.net.nlp', module: 'morfologik-ukrainian-search'])
             config.exclude([group: 'com.zaxxer', module: 'HikariCP'])
+            config.exclude([group: 'ua.net.nlp', module: 'morfologik-ukrainian-search'])
 
             if (subproject.path.startsWith(':javafx:')) {
                 config.exclude([group: 'ch.qos.logback'])
@@ -126,7 +164,7 @@ subprojects { subproject ->
                 config.exclude([group: 'io.netty', module: 'netty-resolver-dns-native-macos'])
             }
 
-            rootProject.ext.applyCommonResolutionStrategy(config, libs, [:])
+            applyCommonResolutionStrategy.call(config, libs, [:])
         }
     }
 
@@ -308,11 +346,11 @@ subprojects { subproject ->
                                 if (sonatypeUsername != null && !sonatypeUsername.isBlank()) {
                                     username.set(sonatypeUsername)
                                 }
-                                if (sonatypePassword != null && !sonatypePassword.isBlank()) {
-                                    password.set(sonatypePassword)
+                                if (sonatypeBearerToken != null && !sonatypeBearerToken.isBlank()) {
+                                    password.set(sonatypeBearerToken)
                                 }
 
-                                authorization.set(org.jreleaser.model.Http.Authorization.BASIC)
+                                authorization.set(org.jreleaser.model.Http.Authorization.BEARER)
 
                                 sign.set(false)
                                 checksums.set(false)
