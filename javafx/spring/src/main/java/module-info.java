@@ -18,5 +18,7 @@ module io.geewit.utils.javafx.spring {
     requires transitive org.slf4j;
     requires static lombok;
     exports io.geewit.utils.javafx.spring;
+    exports io.geewit.utils.javafx.spring.config;
+    exports io.geewit.utils.javafx.spring.constants;
     exports io.geewit.utils.javafx.spring.weaver;
 }

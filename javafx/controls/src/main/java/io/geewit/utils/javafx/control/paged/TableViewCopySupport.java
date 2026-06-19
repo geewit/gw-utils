@@ -20,6 +20,7 @@ import javafx.util.Callback;
 import java.util.ArrayList;
 import javafx.collections.ObservableList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -382,6 +383,6 @@ public final class TableViewCopySupport {
             }
             result.add(id.trim());
         }
-        return Set.copyOf(result);
+        return Collections.unmodifiableSet(new LinkedHashSet<>(result));
     }
 }

@@ -327,7 +327,7 @@ class PagedCrudTableControlTest {
             PagedCrudTableControl<TestEntity, String, String> control = new PagedCrudTableControl<>();
             TableColumn<TestEntity, String> col = new TableColumn<>("Name");
 
-            control.initialize(List.of(col), createConfig(), Set.of("name", "remark"));
+            control.initialize(List.of(col), createConfig(), List.of("name", "remark"));
 
             assertThat(control.getSelectableTextFieldIds()).containsExactly("name", "remark");
             assertThat(control.getConfig()).isNotNull();

@@ -68,6 +68,32 @@ class ActionsTest {
         };
     }
 
+    private PagedCrudService<TestEntity, String, String> hangingQueryService() {
+        return new PagedCrudService<>() {
+            private final CompletableFuture<PageResult<TestEntity>> hangingQuery = new CompletableFuture<>();
+
+            @Override
+            public CompletionStage<PageResult<TestEntity>> query(String query, int pageIndex, int pageSize) {
+                return hangingQuery;
+            }
+
+            @Override
+            public CompletionStage<TestEntity> create(TestEntity entity) {
+                return CompletableFuture.completedFuture(entity);
+            }
+
+            @Override
+            public CompletionStage<TestEntity> update(TestEntity entity) {
+                return CompletableFuture.completedFuture(entity);
+            }
+
+            @Override
+            public CompletionStage<Void> deleteByIds(Collection<String> ids) {
+                return CompletableFuture.completedFuture(null);
+            }
+        };
+    }
+
     private PagedCrudTableConfig<TestEntity, String, String> createConfig() {
         return PagedCrudTableConfig.<TestEntity, String, String>builder()
                 .pageSize(20)
@@ -205,7 +231,7 @@ class ActionsTest {
             PagedCrudTableConfig<TestEntity, String, String> config = PagedCrudTableConfig.<TestEntity, String, String>builder()
                     .pageSize(20)
                     .querySupplier(() -> "query")
-                    .service(mockService())
+                    .service(hangingQueryService())
                     .keyFn(TestEntity::getId)
                     .openEditEditor(e -> {
                         called.set(true);
@@ -216,12 +242,16 @@ class ActionsTest {
             PagedCrudTableSkin<TestEntity, String, String> skin = new PagedCrudTableSkin<>(control);
 
             // Add to skin's table items which is bound to control's items via constructor
+            TableColumn<TestEntity, String> dummyCol = new TableColumn<>("Dummy");
+            skin.table.getColumns().add(dummyCol);
             skin.table.getItems().add(entity);
-            skin.table.getSelectionModel().select(entity);
+            skin.table.getSelectionModel().select(0);
             Actions<TestEntity, String, String> actions = new Actions<>(skin);
 
             // Should not throw - editSelected triggers async operation
             actions.editSelected();
+
+            assertThat(called.get()).isTrue();
         }
     }
 
@@ -268,33 +298,10 @@ class ActionsTest {
             AtomicBoolean confirmed = new AtomicBoolean(false);
             // Use a service with a hanging query to prevent the initial search
             // from asynchronously clearing items after the test adds the entity.
-            PagedCrudService<TestEntity, String, String> hangingService = new PagedCrudService<>() {
-                private final CompletableFuture<PageResult<TestEntity>> hangingQuery = new CompletableFuture<>();
-
-                @Override
-                public CompletionStage<PageResult<TestEntity>> query(String query, int pageIndex, int pageSize) {
-                    return hangingQuery;
-                }
-
-                @Override
-                public CompletionStage<TestEntity> create(TestEntity e) {
-                    return CompletableFuture.completedFuture(e);
-                }
-
-                @Override
-                public CompletionStage<TestEntity> update(TestEntity e) {
-                    return CompletableFuture.completedFuture(e);
-                }
-
-                @Override
-                public CompletionStage<Void> deleteByIds(Collection<String> ids) {
-                    return CompletableFuture.completedFuture(null);
-                }
-            };
             PagedCrudTableConfig<TestEntity, String, String> config = PagedCrudTableConfig.<TestEntity, String, String>builder()
                     .pageSize(20)
                     .querySupplier(() -> "query")
-                    .service(hangingService)
+                    .service(hangingQueryService())
                     .keyFn(TestEntity::getId)
                     .confirmDelete(list -> {
                         confirmed.set(true);

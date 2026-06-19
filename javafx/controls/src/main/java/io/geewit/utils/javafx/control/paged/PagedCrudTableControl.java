@@ -15,6 +15,7 @@ import javafx.scene.control.TableView;
 import lombok.Getter;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -109,7 +110,7 @@ public final class PagedCrudTableControl<T, K, Q> extends Control {
             }
             result.add(id.trim());
         }
-        this.selectableTextFieldIds.set(Set.copyOf(result));
+        this.selectableTextFieldIds.set(Collections.unmodifiableSet(new LinkedHashSet<>(result)));
     }
 
     public ObjectProperty<Set<String>> selectableTextFieldIdsProperty() {
@@ -127,7 +128,7 @@ public final class PagedCrudTableControl<T, K, Q> extends Control {
             }
             result.add(id.trim());
         }
-        return Set.copyOf(result);
+        return Collections.unmodifiableSet(new LinkedHashSet<>(result));
     }
 
     // ===== actions =====
