@@ -1,0 +1,34 @@
+import io.geewit.gradle.publishing.PublishingSupport
+import io.geewit.gradle.publishing.VerifyCentralPublication
+
+plugins {
+    id 'base'
+}
+
+def centralStaging = configurations.dependencyScope('centralStaging')
+def stagedArtifacts = configurations.resolvable('centralStagingArtifacts') {
+    extendsFrom(centralStaging.get())
+}
+def enabled = providers.gradleProperty('io.geewit.publish.enabled').map { it.toBoolean() }.orElse(false)
+def releaseVersion = version.toString()
+def centralDirectory = layout.buildDirectory.dir('central-staging')
+def verifyPublication = tasks.register('verifyCentralPublication', VerifyCentralPublication) {
+    group = 'publishing'
+    publishingEnabled.set(enabled)
+    publicationVersion.set(releaseVersion)
+}
+def stage = tasks.register('stageMavenCentral', Sync) {
+    group = 'publishing'
+    description = 'Collects signed Maven publications for the current release into one Central bundle.'
+    dependsOn(verifyPublication)
+    from(stagedArtifacts)
+    include("**/${releaseVersion}/**")
+    includeEmptyDirs = false
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    into(centralDirectory)
+}
+
+PublishingSupport.configureCentral(project, centralDirectory.map { [it.asFile.absolutePath] })
+tasks.matching { it.name in ['jreleaserDeploy', 'jreleaserFullRelease'] }.configureEach {
+    dependsOn(stage)
+}

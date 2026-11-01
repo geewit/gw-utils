@@ -1,3 +1,7 @@
+plugins {
+    id 'io.geewit.maven-publish'
+}
+
 def os = org.gradle.internal.os.OperatingSystem.current()
 def arch = System.getProperty('os.arch')
 def javafxPlatform = os.isWindows() ? 'win' : os.isMacOsX() ? (arch == 'aarch64' ? 'mac-aarch64' : 'mac') : 'linux'

@@ -35,10 +35,12 @@
 - 版本统一来自 `gradle.properties` 与 version catalog。
 - 每个子模块通过本模块 `gradle.properties` 定义 `group` 与 `artifactId`。
 - 发布链路保留：`maven-publish` + `signing` + `org.jreleaser`。
-- 发布开关：`io.geewit.publish.enabled=true|false`。
-- JReleaser staging 仓库：`build/staging-deploy`。
+- 发布约定插件位于 `buildSrc/src/main/groovy`：子模块 `io.geewit.maven-publish`，根工程 `io.geewit.central-publish`。
+- 发布开关：`io.geewit.publish.enabled=true|false`，默认 `false`；本地 Maven 发布始终可用。
+- JReleaser staging 仓库：各模块 `build/staging-deploy`；根 `stageMavenCentral` 汇总当前版本到 `build/central-staging`。
+- 正式发布入口：根 `gradle jreleaserDeploy -Pio.geewit.publish.enabled=true`，自动完成 staging 后统一部署。
 - Central 凭据优先使用 `SONATYPE_BEARER_TOKEN` / `SONATYPE_TOKEN`，也支持由用户名和密码派生 Bearer token。
-- 子模块可通过 `io.geewit.jreleaser.skip` 跳过 JReleaser 插件执行。
+- 子模块可通过 `io.geewit.jreleaser.skip` 跳过独立 JReleaser 插件执行，但仍参与根聚合发布。
 
 ## 模块规则
 

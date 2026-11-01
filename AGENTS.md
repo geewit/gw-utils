@@ -44,10 +44,12 @@
 - 依赖对齐：`buildSrc/common-resolution-strategy.gradle`
 - buildSrc 自身配置：`buildSrc/build.gradle`、`buildSrc/gradle.properties`
 - 发布：`maven-publish` + `signing` + `org.jreleaser`
-- 发布开关：`io.geewit.publish.enabled`
-- staging 仓库：各模块 `build/staging-deploy`
+- 发布约定：子模块 `io.geewit.maven-publish`，根工程 `io.geewit.central-publish`；实现位于 `buildSrc/src/main/groovy`
+- 发布开关：`io.geewit.publish.enabled`，默认 `false`，不影响本地发布
+- staging 仓库：各模块 `build/staging-deploy`；根 `stageMavenCentral` 汇总当前版本到 `build/central-staging`
+- Central 发布入口：根 `jreleaserDeploy -Pio.geewit.publish.enabled=true`，一次部署全部声明的模块
 - Central 凭据：优先 `SONATYPE_BEARER_TOKEN` / `SONATYPE_TOKEN`，也支持由 `SONATYPE_USERNAME` + `SONATYPE_PASSWORD` 派生 Bearer token
-- JReleaser 插件执行：子模块可通过 `io.geewit.jreleaser.skip` 跳过
+- JReleaser 插件执行：子模块可通过 `io.geewit.jreleaser.skip` 跳过独立插件，仍参与根聚合发布
 
 ## 模块职责
 

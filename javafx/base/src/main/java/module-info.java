@@ -7,7 +7,6 @@ module io.geewit.utils.javafx.base {
     requires javafx.base;
     requires javafx.controls;
     requires javafx.graphics;
-    requires javafx.web;
     requires org.jspecify;
     requires org.kordamp.bootstrapfx.core;
     requires org.reactivestreams;

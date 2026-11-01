@@ -1,0 +1,118 @@
+import io.geewit.gradle.publishing.PublishingSupport
+import io.geewit.gradle.publishing.VerifyCentralPublication
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import org.gradle.plugins.signing.Sign
+
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
+}
+
+def localProperties = new Properties()
+localProperties.load(new StringReader(providers.fileContents(layout.projectDirectory.file('gradle.properties')).asText.get()))
+group = localProperties.getProperty('group', group.toString())
+def publishedArtifactId = localProperties.getProperty('artifactId', name)
+def publishedVersion = version.toString()
+def enabled = providers.gradleProperty('io.geewit.publish.enabled').map { it.toBoolean() }.orElse(false)
+def releaseSigning = enabled.map { it && !publishedVersion.endsWith('-SNAPSHOT') }
+def stagingDirectory = layout.buildDirectory.dir('staging-deploy')
+def pomProperty = { String key, String fallback ->
+    providers.gradleProperty(key).filter { !it.isBlank() }.orElse(fallback)
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(Javadoc).configureEach {
+    // The Java 25 baseline supports system fonts, keeping each documentation JAR small.
+    options.addBooleanOption('-no-fonts', true)
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            groupId = project.group.toString()
+            artifactId = publishedArtifactId
+            version = publishedVersion
+            from components.java
+            pom {
+                name.set(pomProperty('POM_NAME', 'gw-utils'))
+                description.set(pomProperty('POM_DESCRIPTION', 'Reusable Java utilities by Geewit'))
+                url.set(pomProperty('POM_URL', 'https://github.com/geewit/gw-utils'))
+                licenses {
+                    license {
+                        name.set(pomProperty('POM_LICENCE_NAME', 'The MIT License (MIT)'))
+                        url.set(pomProperty('POM_LICENCE_URL', 'https://mit-license.org/'))
+                        distribution.set(pomProperty('POM_LICENCE_DIST', 'repo'))
+                    }
+                }
+                developers {
+                    developer {
+                        id.set(pomProperty('POM_DEVELOPER_ID', 'geewit'))
+                        name.set(pomProperty('POM_DEVELOPER_NAME', 'Huang Fang'))
+                        email.set(pomProperty('POM_DEVELOPER_EMAIL', 'hf@geewit.io'))
+                        url.set(pomProperty('POM_DEVELOPER_URL', 'https://github.com/geewit/gw-utils/graphs/contributors'))
+                    }
+                }
+                scm {
+                    connection.set(pomProperty('POM_SCM_CONNECTION', 'scm:git:https://github.com/geewit/gw-utils.git'))
+                    developerConnection.set(pomProperty('POM_SCM_DEV_CONNECTION', 'scm:git:https://github.com/geewit/gw-utils.git'))
+                    url.set(pomProperty('POM_SCM_URL', 'https://github.com/geewit/gw-utils'))
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'jreleaser'
+            url = stagingDirectory
+        }
+    }
+}
+
+def signingKey = providers.gradleProperty('signingKey').orElse(providers.environmentVariable('SIGNING_KEY'))
+def signingPassword = providers.gradleProperty('signingPassword').orElse(providers.environmentVariable('SIGNING_PASSWORD'))
+def signingKeyId = providers.gradleProperty('signingKeyId').orElse(providers.environmentVariable('SIGNING_KEY_ID'))
+signing {
+    required { releaseSigning.get() }
+    if (signingKey.present) {
+        useInMemoryPgpKeys(signingKeyId.orNull, signingKey.get(), signingPassword.orNull)
+    }
+    sign publishing.publications
+}
+tasks.withType(Sign).configureEach {
+    onlyIf('Release signing is enabled') { releaseSigning.get() }
+}
+
+def verifyPublication = tasks.register('verifyCentralPublication', VerifyCentralPublication) {
+    group = 'publishing'
+    description = 'Checks that Central publication is enabled and uses a release version.'
+    publishingEnabled.set(enabled)
+    publicationVersion.set(publishedVersion)
+}
+def cleanStaging = tasks.register('cleanCentralStaging', Delete) {
+    group = 'publishing'
+    description = 'Removes the previous staging contents before writing this publication.'
+    dependsOn(verifyPublication)
+    delete(stagingDirectory)
+}
+tasks.withType(PublishToMavenRepository).configureEach {
+    if (repository.name == 'jreleaser') dependsOn(cleanStaging)
+}
+tasks.withType(Sign).configureEach { mustRunAfter(verifyPublication) }
+
+configurations.consumable('centralStagingElements') {
+    outgoing.artifact(stagingDirectory) {
+        builtBy(tasks.named('publishAllPublicationsToJreleaserRepository'))
+    }
+}
+
+if (!localProperties.getProperty('io.geewit.jreleaser.skip', 'false').toBoolean()) {
+    PublishingSupport.configureCentral(project, stagingDirectory.map { [it.asFile.absolutePath] })
+    tasks.matching { it.name in ['jreleaserDeploy', 'jreleaserFullRelease'] }.configureEach {
+        dependsOn(tasks.named('publishAllPublicationsToJreleaserRepository'))
+    }
+}

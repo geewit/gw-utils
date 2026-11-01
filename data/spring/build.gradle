@@ -1,3 +1,7 @@
+plugins {
+    id 'io.geewit.maven-publish'
+}
+
 dependencies {
     api(libs.spring.data.commons)
     testImplementation(libs.junit.jupiter.engine)

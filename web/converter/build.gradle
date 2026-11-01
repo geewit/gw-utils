@@ -1,3 +1,7 @@
+plugins {
+    id 'io.geewit.maven-publish'
+}
+
 dependencies {
     api(project(':core:enums'))
     api(libs.slf4j.api) {

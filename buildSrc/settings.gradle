@@ -15,4 +15,15 @@ if (parentPropsFile.exists()) {
 // 3) 再 apply 你的共享 settings 逻辑（注意：共享脚本里用 settings.pluginManagement / settings.dependencyResolutionManagement）
 apply from: file("common-settings.gradle")
 
+dependencyResolutionManagement.repositories {
+    exclusiveContent {
+        forRepository { gradlePluginPortal() }
+        filter {
+            includeModule('org.jreleaser', 'org.jreleaser.gradle.plugin')
+            includeModule('org.jreleaser', 'jreleaser-gradle-plugin')
+            includeGroup('org.kordamp.gradle')
+        }
+    }
+}
+
 rootProject.name = 'buildSrc'
